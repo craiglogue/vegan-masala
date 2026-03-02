@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Rajdhani } from "next/font/google";
+import SiteHeader from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-touch-icon.png?v=3" }],
   },
+
   manifest: "/site.webmanifest?v=3",
 };
 
@@ -39,91 +41,11 @@ const rajdhani = Rajdhani({
   display: "swap",
 });
 
-function SiteHeader() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-[var(--border)]">
-      <div className="relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0">
-          <img
-            src="/images/header/mandala-bg.jpg"
-            alt=""
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/60" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/75" />
-        </div>
-
-        {/* Content */}
-        <div className="relative mx-auto max-w-7xl px-4 py-2">
-          {/* MOBILE ROW: logo + browse (nav links hidden) */}
-          <div className="flex items-center justify-between sm:hidden">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/brand/logo-flat.png"
-                alt="Vegan Masala"
-                width={260}
-                height={100}
-                priority
-                className="h-auto w-[150px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
-              />
-            </Link>
-
-            <Link
-              href="/recipes"
-              className="inline-flex items-center justify-center rounded-xl bg-[var(--brand-red)] px-4 py-2 text-sm font-extrabold tracking-wide text-white hover:opacity-90 transition"
-            >
-              Browse
-            </Link>
-          </div>
-
-          {/* DESKTOP ROW: logo + full nav */}
-          <div className="hidden sm:flex items-center justify-between">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/brand/logo-flat.png"
-                alt="Vegan Masala"
-                width={520}
-                height={200}
-                priority
-                className="h-auto w-[220px] md:w-[250px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
-              />
-            </Link>
-
-            <nav className="flex items-center gap-6 text-[14px] font-bold tracking-wide text-[var(--brand-gold)]">
-              <Link className="hover:opacity-90" href="/recipes">
-                Recipes
-              </Link>
-              <Link className="hover:opacity-90" href="/guides">
-                Guides
-              </Link>
-              <Link className="hover:opacity-90" href="/about">
-                About
-              </Link>
-              <Link className="hover:opacity-90" href="/contact">
-                Contact
-              </Link>
-
-              <Link
-                href="/recipes"
-                className="ml-2 inline-flex items-center justify-center rounded-xl bg-[var(--brand-red)] px-5 py-2.5 text-sm font-extrabold tracking-wide text-white hover:opacity-90 transition"
-              >
-                Browse
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-}
-
 function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-[var(--border)] bg-black/80">
       <div className="mx-auto max-w-7xl px-6 py-10 text-sm text-[var(--text-soft)]">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
-          {/* Footer logo + description */}
           <div className="flex items-start gap-4">
             <Image
               src="/brand/logo-flat.png"
@@ -143,25 +65,24 @@ function SiteFooter() {
             </div>
           </div>
 
-          {/* ✅ FIX: make columns sit side-by-side on mobile */}
-          <div className="w-full grid grid-cols-2 gap-10 sm:w-auto sm:grid-cols-3">
+          <div className="grid gap-10 sm:grid-cols-3">
             <div>
               <h4 className="text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
                 Explore
               </h4>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <Link className="hover:text-[var(--brand-gold)]" href="/recipes">
+                  <Link href="/recipes" className="hover:text-[var(--brand-gold)]">
                     Recipes
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-[var(--brand-gold)]" href="/guides">
+                  <Link href="/guides" className="hover:text-[var(--brand-gold)]">
                     Guides
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-[var(--brand-gold)]" href="/about">
+                  <Link href="/about" className="hover:text-[var(--brand-gold)]">
                     About
                   </Link>
                 </li>
@@ -174,41 +95,40 @@ function SiteFooter() {
               </h4>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <Link className="hover:text-[var(--brand-gold)]" href="/privacy">
+                  <Link href="/privacy" className="hover:text-[var(--brand-gold)]">
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-[var(--brand-gold)]" href="/cookies">
+                  <Link href="/cookies" className="hover:text-[var(--brand-gold)]">
                     Cookie Policy
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-[var(--brand-gold)]" href="/contact">
+                  <Link href="/contact" className="hover:text-[var(--brand-gold)]">
                     Contact
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* On mobile, make "Follow" span full width so it doesn't create empty space */}
-            <div className="col-span-2 sm:col-span-1">
+            <div>
               <h4 className="text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
                 Follow
               </h4>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <a className="hover:text-[var(--brand-gold)]" href="#" rel="noreferrer">
+                  <a href="#" className="hover:text-[var(--brand-gold)]" rel="noreferrer">
                     Instagram
                   </a>
                 </li>
                 <li>
-                  <a className="hover:text-[var(--brand-gold)]" href="#" rel="noreferrer">
+                  <a href="#" className="hover:text-[var(--brand-gold)]" rel="noreferrer">
                     YouTube
                   </a>
                 </li>
                 <li>
-                  <a className="hover:text-[var(--brand-gold)]" href="#" rel="noreferrer">
+                  <a href="#" className="hover:text-[var(--brand-gold)]" rel="noreferrer">
                     Pinterest
                   </a>
                 </li>
