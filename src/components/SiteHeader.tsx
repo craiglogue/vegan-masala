@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)]">
-      <div className="relative">
+      <div className="relative overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0">
           <img
@@ -16,42 +16,29 @@ export default function SiteHeader() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/75" />
         </div>
 
-        {/* Content */}
-        <div className="relative mx-auto max-w-7xl px-4">
-          {/* Top row: logo + browse */}
-          <div className="flex items-center justify-between py-2">
-            <Link href="/" className="flex items-center">
-              <img
-                src="/brand/logo-flat.png"
-                alt="Vegan Masala"
-                className="h-auto w-[170px] sm:w-[220px] md:w-[250px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
-              />
-            </Link>
+        {/* Centered logo + nav */}
+        <div className="relative mx-auto flex max-w-7xl flex-col items-center px-4 py-3">
+          <Link href="/" className="flex items-center justify-center">
+            <img
+              src="/brand/logo-flat.png"
+              alt="Vegan Masala"
+              className="h-auto w-[180px] sm:w-[240px] md:w-[270px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
+            />
+          </Link>
 
-            <Link
-              href="/recipes"
-              className="inline-flex items-center justify-center rounded-xl bg-[var(--brand-red)] px-5 py-2.5 text-sm font-extrabold tracking-wide text-white hover:opacity-90 transition"
-            >
-              Browse
+          <nav className="mt-2 flex items-center justify-center gap-7 text-[15px] sm:text-[16px] font-bold tracking-wide text-[var(--brand-gold)]">
+            <Link className="hover:opacity-90" href="/recipes">
+              Recipes
             </Link>
-          </div>
-
-          {/* Nav row: ALWAYS present, just changes layout */}
-          <nav className="pb-2">
-            <div className="flex items-center gap-6 overflow-x-auto whitespace-nowrap text-[14px] font-bold tracking-wide text-[var(--brand-gold)]">
-              <Link className="hover:opacity-90" href="/recipes">
-                Recipes
-              </Link>
-              <Link className="hover:opacity-90" href="/guides">
-                Guides
-              </Link>
-              <Link className="hover:opacity-90" href="/about">
-                About
-              </Link>
-              <Link className="hover:opacity-90" href="/contact">
-                Contact
-              </Link>
-            </div>
+            <Link className="hover:opacity-90" href="/guides">
+              Guides
+            </Link>
+            <Link className="hover:opacity-90" href="/about">
+              About
+            </Link>
+            <Link className="hover:opacity-90" href="/contact">
+              Contact
+            </Link>
           </nav>
         </div>
       </div>
