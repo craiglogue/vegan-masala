@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Rajdhani } from "next/font/google";
+
 import SiteHeader from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
