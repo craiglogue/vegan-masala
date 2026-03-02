@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 // src/app/recipes/[slug]/opengraph-image.tsx
 import { ImageResponse } from "next/og";
 import { getRecipeBySlug } from "@/lib/recipes";

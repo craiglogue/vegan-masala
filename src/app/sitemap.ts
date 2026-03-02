@@ -1,4 +1,6 @@
 // src/app/sitemap.ts
+export const runtime = "nodejs";
+
 import type { MetadataRoute } from "next";
 import { getAllRecipeSlugs } from "@/lib/recipes";
 
