@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
+/* ===== Vegan Masala theme tokens ===== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand-gold: #d6b25e;
+  --brand-red: #9b2c2c;
+
+  --bg: #0b1216;
+  --surface: rgba(17, 28, 34, 0.88);
+
+  --text: #f6f2e6;
+  --text-soft: rgba(246, 242, 230, 0.78);
+
+  --border: rgba(214, 178, 94, 0.35);
+}
+:root{
+  /* Adjust this number if you change header height */
+  --header-offset: 110px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Makes anchor jumps land below your sticky header */
+html{
+  scroll-padding-top: var(--header-offset);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ✅ Site-wide font */
+body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI,
+    Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 500; /* slightly bolder overall */
+}
+
+/* ✅ Headings also Rajdhani */
+h1, h2, h3, h4, h5 {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--brand-gold);
+}
+
+/* MDX prose */
+.prose {
+  color: var(--text-soft);
+  max-width: none;
+  line-height: 1.85;
+  font-size: 1.05rem;
+}
+
+.prose strong {
+  color: var(--text);
+}
+
+.prose a {
+  color: var(--brand-gold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(214, 178, 94, 0.35);
+}
+
+.prose a:hover {
+  border-bottom-color: rgba(214, 178, 94, 0.75);
+}
+
+::selection {
+  background: rgba(214, 178, 94, 0.35);
+  color: var(--text);
 }
