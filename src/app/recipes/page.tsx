@@ -77,6 +77,9 @@ function canonicalizeTag(raw: string): string | null {
     urad: "dal-and-lentils",
     masoor: "dal-and-lentils",
 
+    // ✅ FIX: prevent dal-and-lentils appearing twice under different keys
+    "dal-and-lentils": "dal-and-lentils",
+
     tofu: "tofu",
     paneer: "tofu",
 
@@ -191,7 +194,9 @@ function matchesCollection(r: any, collection: string) {
       const diet = (r.diet ?? []).map((d: string) => norm(String(d)));
       const tags = (r.tags ?? []).map((t: string) => norm(String(t)));
       return (
-        diet.includes("gluten-free") || tags.includes("gluten-free") || txt.includes("gluten-free")
+        diet.includes("gluten-free") ||
+        tags.includes("gluten-free") ||
+        txt.includes("gluten-free")
       );
     }
     default:
@@ -282,19 +287,26 @@ export default async function RecipesPage({
 
   let filtered = recipes;
 
-  if (selectedTag) filtered = filtered.filter((r: any) => recipeCanonicalTags(r).includes(selectedTag));
-  if (selectedCollection) filtered = filtered.filter((r: any) => matchesCollection(r, selectedCollection));
+  if (selectedTag)
+    filtered = filtered.filter((r: any) => recipeCanonicalTags(r).includes(selectedTag));
+  if (selectedCollection)
+    filtered = filtered.filter((r: any) => matchesCollection(r, selectedCollection));
 
   const btnBase =
     "flex-1 min-w-[150px] text-center rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-extrabold transition";
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-[var(--brand-gold)] sm:text-4xl">Recipes</h1>
+          <h1 className="text-3xl font-extrabold text-[var(--brand-gold)] sm:text-4xl">
+            Recipes
+          </h1>
           <p className="mt-2 text-[var(--text-soft)]">
             Browse curries, dals, sides and comfort food — all vegan.
           </p>
@@ -411,7 +423,9 @@ export default async function RecipesPage({
                 </h3>
 
                 {r.description && (
-                  <p className="mt-2 line-clamp-2 text-sm text-[var(--text-soft)]">{r.description}</p>
+                  <p className="mt-2 line-clamp-2 text-sm text-[var(--text-soft)]">
+                    {r.description}
+                  </p>
                 )}
 
                 {!!r.tags?.length && (
@@ -435,7 +449,9 @@ export default async function RecipesPage({
       {filtered.length === 0 ? (
         <div className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
           <h2 className="text-xl font-extrabold text-[var(--brand-gold)]">No recipes found</h2>
-          <p className="mt-3 text-[var(--text-soft)]">Try clearing the filter or picking a different button.</p>
+          <p className="mt-3 text-[var(--text-soft)]">
+            Try clearing the filter or picking a different button.
+          </p>
           <div className="mt-6">
             <Link
               href="/recipes"
