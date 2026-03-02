@@ -280,8 +280,7 @@ export default async function RecipesPage({
 
   const quickCollections = [
     { label: "30-minute meals", key: "30-min" },
-    { label: "One-pot", key: "one-pot" },
-    { label: "Dal & lentils", key: "dal" },
+    { label: "One-pot", key: "one-pot" }, 
     { label: "Gluten-free", key: "gluten-free" },
   ];
 
