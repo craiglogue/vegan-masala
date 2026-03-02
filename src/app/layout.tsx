@@ -56,17 +56,14 @@ function SiteHeader() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/75" />
         </div>
 
-        <div className="relative mx-auto flex max-w-7xl items-end justify-between px-4 py-2">
-          <Link href="/" className="flex items-end">
-            <Image
-              src="/brand/logo-flat.png"
-              alt="Vegan Masala"
-              width={520}
-              height={200}
-              priority
-              className="h-auto w-[140px] sm:w-[180px] md:w-[210px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
-            />
-          </Link>
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
+          <Link href="/" className="relative z-10 flex items-center">
+  <img
+    src="/brand/logo-flat.png"
+    alt="Vegan Masala"
+    className="h-auto w-[150px] sm:w-[220px] md:w-[250px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
+  />
+</Link>
 
           <nav className="flex items-end gap-6 text-[14px] font-bold tracking-wide text-[var(--brand-gold)]">
             <Link className="hover:opacity-90" href="/recipes">
