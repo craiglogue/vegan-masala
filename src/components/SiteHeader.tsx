@@ -34,8 +34,8 @@ export default function SiteHeader() {
           </Link>
         </div>
 
-        {/* Mobile nav row (shows on <sm) */}
-        <div className="relative mx-auto max-w-7xl px-4 pb-2 sm:hidden">
+        {/* Mobile nav row (now shows on ALL sizes) ✅ */}
+        <div className="relative mx-auto max-w-7xl px-4 pb-2">
           <nav className="flex items-center gap-6 overflow-x-auto whitespace-nowrap text-[14px] font-bold tracking-wide text-[var(--brand-gold)]">
             <Link className="hover:opacity-90" href="/recipes">
               Recipes
