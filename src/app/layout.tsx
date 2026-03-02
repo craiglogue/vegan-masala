@@ -113,7 +113,6 @@ function SiteFooter() {
               </ul>
             </div>
 
-            {/* ✅ UPDATED SOCIAL LINKS */}
             <div>
               <h4 className="text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
                 Follow
@@ -121,7 +120,7 @@ function SiteFooter() {
               <ul className="mt-4 space-y-2">
                 <li>
                   <a
-                    href="https://www.instagram.com/vegan.masala"
+                    href="https://www.instagram.com/veganmasalaonline/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-[var(--brand-gold)]"
@@ -131,7 +130,7 @@ function SiteFooter() {
                 </li>
                 <li>
                   <a
-                    href="https://www.youtube.com/@veganmasala"
+                    href="https://www.youtube.com/@vegan-masala"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-[var(--brand-gold)]"
@@ -141,12 +140,32 @@ function SiteFooter() {
                 </li>
                 <li>
                   <a
-                    href="https://www.pinterest.com/veganmasala"
+                    href="https://uk.pinterest.com/VeganMasala/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-[var(--brand-gold)]"
                   >
                     Pinterest
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.facebook.com/profile.php?id=61588342679463"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[var(--brand-gold)]"
+                  >
+                    Facebook
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.tiktok.com/@user2554050179629?lang=en-GB"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[var(--brand-gold)]"
+                  >
+                    TikTok
                   </a>
                 </li>
               </ul>
