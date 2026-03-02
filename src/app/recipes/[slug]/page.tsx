@@ -103,15 +103,29 @@ export default async function RecipePage({
     sections["instruction"] ||
     "";
 
+  // Notes block candidates
   const notesBlock =
-    recipe.notesMarkdown ||
-    sections["notes"] ||
-    sections["tips"] ||
-    "";
+    recipe.notesMarkdown || sections["notes"] || sections["tips"] || "";
 
   const ingredientsFromBody = extractBullets(ingredientsBlock);
   const methodFromBody = extractNumbered(methodBlock);
-  const notesFromBody = extractNotes(notesBlock);
+
+  // ✅ FIX: notes extraction checks multiple likely sources in a safe order
+  const notesFromBody = (() => {
+    const a = extractNotes(recipe.notesMarkdown);
+    if (a.length) return a;
+
+    const b = extractNotes(sections["notes"]);
+    if (b.length) return b;
+
+    const c = extractNotes(sections["tips"]);
+    if (c.length) return c;
+
+    const d = extractNotes(notesBlock);
+    if (d.length) return d;
+
+    return [];
+  })();
 
   const ingredients =
     (Array.isArray(recipe.ingredients) && recipe.ingredients.length
@@ -124,18 +138,21 @@ export default async function RecipePage({
       : methodFromBody) || [];
 
   const notes =
-    (Array.isArray(recipe.notes) && recipe.notes.length ? recipe.notes : notesFromBody) ||
-    [];
+    (Array.isArray(recipe.notes) && recipe.notes.length
+      ? recipe.notes
+      : notesFromBody) || [];
 
   // ✅ anchor offset for sticky header when jumping
-  // If your header height changes, tweak this number.
-  const anchorOffsetClass = "scroll-mt-[140px]";
+  const anchorOffsetClass = "scroll-mt-[160px] sm:scroll-mt-[140px]";
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
       <style>{`html { scroll-behavior: smooth; }`}</style>
 
-      <Link href="/recipes" className="text-sm text-[var(--text-soft)] hover:underline">
+      <Link
+        href="/recipes"
+        className="text-sm text-[var(--text-soft)] hover:underline"
+      >
         ← Back to recipes
       </Link>
 
@@ -149,7 +166,9 @@ export default async function RecipePage({
                 src={hero}
                 alt={recipe.title}
                 fill
-                className={placeholder ? "object-contain p-8 opacity-90" : "object-cover"}
+                className={
+                  placeholder ? "object-contain p-8 opacity-90" : "object-cover"
+                }
                 sizes="(max-width: 1024px) 100vw, 340px"
                 priority
               />
@@ -245,7 +264,9 @@ export default async function RecipePage({
           id="method"
           className={`rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm ${anchorOffsetClass}`}
         >
-          <h2 className="text-xl font-extrabold text-[var(--brand-gold)]">Method</h2>
+          <h2 className="text-xl font-extrabold text-[var(--brand-gold)]">
+            Method
+          </h2>
 
           {instructions.length ? (
             <ol className="mt-6 space-y-5">
@@ -272,7 +293,9 @@ export default async function RecipePage({
             id="ingredients"
             className={`rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm ${anchorOffsetClass}`}
           >
-            <h2 className="text-xl font-extrabold text-[var(--brand-gold)]">Ingredients</h2>
+            <h2 className="text-xl font-extrabold text-[var(--brand-gold)]">
+              Ingredients
+            </h2>
 
             {ingredients.length ? (
               <ul className="mt-6 space-y-2 text-[var(--text-soft)]">
@@ -295,7 +318,9 @@ export default async function RecipePage({
             id="notes"
             className={`rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm ${anchorOffsetClass}`}
           >
-            <h2 className="text-xl font-extrabold text-[var(--brand-gold)]">Notes</h2>
+            <h2 className="text-xl font-extrabold text-[var(--brand-gold)]">
+              Notes
+            </h2>
 
             {notes.length ? (
               <ul className="mt-6 space-y-2 text-[var(--text-soft)]">
@@ -307,7 +332,9 @@ export default async function RecipePage({
                 ))}
               </ul>
             ) : (
-              <p className="mt-4 text-sm text-[var(--text-soft)]/80">No notes yet.</p>
+              <p className="mt-4 text-sm text-[var(--text-soft)]/80">
+                No notes yet.
+              </p>
             )}
           </div>
         </div>

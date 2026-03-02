@@ -13,9 +13,7 @@ export const metadata: Metadata = {
     default: "Vegan Masala",
     template: "%s | Vegan Masala",
   },
-
-  description:
-    "Vegan Indian recipes made simple. Weeknight-friendly and tested.",
+  description: "Vegan Indian recipes made simple. Weeknight-friendly and tested.",
 
   // ✅ Google Search Console verification
   verification: {
@@ -31,7 +29,6 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-touch-icon.png?v=3" }],
   },
-
   manifest: "/site.webmanifest?v=3",
 };
 
@@ -46,6 +43,7 @@ function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)]">
       <div className="relative overflow-hidden">
+        {/* Background image */}
         <div className="absolute inset-0">
           <img
             src="/images/header/mandala-bg.jpg"
@@ -56,16 +54,32 @@ function SiteHeader() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/75" />
         </div>
 
-        <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
-          <Link href="/" className="relative z-10 flex items-center">
-  <img
-    src="/brand/logo-flat.png"
-    alt="Vegan Masala"
-    className="h-auto w-[150px] sm:w-[220px] md:w-[250px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
-  />
-</Link>
+        {/* Header content */}
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2">
+          {/* ✅ Logo always visible */}
+          <Link
+            href="/"
+            className="relative z-10 flex min-w-0 flex-1 items-center"
+          >
+            <img
+              src="/brand/logo-flat.png"
+              alt="Vegan Masala"
+              className="h-auto w-[160px] sm:w-[220px] md:w-[250px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
+            />
+          </Link>
 
-          <nav className="flex items-end gap-6 text-[14px] font-bold tracking-wide text-[var(--brand-gold)]">
+          {/* ✅ Mobile: keep it simple so the logo never gets squeezed out */}
+          <div className="flex shrink-0 items-center gap-2 sm:hidden">
+            <Link
+              href="/recipes"
+              className="inline-flex items-center justify-center rounded-xl bg-[var(--brand-red)] px-4 py-2 text-sm font-extrabold tracking-wide text-white hover:opacity-90 transition"
+            >
+              Browse
+            </Link>
+          </div>
+
+          {/* ✅ Desktop nav (unchanged), hidden on mobile */}
+          <nav className="hidden items-end gap-6 text-[14px] font-bold tracking-wide text-[var(--brand-gold)] sm:flex">
             <Link className="hover:opacity-90" href="/recipes">
               Recipes
             </Link>
@@ -97,6 +111,7 @@ function SiteFooter() {
     <footer className="mt-16 border-t border-[var(--border)] bg-black/80">
       <div className="mx-auto max-w-7xl px-6 py-10 text-sm text-[var(--text-soft)]">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+          {/* Footer logo */}
           <div className="flex items-start gap-4">
             <Image
               src="/brand/logo-flat.png"
@@ -110,13 +125,14 @@ function SiteFooter() {
                 Vegan Masala
               </div>
               <p className="mt-2 max-w-sm text-[var(--text-soft)]">
-                Authentic vegan Indian recipes, spices, and cooking guides —
-                built to be practical and weeknight-friendly.
+                Authentic vegan Indian recipes, spices, and cooking guides — built to be
+                practical and weeknight-friendly.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-10 sm:grid-cols-3">
+          {/* ✅ FIX: make columns sit side-by-side on mobile (2 cols), 3 cols on sm+ */}
+          <div className="grid w-full gap-10 grid-cols-2 sm:grid-cols-3">
             <div>
               <h4 className="text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
                 Explore
@@ -163,6 +179,7 @@ function SiteFooter() {
               </ul>
             </div>
 
+            {/* On mobile (2 columns), this will wrap under — that’s fine and looks balanced */}
             <div>
               <h4 className="text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
                 Follow
@@ -189,8 +206,7 @@ function SiteFooter() {
         </div>
 
         <div className="mt-10 border-t border-[var(--border)] pt-6 text-xs text-[var(--text-soft)]/70">
-          © {new Date().getFullYear()} Vegan Masala • Cooked with ♥ •
-          Vegan-Masala.com
+          © {new Date().getFullYear()} Vegan Masala • Cooked with ♥ • Vegan-Masala.com
         </div>
       </div>
     </footer>
