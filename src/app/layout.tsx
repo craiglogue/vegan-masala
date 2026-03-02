@@ -113,23 +113,39 @@ function SiteFooter() {
               </ul>
             </div>
 
+            {/* ✅ UPDATED SOCIAL LINKS */}
             <div>
               <h4 className="text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
                 Follow
               </h4>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <a href="#" className="hover:text-[var(--brand-gold)]" rel="noreferrer">
+                  <a
+                    href="https://www.instagram.com/vegan.masala"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[var(--brand-gold)]"
+                  >
                     Instagram
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-[var(--brand-gold)]" rel="noreferrer">
+                  <a
+                    href="https://www.youtube.com/@veganmasala"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[var(--brand-gold)]"
+                  >
                     YouTube
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-[var(--brand-gold)]" rel="noreferrer">
+                  <a
+                    href="https://www.pinterest.com/veganmasala"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[var(--brand-gold)]"
+                  >
                     Pinterest
                   </a>
                 </li>
