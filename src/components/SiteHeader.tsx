@@ -26,7 +26,7 @@ export default function SiteHeader() {
             />
           </Link>
 
-          <nav className="mt-2 flex items-center justify-center gap-7 text-[15px] sm:text-[16px] font-bold tracking-wide text-[var(--brand-gold)]">
+          <nav className="mt-3 flex items-center justify-center gap-8 text-[18px] sm:text-[20px] font-bold tracking-wide text-[var(--brand-gold)]">
             <Link className="hover:opacity-90" href="/recipes">
               Recipes
             </Link>
