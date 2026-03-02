@@ -64,7 +64,7 @@ function SiteHeader() {
               width={520}
               height={200}
               priority
-              className="h-auto w-[210px] sm:w-[250px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
+              className="h-auto w-[140px] sm:w-[180px] md:w-[210px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
             />
           </Link>
 
