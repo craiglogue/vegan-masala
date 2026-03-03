@@ -17,16 +17,24 @@ export default function SiteHeader() {
         </div>
 
         {/* Centered logo + nav */}
-        <div className="relative mx-auto flex max-w-7xl flex-col items-center px-4 py-3">
-          <Link href="/" className="flex items-center justify-center">
-            <img
-              src="/brand/logo-flat.png"
-              alt="Vegan Masala"
-              className="h-auto w-[180px] sm:w-[240px] md:w-[270px] drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]"
-            />
-          </Link>
+        <div className="relative mx-auto max-w-7xl px-4 py-3">
+          {/* Hard height cap container */}
+          <div className="flex items-center justify-center overflow-hidden">
+            <Link href="/" className="flex items-center justify-center">
+              <img
+                src="/brand/logo-flat.png"
+                alt="Vegan Masala"
+                // FORCE size no matter what global CSS says:
+                style={{
+                  height: "clamp(120px, 14vw, 180px)", // responsive but capped
+                  width: "auto",
+                  display: "block",
+                }}
+              />
+            </Link>
+          </div>
 
-          <nav className="mt-3 flex items-center justify-center gap-8 text-[18px] sm:text-[20px] font-bold tracking-wide text-[var(--brand-gold)]">
+          <nav className="mt-2 flex items-center justify-center gap-8 text-[18px] font-bold tracking-wide text-[var(--brand-gold)] sm:text-[20px]">
             <Link className="hover:opacity-90" href="/recipes">
               Recipes
             </Link>
