@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 // src/app/recipes/page.tsx
 import Link from "next/link";
 import Image from "next/image";
