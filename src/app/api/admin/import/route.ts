@@ -131,7 +131,8 @@ export async function POST(req: Request) {
   const slug = guessSlugFromFrontmatter(mdxAfter);
 
   // Absolute path is useful for the "Open in VS Code" button (local dev)
-  const absPath = process.env.NODE_ENV !== "production" ? createdPath : undefined;
+  // Only return absPath when running locally (never on Vercel)
+const absPath = process.env.VERCEL ? undefined : createdPath;
 
   log += `\n✅ Done.\nSaved: ${relPath}\n`;
 
