@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { getRecipeBySlug } from "@/lib/recipes";
 import { getRecipeImage, isPlaceholderImage } from "@/lib/recipeimages";
+import PrintButton from "@/components/PrintButton";
 
 /**
  * Extract sections from MDX body.
@@ -232,7 +233,7 @@ export default async function RecipePage({
               </div>
             ) : null}
 
-            {/* JUMP TO SECTION BUTTONS */}
+            {/* JUMP TO SECTION BUTTONS + PRINT */}
             <div className="mt-6 flex flex-wrap gap-3">
               <a
                 href="#ingredients"
@@ -252,6 +253,9 @@ export default async function RecipePage({
               >
                 Notes
               </a>
+
+              {/* ✅ Print */}
+              <PrintButton />
             </div>
           </div>
         </div>

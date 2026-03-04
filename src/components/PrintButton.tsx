@@ -1,19 +1,13 @@
 "use client";
 
-export default function PrintButton({
-  className = "",
-  children = "Print",
-}: {
-  className?: string;
-  children?: React.ReactNode;
-}) {
+export default function PrintButton() {
   return (
     <button
       type="button"
       onClick={() => window.print()}
-      className={className}
+      className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
     >
-      {children}
+      Print
     </button>
   );
 }
