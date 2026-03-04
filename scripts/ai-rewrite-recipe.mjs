@@ -166,6 +166,38 @@ function buildBody({ ingredients, instructions, notes }) {
   ].join("\n");
 }
 
+function toSlugTag(s) {
+  return String(s ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/[&]/g, "and")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function uniqLower(arr) {
+  const seen = new Set();
+  const out = [];
+  for (const x of arr || []) {
+    const v = String(x ?? "").trim();
+    if (!v) continue;
+    const key = v.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(v);
+  }
+  return out;
+}
+
+function safeInt(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return undefined;
+  const i = Math.round(n);
+  return i > 0 ? i : undefined;
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -242,9 +274,11 @@ async function main() {
       : parseNumbered(methodBlock);
 
   const notes =
-    Array.isArray(data.notes) && data.notes.length
-      ? data.notes.map(String)
-      : parseBullets(notesBlock);
+    Array.isArray(data.notes) && data.notes.length ? data.notes.map(String) : parseBullets(notesBlock);
+
+  const existingPrep = safeInt(data?.prepMinutes);
+  const existingCook = safeInt(data?.cookMinutes);
+  const existingTags = Array.isArray(data?.tags) ? data.tags.map(String) : [];
 
   console.log(`\n📄 Target: ${path.relative(process.cwd(), filePath)}`);
   console.log(`🧾 Title: ${title}`);
@@ -252,6 +286,8 @@ async function main() {
   console.log(`🧺 Ingredients: ${ingredients.length}`);
   console.log(`🧑‍🍳 Steps: ${instructions.length}`);
   console.log(`📝 Notes: ${notes.length}`);
+  console.log(`⏱️  Existing times: prep=${existingPrep ?? "—"} cook=${existingCook ?? "—"}`);
+  console.log(`🏷️  Existing tags: ${existingTags.length}`);
   console.log(`🤖 Model: ${model}`);
 
   if (dryRun) {
@@ -269,12 +305,15 @@ Return ONLY valid JSON with this shape:
   "description": "1-2 sentence punchy description (vegan, Indian, practical, weeknight-friendly).",
   "ingredients": ["..."],
   "instructions": ["Step 1...", "Step 2...", "..."],
-  "notes": ["Bullet 1...", "Bullet 2...", "..."]
+  "notes": ["Bullet 1...", "Bullet 2...", "..."],
+  "tags": ["short tag", "short tag", "..."],
+  "prepMinutes": 10,
+  "cookMinutes": 20
 }
 
 Rules:
 - This site is 100% vegan. If the ingredients contain ANY non-vegan items, you MUST replace them with a realistic plant-based alternative.
-- Do NOT mention the word "vegan" repeatedly in the ingredients list. Just do the substitutions.
+- Do NOT repeatedly say "vegan" in the ingredients list. Just do the substitutions.
 - Keep the recipe authentic where possible.
 
 Non-vegan substitution rules (examples):
@@ -282,42 +321,60 @@ Non-vegan substitution rules (examples):
 - curd/yogurt → unsweetened plant-based yogurt (coconut/soy)
 - cream → coconut cream OR oat cream
 - ghee/butter → vegan butter OR neutral oil
-- milk → plant milk (unsweetened)
+- milk → unsweetened plant milk
 - honey → maple syrup or sugar
 - eggs → flax egg or chickpea flour mixture (only if needed)
 - chicken stock → vegetable stock
+- fish sauce → soy sauce + lime (or vegan fish sauce)
 
-Ingredients rules:
-- Keep it in simple ingredient phrases (no quantities needed if missing).
+Ingredients:
+- Keep simple bullet-style ingredient phrases (no quantities needed if missing).
 - Remove duplicates and obvious junk (e.g. repeated “salt”, weird casing).
-- Use British English ingredient names (chilli, coriander).
+- Use British English (chilli, coriander).
+- Do NOT invent lots of new ingredients — only add tiny essentials if truly required (like “oil” or “salt”).
 
 Instructions:
-- Clear, concise, British English, assume home cook.
+- Clear, concise, British English, assume a home cook.
 - Avoid fluff. Avoid brand names unless essential.
 
 Notes:
 - Helpful tips, substitutions, storage/reheating, spice adjustments.
-- Mention what was substituted if it matters (e.g. tofu instead of paneer) but keep it friendly.
+- Mention key substitutions if it matters (e.g. tofu instead of paneer) but keep it friendly.
+
+Tags:
+- Provide 3–6 useful, short tags. Prefer canonical categories like:
+  "curries", "dal and lentils", "chickpeas", "beans", "tofu", "potatoes", "rice", "one-pot", "instant pot", "gluten-free"
+- Keep tags lowercase, 1–3 words max, avoid duplicates and avoid the full recipe title as a tag.
+
+Times:
+- If prepMinutes/cookMinutes are already provided, DO NOT change them.
+- If missing, estimate realistic minutes based on the method steps and typical Indian cooking.
+- Use whole numbers, keep them reasonable (prep 5–25, cook 10–60 usually).
 
 Use only the provided recipe title/cuisine/ingredients/instructions/notes as your source.
-If something is missing, don’t invent lots of new ingredients — only add small essentials if truly required (like “oil” or “salt”).
 `.trim();
 
   const response = await client.responses.create({
     model,
     input: [
-      {
-        role: "system",
-        content: [{ type: "input_text", text: prompt }],
-      },
+      { role: "system", content: [{ type: "input_text", text: prompt }] },
       {
         role: "user",
         content: [
           {
             type: "input_text",
             text: JSON.stringify(
-              { title, cuisine, description, ingredients, instructions, notes },
+              {
+                title,
+                cuisine,
+                description,
+                ingredients,
+                instructions,
+                notes,
+                prepMinutes: existingPrep ?? null,
+                cookMinutes: existingCook ?? null,
+                tags: existingTags,
+              },
               null,
               2
             ),
@@ -353,32 +410,49 @@ If something is missing, don’t invent lots of new ingredients — only add sma
     ? rewritten.notes.map((s) => String(s).trim()).filter(Boolean)
     : [];
 
+  const newTagsRaw = Array.isArray(rewritten.tags)
+    ? rewritten.tags.map((s) => String(s).trim()).filter(Boolean)
+    : [];
+
+  // Times: keep existing if present; otherwise adopt AI
+  const aiPrep = safeInt(rewritten.prepMinutes);
+  const aiCook = safeInt(rewritten.cookMinutes);
+  const finalPrep = existingPrep ?? aiPrep;
+  const finalCook = existingCook ?? aiCook;
+
   if (!newDescription) warn("Model returned empty description; keeping existing.");
-  if (!newIngredients.length) warn("Model returned no ingredients; keeping existing.");
   if (!newInstructions.length) warn("Model returned no instructions; keeping existing.");
   if (!newNotes.length) warn("Model returned no notes; keeping existing.");
+  if (!newIngredients.length) warn("Model returned no ingredients; keeping existing.");
+  if (!newTagsRaw.length) warn("Model returned no tags; keeping existing (or none).");
 
   const finalDescription = newDescription || description;
   const finalIngredients = newIngredients.length ? newIngredients : ingredients;
   const finalInstructions = newInstructions.length ? newInstructions : instructions;
   const finalNotes = newNotes.length ? newNotes : notes;
 
-  // ✅ arrays in frontmatter
+  // Tags: normalise, de-dupe, keep short set (3–8)
+  const finalTags = (() => {
+    const cleaned = uniqLower(newTagsRaw.map((t) => toSlugTag(t)).filter(Boolean));
+    // Convert sluggy tags back to nicer spacing for display on cards
+    const nice = cleaned.map((t) => t.replace(/-/g, " "));
+    return nice.slice(0, 8);
+  })();
+
+  // ✅ Write arrays + tags + minutes into frontmatter
   const fm = {
     ...data,
     description: finalDescription,
+    prepMinutes: finalPrep ?? data.prepMinutes,
+    cookMinutes: finalCook ?? data.cookMinutes,
+    tags: finalTags.length ? finalTags : data.tags,
     ingredients: finalIngredients,
     instructions: finalInstructions,
     notes: finalNotes,
   };
 
-  // ✅ sections in body
   const nextMdx = matter.stringify(
-    buildBody({
-      ingredients: finalIngredients,
-      instructions: finalInstructions,
-      notes: finalNotes,
-    }),
+    buildBody({ ingredients: finalIngredients, instructions: finalInstructions, notes: finalNotes }),
     fm
   );
 
@@ -399,10 +473,12 @@ If something is missing, don’t invent lots of new ingredients — only add sma
   fs.writeFileSync(filePath, nextMdx, "utf8");
   ok(`Updated: ${path.relative(process.cwd(), filePath)}`);
 
-  console.log(`\n🧪 Final counts:`);
-  console.log(`🧺 Ingredients: ${finalIngredients.length}`);
-  console.log(`🧑‍🍳 Steps: ${finalInstructions.length}`);
-  console.log(`📝 Notes: ${finalNotes.length}`);
+  // Helpful console output
+  console.log(
+    `\n🏷️  Tags: ${Array.isArray(fm.tags) ? fm.tags.join(", ") : "—"}\n⏱️  Total: ${
+      safeInt(fm.prepMinutes) || 0
+    } + ${safeInt(fm.cookMinutes) || 0} min\n`
+  );
 }
 
 main().catch((err) => {
