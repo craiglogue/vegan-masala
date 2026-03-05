@@ -1,7 +1,7 @@
 // src/app/recipes/[slug]/page.tsx
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import Script from "next/script";
 import { notFound } from "next/navigation";
 
 import { getRecipeBySlug } from "@/lib/recipes";
@@ -61,20 +61,69 @@ function extractNotes(block?: string): string[] {
     .filter((l) => l && !l.startsWith("<a ") && !l.startsWith("</a>"));
 }
 
-function minutes(prep?: number, cook?: number) {
+function totalMinutesNumber(prep?: number, cook?: number) {
   const total = (prep ?? 0) + (cook ?? 0);
-  return total > 0 ? `${total} min` : null;
+  return total > 0 ? total : null;
 }
 
-function toIsoDurationFromMinutes(mins?: number) {
-  const m = typeof mins === "number" && mins > 0 ? mins : 0;
-  return m > 0 ? `PT${m}M` : undefined;
+function minutesLabel(prep?: number, cook?: number) {
+  const t = totalMinutesNumber(prep, cook);
+  return t !== null ? `${t} min` : null;
 }
 
-function absoluteUrl(siteUrl: string, p: string) {
-  if (!p) return p;
-  if (p.startsWith("http://") || p.startsWith("https://")) return p;
-  return `${siteUrl}${p.startsWith("/") ? "" : "/"}${p}`;
+function isoDurationFromMinutes(mins?: number) {
+  if (typeof mins !== "number" || !Number.isFinite(mins) || mins <= 0) return undefined;
+  return `PT${Math.round(mins)}M`;
+}
+
+function absUrl(siteUrl: string, maybePath: string) {
+  if (!maybePath) return maybePath;
+  if (maybePath.startsWith("http://") || maybePath.startsWith("https://")) return maybePath;
+  return `${siteUrl}${maybePath.startsWith("/") ? "" : "/"}${maybePath}`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  const recipe: any = getRecipeBySlug(slug);
+  if (!recipe) return {};
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
+
+  const hero = getRecipeImage(recipe.slug);
+  const heroAbs = absUrl(siteUrl, hero);
+
+  const title = recipe?.title ? String(recipe.title) : "Recipe";
+  const description =
+    (recipe?.description ? String(recipe.description) : "").trim() ||
+    "Vegan Indian recipes made simple. Weeknight-friendly and tested.";
+
+  const canonical = `${siteUrl}/recipes/${slug}`;
+
+  return {
+    title: `${title} | Vegan Masala`,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: `${title} | Vegan Masala`,
+      description,
+      url: canonical,
+      siteName: "Vegan Masala",
+      type: "article",
+      images: heroAbs ? [{ url: heroAbs }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | Vegan Masala`,
+      description,
+      images: heroAbs ? [heroAbs] : undefined,
+    },
+  };
 }
 
 export default async function RecipePage({
@@ -86,6 +135,9 @@ export default async function RecipePage({
 
   const recipe: any = getRecipeBySlug(slug);
   if (!recipe) return notFound();
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
   const hero = getRecipeImage(recipe.slug);
   const placeholder = isPlaceholderImage(hero);
@@ -123,7 +175,7 @@ export default async function RecipePage({
   const ingredientsFromBody = extractBullets(ingredientsBlock);
   const methodFromBody = extractNumbered(methodBlock);
 
-  // ✅ FIX: notes extraction checks multiple likely sources in a safe order
+  // ✅ notes extraction checks multiple likely sources in a safe order
   const notesFromBody = (() => {
     const a = extractNotes(recipe.notesMarkdown);
     if (a.length) return a;
@@ -158,65 +210,14 @@ export default async function RecipePage({
   // ✅ anchor offset for sticky header when jumping
   const anchorOffsetClass = "scroll-mt-[160px] sm:scroll-mt-[140px]";
 
-  // ✅ Site URL for absolute schema URLs (use env first, fallback to prod domain)
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "https://vegan-masala.com";
+  const totalMins = totalMinutesNumber(recipe.prepMinutes, recipe.cookMinutes);
+  const totalLabel = minutesLabel(recipe.prepMinutes, recipe.cookMinutes);
 
-  const pageUrl = `${siteUrl}/recipes/${recipe.slug}`;
+  const canonicalUrl = `${siteUrl}/recipes/${recipe.slug}`;
+  const heroAbs = absUrl(siteUrl, hero);
 
-  const totalMins =
-    (typeof recipe.prepMinutes === "number" ? recipe.prepMinutes : 0) +
-    (typeof recipe.cookMinutes === "number" ? recipe.cookMinutes : 0);
-
-  const recipeSchema: any = {
-    "@context": "https://schema.org",
-    "@type": "Recipe",
-    name: recipe.title,
-    description: recipe.description || undefined,
-    url: pageUrl,
-    image: placeholder ? undefined : [absoluteUrl(siteUrl, hero)],
-    recipeCuisine: recipe.cuisine || "Indian",
-    keywords: Array.isArray(recipe.tags) ? recipe.tags.join(", ") : undefined,
-    datePublished: recipe.publishedAt || undefined,
-    author: { "@type": "Organization", name: "Vegan Masala" },
-    publisher: {
-      "@type": "Organization",
-      name: "Vegan Masala",
-      logo: {
-        "@type": "ImageObject",
-        url: absoluteUrl(siteUrl, "/brand/logo-flat.png"),
-      },
-    },
-    prepTime: toIsoDurationFromMinutes(recipe.prepMinutes),
-    cookTime: toIsoDurationFromMinutes(recipe.cookMinutes),
-    totalTime: totalMins > 0 ? `PT${totalMins}M` : undefined,
-    recipeYield:
-      typeof recipe.servings === "number"
-        ? `${recipe.servings} servings`
-        : recipe.servings
-        ? String(recipe.servings)
-        : undefined,
-    recipeCategory: "Main course",
-    recipeIngredient: ingredients.length ? ingredients : undefined,
-    recipeInstructions: instructions.length
-      ? instructions.map((step: string) => ({
-          "@type": "HowToStep",
-          text: step,
-        }))
-      : undefined,
-    suitableForDiet:
-      recipe?.diet?.includes("vegan") || recipe?.diet?.includes("Vegan")
-        ? "https://schema.org/VeganDiet"
-        : undefined,
-  };
-
-  // Remove undefined keys so Google’s parser is happier
-  for (const k of Object.keys(recipeSchema)) {
-    if (recipeSchema[k] === undefined) delete recipeSchema[k];
-  }
-
-  const breadcrumbSchema = {
+  // ---------- JSON-LD ----------
+  const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
@@ -236,25 +237,74 @@ export default async function RecipePage({
         "@type": "ListItem",
         position: 3,
         name: recipe.title,
-        item: pageUrl,
+        item: canonicalUrl,
       },
     ],
   };
 
-  // Output both Recipe + Breadcrumbs as an array (valid JSON-LD)
-  const jsonLd = [breadcrumbSchema, recipeSchema];
+  const recipeJsonLd: any = {
+    "@context": "https://schema.org",
+    "@type": "Recipe",
+    name: recipe.title,
+    description: recipe.description || undefined,
+    url: canonicalUrl,
+    image: heroAbs || undefined,
+    datePublished: recipe.publishedAt || undefined,
+    author: {
+      "@type": "Organization",
+      name: "Vegan Masala",
+      url: siteUrl,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Vegan Masala",
+      url: siteUrl,
+    },
+
+    // Helpful fields for Google
+    recipeCuisine: recipe.cuisine || "Indian",
+    recipeCategory: "Vegan Indian Recipes",
+    keywords: Array.isArray(recipe.tags) ? recipe.tags.join(", ") : undefined,
+
+    // Yield (servings)
+    recipeYield:
+      typeof recipe.servings === "number"
+        ? `${recipe.servings} servings`
+        : typeof recipe.serves === "number"
+        ? `${recipe.serves} servings`
+        : undefined,
+
+    // Times (ISO8601 durations)
+    prepTime: isoDurationFromMinutes(recipe.prepMinutes),
+    cookTime: isoDurationFromMinutes(recipe.cookMinutes),
+    totalTime: isoDurationFromMinutes(totalMins ?? undefined),
+
+    // Ingredients + instructions
+    recipeIngredient: ingredients.length ? ingredients : undefined,
+    recipeInstructions: instructions.length
+      ? instructions.map((step: string, i: number) => ({
+          "@type": "HowToStep",
+          name: `Step ${i + 1}`,
+          text: step,
+        }))
+      : undefined,
+
+    suitableForDiet: "https://schema.org/VeganDiet",
+  };
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
-      {/* ✅ Rich Results schema (Next.js-safe) */}
-      <Script
-        id="recipe-schema"
-        type="application/ld+json"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
       <style>{`html { scroll-behavior: smooth; }`}</style>
+
+      {/* JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeJsonLd) }}
+      />
 
       <Link
         href="/recipes"
@@ -295,9 +345,9 @@ export default async function RecipePage({
             )}
 
             <div className="mt-5 flex flex-wrap gap-2">
-              {minutes(recipe.prepMinutes, recipe.cookMinutes) && (
+              {totalLabel && (
                 <span className="rounded-xl bg-[var(--brand-red)] px-3 py-1 text-xs font-bold text-white">
-                  {minutes(recipe.prepMinutes, recipe.cookMinutes)}
+                  {totalLabel}
                 </span>
               )}
 
@@ -360,7 +410,6 @@ export default async function RecipePage({
                 Notes
               </a>
 
-              {/* ✅ Print */}
               <PrintButton />
             </div>
           </div>
