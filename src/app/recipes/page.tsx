@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+
 // src/app/recipes/page.tsx
 import Link from "next/link";
 import Image from "next/image";
@@ -27,10 +28,7 @@ function recipeText(r: any) {
 }
 
 /** Build href preserving existing filters */
-function buildHref(
-  base: string,
-  params: { tag?: string | null; collection?: string | null }
-) {
+function buildHref(base: string, params: { tag?: string | null; collection?: string | null }) {
   const sp = new URLSearchParams();
   if (params.collection) sp.set("collection", params.collection);
   if (params.tag) sp.set("tag", params.tag);
@@ -195,9 +193,7 @@ function matchesCollection(r: any, collection: string) {
       const diet = (r.diet ?? []).map((d: string) => norm(String(d)));
       const tags = (r.tags ?? []).map((t: string) => norm(String(t)));
       return (
-        diet.includes("gluten-free") ||
-        tags.includes("gluten-free") ||
-        txt.includes("gluten-free")
+        diet.includes("gluten-free") || tags.includes("gluten-free") || txt.includes("gluten-free")
       );
     }
     default:
@@ -281,16 +277,18 @@ export default async function RecipesPage({
 
   const quickCollections = [
     { label: "30-minute meals", key: "30-min" },
-    { label: "One-pot", key: "one-pot" }, 
+    { label: "One-pot", key: "one-pot" },
     { label: "Gluten-free", key: "gluten-free" },
   ];
 
   let filtered = recipes;
 
-  if (selectedTag)
+  if (selectedTag) {
     filtered = filtered.filter((r: any) => recipeCanonicalTags(r).includes(selectedTag));
-  if (selectedCollection)
+  }
+  if (selectedCollection) {
     filtered = filtered.filter((r: any) => matchesCollection(r, selectedCollection));
+  }
 
   const btnBase =
     "flex-1 min-w-[150px] text-center rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-extrabold transition";
@@ -317,6 +315,50 @@ export default async function RecipesPage({
           {filtered.length === 1 ? "recipe" : "recipes"}
         </div>
       </div>
+
+      {/* ✅ NEW: Recipe Hub Links */}
+      <section className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
+        <h2 className="text-lg font-extrabold text-[var(--brand-gold)]">
+          Browse by Ingredient
+        </h2>
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/recipes/hub/chickpea"
+            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
+          >
+            Chickpea Recipes
+          </Link>
+
+          <Link
+            href="/recipes/hub/tofu"
+            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
+          >
+            Tofu Recipes
+          </Link>
+
+          <Link
+            href="/recipes/hub/potato"
+            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
+          >
+            Potato Recipes
+          </Link>
+
+          <Link
+            href="/recipes/hub/lentil"
+            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
+          >
+            Lentil Recipes
+          </Link>
+
+          <Link
+            href="/recipes/hub/cauliflower"
+            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
+          >
+            Cauliflower Recipes
+          </Link>
+        </div>
+      </section>
 
       <section className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm space-y-5">
         {/* COLLECTION BUTTONS */}
