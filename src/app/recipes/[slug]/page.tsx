@@ -1,6 +1,7 @@
 // src/app/recipes/[slug]/page.tsx
 import Link from "next/link";
 import Image from "next/image";
+import Script from "next/script";
 import { notFound } from "next/navigation";
 
 import { getRecipeBySlug } from "@/lib/recipes";
@@ -63,6 +64,17 @@ function extractNotes(block?: string): string[] {
 function minutes(prep?: number, cook?: number) {
   const total = (prep ?? 0) + (cook ?? 0);
   return total > 0 ? `${total} min` : null;
+}
+
+function toIsoDurationFromMinutes(mins?: number) {
+  const m = typeof mins === "number" && mins > 0 ? mins : 0;
+  return m > 0 ? `PT${m}M` : undefined;
+}
+
+function absoluteUrl(siteUrl: string, p: string) {
+  if (!p) return p;
+  if (p.startsWith("http://") || p.startsWith("https://")) return p;
+  return `${siteUrl}${p.startsWith("/") ? "" : "/"}${p}`;
 }
 
 export default async function RecipePage({
@@ -146,8 +158,102 @@ export default async function RecipePage({
   // ✅ anchor offset for sticky header when jumping
   const anchorOffsetClass = "scroll-mt-[160px] sm:scroll-mt-[140px]";
 
+  // ✅ Site URL for absolute schema URLs (use env first, fallback to prod domain)
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    "https://vegan-masala.com";
+
+  const pageUrl = `${siteUrl}/recipes/${recipe.slug}`;
+
+  const totalMins =
+    (typeof recipe.prepMinutes === "number" ? recipe.prepMinutes : 0) +
+    (typeof recipe.cookMinutes === "number" ? recipe.cookMinutes : 0);
+
+  const recipeSchema: any = {
+    "@context": "https://schema.org",
+    "@type": "Recipe",
+    name: recipe.title,
+    description: recipe.description || undefined,
+    url: pageUrl,
+    image: placeholder ? undefined : [absoluteUrl(siteUrl, hero)],
+    recipeCuisine: recipe.cuisine || "Indian",
+    keywords: Array.isArray(recipe.tags) ? recipe.tags.join(", ") : undefined,
+    datePublished: recipe.publishedAt || undefined,
+    author: { "@type": "Organization", name: "Vegan Masala" },
+    publisher: {
+      "@type": "Organization",
+      name: "Vegan Masala",
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl(siteUrl, "/brand/logo-flat.png"),
+      },
+    },
+    prepTime: toIsoDurationFromMinutes(recipe.prepMinutes),
+    cookTime: toIsoDurationFromMinutes(recipe.cookMinutes),
+    totalTime: totalMins > 0 ? `PT${totalMins}M` : undefined,
+    recipeYield:
+      typeof recipe.servings === "number"
+        ? `${recipe.servings} servings`
+        : recipe.servings
+        ? String(recipe.servings)
+        : undefined,
+    recipeCategory: "Main course",
+    recipeIngredient: ingredients.length ? ingredients : undefined,
+    recipeInstructions: instructions.length
+      ? instructions.map((step: string) => ({
+          "@type": "HowToStep",
+          text: step,
+        }))
+      : undefined,
+    suitableForDiet:
+      recipe?.diet?.includes("vegan") || recipe?.diet?.includes("Vegan")
+        ? "https://schema.org/VeganDiet"
+        : undefined,
+  };
+
+  // Remove undefined keys so Google’s parser is happier
+  for (const k of Object.keys(recipeSchema)) {
+    if (recipeSchema[k] === undefined) delete recipeSchema[k];
+  }
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: siteUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Recipes",
+        item: `${siteUrl}/recipes`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: recipe.title,
+        item: pageUrl,
+      },
+    ],
+  };
+
+  // Output both Recipe + Breadcrumbs as an array (valid JSON-LD)
+  const jsonLd = [breadcrumbSchema, recipeSchema];
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
+      {/* ✅ Rich Results schema (Next.js-safe) */}
+      <Script
+        id="recipe-schema"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <style>{`html { scroll-behavior: smooth; }`}</style>
 
       <Link
