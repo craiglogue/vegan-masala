@@ -13,18 +13,16 @@ function die(msg) {
   console.error(`\n❌ ${msg}\n`);
   process.exit(1);
 }
-
 function ok(msg) {
   console.log(`✅ ${msg}`);
 }
-
 function warn(msg) {
   console.warn(`⚠️  ${msg}`);
 }
 
 function printHelp() {
   console.log(`
-AI Recipe Rewrite (Vegan Masala)
+AI Recipe Rewrite (Vegan Masala) — now enforces tags + prep/cook times
 
 USAGE
   node scripts/ai-rewrite-recipe.mjs --latest
@@ -166,36 +164,75 @@ function buildBody({ ingredients, instructions, notes }) {
   ].join("\n");
 }
 
-function toSlugTag(s) {
-  return String(s ?? "")
+/**
+ * Tag normalisation:
+ * - lowercases
+ * - strips punctuation
+ * - removes duplicates
+ * - removes junk/generic tags
+ * - limits length
+ */
+const JUNK_TAGS = new Set([
+  "lunch",
+  "dinner",
+  "breakfast",
+  "snack",
+  "easy",
+  "quick",
+  "recipe",
+  "recipes",
+  "vegan", // you already have diet for this
+  "indian", // cuisine already
+  "food",
+  "curry recipe",
+  "paneer recipe",
+  "dinner party",
+]);
+
+function cleanTag(t) {
+  return String(t)
     .toLowerCase()
-    .trim()
-    .replace(/[&]/g, "and")
+    .replace(/&/g, "and")
+    .replace(/["']/g, "")
     .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 36);
 }
 
-function uniqLower(arr) {
-  const seen = new Set();
+function normaliseTags(tags) {
   const out = [];
-  for (const x of arr || []) {
-    const v = String(x ?? "").trim();
-    if (!v) continue;
-    const key = v.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(v);
+  const seen = new Set();
+  for (const raw of Array.isArray(tags) ? tags : []) {
+    const t = cleanTag(raw);
+    if (!t) continue;
+    if (JUNK_TAGS.has(t)) continue;
+    if (t.length < 3) continue;
+    if (seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
   }
   return out;
 }
 
-function safeInt(v) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return undefined;
-  const i = Math.round(n);
-  return i > 0 ? i : undefined;
+/**
+ * Safe fallback time inference (if AI returns missing/invalid).
+ * Keeps your recipe cards consistent (time badge always appears).
+ */
+function fallbackTimes({ ingredientsCount, stepsCount }) {
+  // Prep: based on ingredient count, capped
+  const prep = Math.max(10, Math.min(30, Math.round(ingredientsCount * 1.2)));
+  // Cook: based on step count, capped
+  const cook = Math.max(15, Math.min(75, Math.round(stepsCount * 6)));
+  return { prepMinutes: prep, cookMinutes: cook };
+}
+
+function toInt(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return null;
+  const i = Math.round(v);
+  if (i <= 0) return null;
+  return i;
 }
 
 async function main() {
@@ -274,11 +311,14 @@ async function main() {
       : parseNumbered(methodBlock);
 
   const notes =
-    Array.isArray(data.notes) && data.notes.length ? data.notes.map(String) : parseBullets(notesBlock);
+    Array.isArray(data.notes) && data.notes.length
+      ? data.notes.map(String)
+      : parseBullets(notesBlock);
 
-  const existingPrep = safeInt(data?.prepMinutes);
-  const existingCook = safeInt(data?.cookMinutes);
-  const existingTags = Array.isArray(data?.tags) ? data.tags.map(String) : [];
+  const currentTags = normaliseTags(data?.tags ?? []);
+  const currentPrep = toInt(data?.prepMinutes);
+  const currentCook = toInt(data?.cookMinutes);
+  const currentServings = toInt(data?.servings);
 
   console.log(`\n📄 Target: ${path.relative(process.cwd(), filePath)}`);
   console.log(`🧾 Title: ${title}`);
@@ -286,8 +326,8 @@ async function main() {
   console.log(`🧺 Ingredients: ${ingredients.length}`);
   console.log(`🧑‍🍳 Steps: ${instructions.length}`);
   console.log(`📝 Notes: ${notes.length}`);
-  console.log(`⏱️  Existing times: prep=${existingPrep ?? "—"} cook=${existingCook ?? "—"}`);
-  console.log(`🏷️  Existing tags: ${existingTags.length}`);
+  console.log(`🏷️  Tags (current): ${currentTags.length}`);
+  console.log(`⏱️  Prep/Cook (current): ${currentPrep ?? "—"} / ${currentCook ?? "—"}`);
   console.log(`🤖 Model: ${model}`);
 
   if (dryRun) {
@@ -302,56 +342,62 @@ You are rewriting a Vegan Masala recipe entry in a consistent house style.
 
 Return ONLY valid JSON with this shape:
 {
-  "description": "1-2 sentence punchy description (vegan, Indian, practical, weeknight-friendly).",
+  "description": "1-2 sentence punchy description (Indian, practical, weeknight-friendly).",
   "ingredients": ["..."],
   "instructions": ["Step 1...", "Step 2...", "..."],
   "notes": ["Bullet 1...", "Bullet 2...", "..."],
-  "tags": ["short tag", "short tag", "..."],
+  "tags": ["tag one", "tag two", "..."],
   "prepMinutes": 10,
-  "cookMinutes": 20
+  "cookMinutes": 20,
+  "servings": 4
 }
 
 Rules:
-- This site is 100% vegan. If the ingredients contain ANY non-vegan items, you MUST replace them with a realistic plant-based alternative.
-- Do NOT repeatedly say "vegan" in the ingredients list. Just do the substitutions.
+- This site is 100% vegan. If ingredients contain ANY non-vegan items, you MUST replace them with realistic plant-based alternatives.
+- Do NOT mention the word "vegan" repeatedly in the ingredients list. Just do substitutions.
 - Keep the recipe authentic where possible.
 
-Non-vegan substitution rules (examples):
+Non-vegan substitutions (examples):
 - paneer → firm tofu cubes OR vegan paneer
-- curd/yogurt → unsweetened plant-based yogurt (coconut/soy)
+- curd/yogurt → unsweetened plant-based yoghurt (coconut/soy)
 - cream → coconut cream OR oat cream
 - ghee/butter → vegan butter OR neutral oil
 - milk → unsweetened plant milk
 - honey → maple syrup or sugar
 - eggs → flax egg or chickpea flour mixture (only if needed)
 - chicken stock → vegetable stock
-- fish sauce → soy sauce + lime (or vegan fish sauce)
 
-Ingredients:
-- Keep simple bullet-style ingredient phrases (no quantities needed if missing).
-- Remove duplicates and obvious junk (e.g. repeated “salt”, weird casing).
-- Use British English (chilli, coriander).
-- Do NOT invent lots of new ingredients — only add tiny essentials if truly required (like “oil” or “salt”).
+Ingredients rules:
+- Keep simple ingredient phrases (no quantities needed if missing).
+- Remove duplicates, fix weird casing, remove junk words.
+- Use British English spellings (chilli, coriander, yoghurt).
 
-Instructions:
-- Clear, concise, British English, assume a home cook.
-- Avoid fluff. Avoid brand names unless essential.
+Instructions rules:
+- Clear, concise, British English, assume home cook.
+- If substitutions affect method (e.g. tofu instead of paneer), adjust steps accordingly.
+- Avoid fluff. Avoid brand names.
 
-Notes:
-- Helpful tips, substitutions, storage/reheating, spice adjustments.
-- Mention key substitutions if it matters (e.g. tofu instead of paneer) but keep it friendly.
+Notes rules:
+- Useful tips, substitutions, storage/reheating, spice adjustments.
+- Mention substitutions only if it matters.
 
-Tags:
-- Provide 3–6 useful, short tags. Prefer canonical categories like:
-  "curries", "dal and lentils", "chickpeas", "beans", "tofu", "potatoes", "rice", "one-pot", "instant pot", "gluten-free"
-- Keep tags lowercase, 1–3 words max, avoid duplicates and avoid the full recipe title as a tag.
+Tags rules:
+- Provide 3 to 8 tags.
+- Tags must be lower-case short phrases (2–4 words max).
+- Remove generic tags like "easy", "recipe", "dinner", "lunch", "vegan", "indian".
+- Prefer ingredients + dish style tags (e.g. "potato curry", "chickpeas", "one-pot").
 
-Times:
-- If prepMinutes/cookMinutes are already provided, DO NOT change them.
-- If missing, estimate realistic minutes based on the method steps and typical Indian cooking.
-- Use whole numbers, keep them reasonable (prep 5–25, cook 10–60 usually).
+Time rules:
+- Always return prepMinutes and cookMinutes as integers.
+- If times were provided, keep them unless clearly nonsensical.
+- If missing, infer reasonable values from steps + ingredients (weeknight-friendly when possible).
+- Do not return 0 or null.
 
-Use only the provided recipe title/cuisine/ingredients/instructions/notes as your source.
+Servings rules:
+- Always return servings as an integer (default 4 if unknown).
+
+Use ONLY the provided title/cuisine/ingredients/instructions/notes/tags/times as your source.
+If something is missing, don’t invent loads of new ingredients — only tiny essentials if truly required (like oil/salt).
 `.trim();
 
   const response = await client.responses.create({
@@ -371,9 +417,10 @@ Use only the provided recipe title/cuisine/ingredients/instructions/notes as you
                 ingredients,
                 instructions,
                 notes,
-                prepMinutes: existingPrep ?? null,
-                cookMinutes: existingCook ?? null,
-                tags: existingTags,
+                tags: currentTags,
+                prepMinutes: currentPrep,
+                cookMinutes: currentCook,
+                servings: currentServings,
               },
               null,
               2
@@ -396,6 +443,7 @@ Use only the provided recipe title/cuisine/ingredients/instructions/notes as you
     throw e;
   }
 
+  // ---- Extract + validate AI output ----
   const newDescription = String(rewritten.description || "").trim();
 
   const newIngredients = Array.isArray(rewritten.ingredients)
@@ -410,49 +458,84 @@ Use only the provided recipe title/cuisine/ingredients/instructions/notes as you
     ? rewritten.notes.map((s) => String(s).trim()).filter(Boolean)
     : [];
 
-  const newTagsRaw = Array.isArray(rewritten.tags)
-    ? rewritten.tags.map((s) => String(s).trim()).filter(Boolean)
-    : [];
+  const aiTagsRaw = Array.isArray(rewritten.tags) ? rewritten.tags : [];
+  const newTags = normaliseTags(aiTagsRaw);
 
-  // Times: keep existing if present; otherwise adopt AI
-  const aiPrep = safeInt(rewritten.prepMinutes);
-  const aiCook = safeInt(rewritten.cookMinutes);
-  const finalPrep = existingPrep ?? aiPrep;
-  const finalCook = existingCook ?? aiCook;
+  let prepMinutes = toInt(rewritten.prepMinutes) ?? currentPrep;
+  let cookMinutes = toInt(rewritten.cookMinutes) ?? currentCook;
+  let servings = toInt(rewritten.servings) ?? currentServings ?? 4;
+
+  // If any are missing/invalid, apply safe fallbacks so cards ALWAYS show time
+  if (!prepMinutes || !cookMinutes) {
+    const fb = fallbackTimes({
+      ingredientsCount: newIngredients.length || ingredients.length,
+      stepsCount: newInstructions.length || instructions.length,
+    });
+    prepMinutes = prepMinutes ?? fb.prepMinutes;
+    cookMinutes = cookMinutes ?? fb.cookMinutes;
+  }
+
+  // Ensure tags ALWAYS exist (for card buttons)
+  const finalTags =
+    newTags.length >= 3
+      ? newTags
+      : // fallback tags if AI didn’t give enough
+        normaliseTags([
+          ...(newTags.length ? newTags : []),
+          // lightweight defaults based on title words
+          ...String(title)
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .split(/\s+/)
+            .filter((w) => w.length > 3)
+            .slice(0, 3),
+          "weeknight curry",
+          "indian mains",
+        ]).slice(0, 8);
 
   if (!newDescription) warn("Model returned empty description; keeping existing.");
+  if (!newIngredients.length) warn("Model returned no ingredients; keeping existing.");
   if (!newInstructions.length) warn("Model returned no instructions; keeping existing.");
   if (!newNotes.length) warn("Model returned no notes; keeping existing.");
-  if (!newIngredients.length) warn("Model returned no ingredients; keeping existing.");
-  if (!newTagsRaw.length) warn("Model returned no tags; keeping existing (or none).");
+  if (!finalTags.length) warn("No tags after normalisation; adding safe defaults.");
+  if (!prepMinutes || !cookMinutes) warn("Missing prep/cook even after fallback (unexpected).");
 
   const finalDescription = newDescription || description;
   const finalIngredients = newIngredients.length ? newIngredients : ingredients;
   const finalInstructions = newInstructions.length ? newInstructions : instructions;
   const finalNotes = newNotes.length ? newNotes : notes;
 
-  // Tags: normalise, de-dupe, keep short set (3–8)
-  const finalTags = (() => {
-    const cleaned = uniqLower(newTagsRaw.map((t) => toSlugTag(t)).filter(Boolean));
-    // Convert sluggy tags back to nicer spacing for display on cards
-    const nice = cleaned.map((t) => t.replace(/-/g, " "));
-    return nice.slice(0, 8);
-  })();
-
-  // ✅ Write arrays + tags + minutes into frontmatter
+  // ---- Write back to MDX (frontmatter + body) ----
   const fm = {
     ...data,
     description: finalDescription,
-    prepMinutes: finalPrep ?? data.prepMinutes,
-    cookMinutes: finalCook ?? data.cookMinutes,
-    tags: finalTags.length ? finalTags : data.tags,
+    cuisine: data?.cuisine ?? cuisine,
+
+    // guaranteed for cards
+    prepMinutes,
+    cookMinutes,
+    servings,
+
+    // guaranteed for buttons
+    tags: finalTags,
+
+    // keep diet as-is, but ensure vegan is present
+    diet: Array.isArray(data?.diet)
+      ? Array.from(new Set([...data.diet.map(String), "vegan"]))
+      : ["vegan"],
+
+    // keep arrays in frontmatter for your loader/cards/schema
     ingredients: finalIngredients,
     instructions: finalInstructions,
     notes: finalNotes,
   };
 
   const nextMdx = matter.stringify(
-    buildBody({ ingredients: finalIngredients, instructions: finalInstructions, notes: finalNotes }),
+    buildBody({
+      ingredients: finalIngredients,
+      instructions: finalInstructions,
+      notes: finalNotes,
+    }),
     fm
   );
 
@@ -472,13 +555,8 @@ Use only the provided recipe title/cuisine/ingredients/instructions/notes as you
 
   fs.writeFileSync(filePath, nextMdx, "utf8");
   ok(`Updated: ${path.relative(process.cwd(), filePath)}`);
-
-  // Helpful console output
-  console.log(
-    `\n🏷️  Tags: ${Array.isArray(fm.tags) ? fm.tags.join(", ") : "—"}\n⏱️  Total: ${
-      safeInt(fm.prepMinutes) || 0
-    } + ${safeInt(fm.cookMinutes) || 0} min\n`
-  );
+  ok(`Tags ensured: ${finalTags.length}`);
+  ok(`Times ensured: prep ${prepMinutes} min / cook ${cookMinutes} min`);
 }
 
 main().catch((err) => {

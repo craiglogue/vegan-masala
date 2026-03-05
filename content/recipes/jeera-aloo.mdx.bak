@@ -1,23 +1,68 @@
 ---
-title: "Jeera Aloo"
-slug: "jeera-aloo"
-diet: ["vegan"]
-publishedAt: "2026-03-04"
+title: Jeera Aloo
+slug: jeera-aloo
+diet:
+  - vegan
+publishedAt: '2026-03-04'
+description: >-
+  A delightful Indian dish featuring spiced potatoes and cumin, perfect for a
+  quick weeknight meal.
+prepMinutes: 10
+cookMinutes: 20
+tags:
+  - potatoes
+  - spiced potatoes
+  - one pot
+ingredients:
+  - potatoes
+  - cumin seeds
+  - onion
+  - green chilli
+  - ginger
+  - garlic
+  - turmeric powder
+  - coriander powder
+  - salt
+  - fresh coriander leaves
+  - oil
+instructions:
+  - 'Boil the potatoes until tender, then peel and cut into cubes.'
+  - 'Heat oil in a pan and add cumin seeds, allowing them to sizzle.'
+  - >-
+    Add finely chopped onion, green chilli, ginger, and garlic. Sauté until the
+    onion turns golden.
+  - 'Stir in turmeric and coriander powders, mixing well with the onions.'
+  - 'Add the potato cubes, season with salt, and gently mix to coat in spices.'
+  - Cook for a few minutes to allow the flavours to meld.
+  - Garnish with fresh coriander leaves before serving.
+notes:
+  - Adjust the number of green chillies to taste for spiciness.
+  - Can be served with chapatis or rice.
+  - Leftovers can be stored in the fridge and reheated easily.
 ---
-
-<a id="ingredients"></a>
-
 ## Ingredients
+- potatoes
+- cumin seeds
+- onion
+- green chilli
+- ginger
+- garlic
+- turmeric powder
+- coriander powder
+- salt
+- fresh coriander leaves
+- oil
 
-- (Add ingredients here)
-
-<a id="instructions"></a>
-
-## Instructions
-
-1. (Add instructions here)
+## Method
+1. Boil the potatoes until tender, then peel and cut into cubes.
+2. Heat oil in a pan and add cumin seeds, allowing them to sizzle.
+3. Add finely chopped onion, green chilli, ginger, and garlic. Sauté until the onion turns golden.
+4. Stir in turmeric and coriander powders, mixing well with the onions.
+5. Add the potato cubes, season with salt, and gently mix to coat in spices.
+6. Cook for a few minutes to allow the flavours to meld.
+7. Garnish with fresh coriander leaves before serving.
 
 ## Notes
-
-- Rewrite the instructions in your own words before publishing.
-- Consider testing the recipe and adding your own tips/substitutions.
+- Adjust the number of green chillies to taste for spiciness.
+- Can be served with chapatis or rice.
+- Leftovers can be stored in the fridge and reheated easily.

@@ -1,19 +1,76 @@
 ---
-title: "Chickpea curry recipe"
-slug: "chickpea-curry-recipe"
-description: "This is my favorite chickpea curry recipe and it&#039;s one of my most requested dinner recipes. It&#039;s not only hands-down, mouthwatering delicious, it is really, really simple to make and quite foolproof. If you have canned or cooked chickpeas on hand you can make it in minutes and serve it over plain basmati rice - or simple jeera rice if you feel like indulging yourself.The chickpeas are plump and juicy in the coconut milk sauce and they drink in all the flavor from the aromatics, including an easy homemade spice mix, turmeric, ginger, garlic and curry leaves."
-cuisine: "Indian"
+title: Chickpea curry recipe
+slug: chickpea-curry-recipe
+description: >-
+  Enjoy a quick and flavoursome vegan chickpea curry that delivers rich Indian
+  flavours in minutes—perfect for weeknight dinners.
+cuisine: Indian
 prepMinutes: 20
 cookMinutes: 25
-diet: ["vegan"]
-tags: ["Chickpea Curry","chickpea curry recipe","chickpea curry with coconut milk","coconut chickpea curry","comfort food","healthy"]
-publishedAt: "2026-03-03"
+diet:
+  - vegan
+tags:
+  - Chickpea Curry
+  - chickpea curry recipe
+  - chickpea curry with coconut milk
+  - coconut chickpea curry
+  - comfort food
+  - healthy
+publishedAt: '2026-03-03'
+ingredients:
+  - 1 tsp cumin seeds
+  - 1 tbsp coriander seeds
+  - 1 tsp fennel seeds
+  - ½ tsp fenugreek seeds ((methi seeds))
+  - 4 pods green cardamom pods
+  - 1 inch cinnamon stick
+  - 4 cups cooked chickpeas ((you can also use canned chickpeas))
+  - 1 tsp coconut oil ((or any neutral oil of choice))
+  - 1 tsp cumin seeds
+  - 2 sprigs curry leaves
+  - 1 medium onion ((finely diced))
+  - >-
+    1 tbsp ginger garlic paste ((or crush together 4 pieces garlic and a 1-inch
+    knob of ginger))
+  - 2 medium tomatoes ((finely diced))
+  - ½ tsp turmeric
+  - 1 tsp paprika
+  - ½ tsp cayenne
+  - 1½ cups water (or vegetable stock)
+  - 1 cup full fat coconut milk
+  - 2 tablespoons cilantro ((chopped))
+  - Salt to taste
+instructions:
+  - >-
+    Blend the spice mix ingredients in a spice grinder or blender until fine,
+    then set aside.
+  - >-
+    In a sauté pan, heat the oil and add cumin seeds. Once they splutter, mix in
+    the onions, curry leaves, and ginger garlic paste with ½ teaspoon salt,
+    cooking until the onions are translucent.
+  - >-
+    Incorporate the tomatoes, paprika, cayenne, turmeric, and the prepared spice
+    mix. Cook on medium heat while stirring frequently until the tomatoes darken
+    and most of the liquid evaporates.
+  - >-
+    Stir in the chickpeas and additional salt, then add 1½ cups of water or
+    vegetable stock. Bring to a boil, reduce the heat, and simmer for 10
+    minutes.
+  - Mix in the coconut milk and heat until warm.
+  - >-
+    Taste and adjust salt as necessary. Garnish with chopped cilantro and serve
+    hot.
+notes:
+  - You can use any neutral oil instead of coconut oil if preferred.
+  - >-
+    For added nutritional value, consider throwing in some spinach or kale
+    during the simmering phase.
+  - >-
+    Store leftovers in an airtight container in the fridge for up to 3 days.
+    Reheat gently on the stovetop.
+image: /recipes/chickpea-curry-recipe.png
 ---
-
-<a id="ingredients"></a>
-
 ## Ingredients
-
 - 1 tsp cumin seeds
 - 1 tbsp coriander seeds
 - 1 tsp fennel seeds
@@ -35,18 +92,15 @@ publishedAt: "2026-03-03"
 - 2 tablespoons cilantro ((chopped))
 - Salt to taste
 
-<a id="instructions"></a>
-
-## Instructions
-
-1. Place all ingredients for the spice mix in a spice grinder or blender. Blend to a fine powder and set aside.
-2. Heat the oil in a saute pan or saucepan. Add cumin seeds. When they sputter, add the onions, curry leaves and ginger garlic paste. Add ½ teaspoon salt and saute, over medium heat until onions turn translucent.
-3. Add the tomatoes, paprika, cayenne, turmeric, and the blended spice mix. Cook over medium heat, stirring frequently, until the tomatoes darken and most of the liquid has evaporated.
-4. Add the chickpeas and salt and stir well to mix. Add 1½ cups of water or vegetable stock. Bring the chickpea curry to a boil, turn down the heat, and simmer for another 10 minutes.
-5. Add the coconut milk and let the curry warm through.
-6. Check salt and add more if needed. Garnish with chopped fresh cilantro and serve hot.
+## Method
+1. Blend the spice mix ingredients in a spice grinder or blender until fine, then set aside.
+2. In a sauté pan, heat the oil and add cumin seeds. Once they splutter, mix in the onions, curry leaves, and ginger garlic paste with ½ teaspoon salt, cooking until the onions are translucent.
+3. Incorporate the tomatoes, paprika, cayenne, turmeric, and the prepared spice mix. Cook on medium heat while stirring frequently until the tomatoes darken and most of the liquid evaporates.
+4. Stir in the chickpeas and additional salt, then add 1½ cups of water or vegetable stock. Bring to a boil, reduce the heat, and simmer for 10 minutes.
+5. Mix in the coconut milk and heat until warm.
+6. Taste and adjust salt as necessary. Garnish with chopped cilantro and serve hot.
 
 ## Notes
-
-- Rewrite the instructions in your own words before publishing.
-- Consider testing the recipe and adding your own tips/substitutions.
+- You can use any neutral oil instead of coconut oil if preferred.
+- For added nutritional value, consider throwing in some spinach or kale during the simmering phase.
+- Store leftovers in an airtight container in the fridge for up to 3 days. Reheat gently on the stovetop.

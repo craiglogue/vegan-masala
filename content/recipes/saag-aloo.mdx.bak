@@ -1,23 +1,78 @@
 ---
-title: "Saag Aloo"
-slug: "saag-aloo"
-diet: ["vegan"]
-publishedAt: "2026-03-04"
+title: Saag Aloo
+slug: saag-aloo
+diet:
+  - vegan
+publishedAt: '2026-03-04'
+description: >-
+  A hearty and comforting Indian dish featuring spiced spinach and potatoes,
+  perfect for weeknight dinners.
+prepMinutes: 10
+cookMinutes: 20
+tags:
+  - curries
+  - potatoes
+  - spinach
+  - one pot
+ingredients:
+  - spinach
+  - potatoes
+  - onion
+  - tomato
+  - garlic
+  - ginger
+  - cumin seeds
+  - coriander powder
+  - garam masala
+  - turmeric
+  - chilli powder
+  - vegan butter or oil
+  - salt
+  - water
+instructions:
+  - Heat vegan butter or oil in a pan; add cumin seeds and cook until fragrant.
+  - 'Sauté onions until golden, then add ginger and garlic; cook for 1-2 minutes.'
+  - >-
+    Stir in chopped tomatoes and spices (coriander, garam masala, turmeric,
+    chilli powder), cooking until tomatoes soften.
+  - >-
+    Add diced potatoes, stir to coat in spices, then add water; cover and cook
+    until potatoes are tender.
+  - >-
+    Once potatoes are cooked, mix in the spinach and cook until wilted; season
+    with salt.
+notes:
+  - 'For creaminess, consider adding coconut cream towards the end.'
+  - Store leftovers in an airtight container for up to three days.
+  - >-
+    Adjust spice levels based on your preference; add more chilli for extra
+    heat.
+image: /recipes/saag-aloo.png
 ---
-
-<a id="ingredients"></a>
-
 ## Ingredients
+- spinach
+- potatoes
+- onion
+- tomato
+- garlic
+- ginger
+- cumin seeds
+- coriander powder
+- garam masala
+- turmeric
+- chilli powder
+- vegan butter or oil
+- salt
+- water
 
-- (Add ingredients here)
-
-<a id="instructions"></a>
-
-## Instructions
-
-1. (Add instructions here)
+## Method
+1. Heat vegan butter or oil in a pan; add cumin seeds and cook until fragrant.
+2. Sauté onions until golden, then add ginger and garlic; cook for 1-2 minutes.
+3. Stir in chopped tomatoes and spices (coriander, garam masala, turmeric, chilli powder), cooking until tomatoes soften.
+4. Add diced potatoes, stir to coat in spices, then add water; cover and cook until potatoes are tender.
+5. Once potatoes are cooked, mix in the spinach and cook until wilted; season with salt.
 
 ## Notes
-
-- Rewrite the instructions in your own words before publishing.
-- Consider testing the recipe and adding your own tips/substitutions.
+- For creaminess, consider adding coconut cream towards the end.
+- Store leftovers in an airtight container for up to three days.
+- Adjust spice levels based on your preference; add more chilli for extra heat.

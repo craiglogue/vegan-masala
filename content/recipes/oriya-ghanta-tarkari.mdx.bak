@@ -1,23 +1,76 @@
 ---
-title: "Oriya Ghanta Tarkari"
-slug: "oriya-ghanta-tarkari"
-diet: ["vegan"]
-publishedAt: "2026-03-04"
+title: Oriya Ghanta Tarkari
+slug: oriya-ghanta-tarkari
+diet:
+  - vegan
+publishedAt: '2026-03-04'
+description: >-
+  This vibrant and hearty Oriya Ghanta Tarkari is a classic Indian vegetable
+  medley, perfect for a quick weeknight meal packed with flavour and nutrients.
+prepMinutes: 15
+cookMinutes: 20
+tags:
+  - curries
+  - tofu
+  - vegetables
+  - one pot
+ingredients:
+  - mixed seasonal vegetables
+  - tofu cubes
+  - 'onion, finely chopped'
+  - ginger-garlic paste
+  - 'green chilli, slit'
+  - cumin seeds
+  - turmeric powder
+  - coriander powder
+  - salt
+  - 'coriander leaves, chopped'
+  - vegetable oil
+  - lemon juice
+instructions:
+  - Heat oil in a pan and add cumin seeds. Sauté until they sizzle.
+  - 'Add chopped onion and green chilli, cooking until the onion is translucent.'
+  - >-
+    Stir in ginger-garlic paste and sauté for a couple of minutes until
+    fragrant.
+  - >-
+    Add the mixed vegetables, turmeric, coriander powder, and salt. Cook for a
+    few minutes, stirring occasionally.
+  - >-
+    Add tofu cubes and a splash of water if necessary. Cover the pan and let it
+    simmer until the vegetables are tender.
+  - Finish with lemon juice and chopped coriander leaves before serving.
+notes:
+  - Feel free to swap seasonal vegetables based on availability.
+  - Tofu is a great substitute for paneer for added protein.
+  - Store leftovers in an airtight container in the fridge for up to 3 days.
+image: /recipes/oriya-ghanta-tarkari.png
+cuisine: Indian
+servings: 4
 ---
-
-<a id="ingredients"></a>
-
 ## Ingredients
+- mixed seasonal vegetables
+- tofu cubes
+- onion, finely chopped
+- ginger-garlic paste
+- green chilli, slit
+- cumin seeds
+- turmeric powder
+- coriander powder
+- salt
+- coriander leaves, chopped
+- vegetable oil
+- lemon juice
 
-- (Add ingredients here)
-
-<a id="instructions"></a>
-
-## Instructions
-
-1. (Add instructions here)
+## Method
+1. Heat oil in a pan and add cumin seeds. Sauté until they sizzle.
+2. Add chopped onion and green chilli, cooking until the onion is translucent.
+3. Stir in ginger-garlic paste and sauté for a couple of minutes until fragrant.
+4. Add the mixed vegetables, turmeric, coriander powder, and salt. Cook for a few minutes, stirring occasionally.
+5. Add tofu cubes and a splash of water if necessary. Cover the pan and let it simmer until the vegetables are tender.
+6. Finish with lemon juice and chopped coriander leaves before serving.
 
 ## Notes
-
-- Rewrite the instructions in your own words before publishing.
-- Consider testing the recipe and adding your own tips/substitutions.
+- Feel free to swap seasonal vegetables based on availability.
+- Tofu is a great substitute for paneer for added protein.
+- Store leftovers in an airtight container in the fridge for up to 3 days.
