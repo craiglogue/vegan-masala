@@ -1,0 +1,43 @@
+# Midjourney Prompts — Instant Pot Vegan Methi Chicken Curry (Soy Curls)
+File: content/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.mdx
+Slug: instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce
+Hero reference: https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png
+
+## 1) HERO (generate first)
+Instant Pot Vegan Methi Chicken Curry (Soy Curls), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 1: Turn Instant Pot to sauté mode and heat oil or broth., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 2: Add bay leaves, cardamom, cloves, and cinnamon; cook until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 3: Add onion and sauté until translucent., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 4: Blend tomato, tomato paste, garlic, ginger, green chilli, and water., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 5: Add blended mixture and ground spices to the pot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 6: Add soy curls, yoghurt, salt, and sugar. Stir well., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 7: Seal and pressure cook for 15 minutes. Allow for natural release., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 8: Stir in plant milk and simmer on sauté mode until creamy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 9: Incorporate fenugreek leaves and garam masala., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 10
+https://vegan-masala.com/images/recipes/instant-pot-vegan-methi-chicken-curry-with-creamy-fenugreek-onion-sauce.png Instant Pot Vegan Methi Chicken Curry (Soy Curls) cooking step 10: Garnish with coriander and serve with rice or flatbread., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Instant Pot Vegan Methi Chicken Curry (Soy Curls), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

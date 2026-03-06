@@ -1,0 +1,31 @@
+# Midjourney Prompts — Chickpea curry recipe
+File: content/recipes/chickpea-curry-recipe.mdx
+Slug: chickpea-curry-recipe
+Hero reference: https://vegan-masala.com/images/recipes/chickpea-curry-recipe.png
+
+## 1) HERO (generate first)
+Chickpea curry recipe, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/chickpea-curry-recipe.png Chickpea curry recipe cooking step 1: Blend the spices in a grinder or blender until fine, then set aside., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/chickpea-curry-recipe.png Chickpea curry recipe cooking step 2: In a sauté pan, heat the oil and add cumin seeds. Once they splutter, mix in the onions, curry leaves, and ginger garlic paste with salt, cooking until the onions are translucent., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/chickpea-curry-recipe.png Chickpea curry recipe cooking step 3: Incorporate the tomatoes, paprika, cayenne, turmeric, and the spice mix. Cook on medium heat, stirring frequently until the tomatoes darken and most liquid evaporates., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/chickpea-curry-recipe.png Chickpea curry recipe cooking step 4: Stir in the chickpeas and additional salt, then add water or stock. Bring to a boil, reduce the heat, and simmer for 10 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/chickpea-curry-recipe.png Chickpea curry recipe cooking step 5: Mix in the coconut milk and heat until warm., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/chickpea-curry-recipe.png Chickpea curry recipe cooking step 6: Taste and adjust salt as necessary. Garnish with chopped cilantro and serve hot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Chickpea curry recipe, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

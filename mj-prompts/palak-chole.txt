@@ -1,0 +1,46 @@
+# Midjourney Prompts — Palak Chole (Spinach Chickpea Curry)
+File: content/recipes/palak-chole.mdx
+Slug: palak-chole
+Hero reference: https://vegan-masala.com/images/recipes/palak-chole.png
+
+## 1) HERO (generate first)
+Palak Chole (Spinach Chickpea Curry), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 1: Soak chickpeas overnight, then pressure cook until soft and tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 2: Blend onion, garlic, ginger, and green chillies into a paste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 3: Heat oil and sauté whole spices until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 4: Add onion paste and cook until lightly golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 5: Add tomato puree and cook until oil separates., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 6: Stir in turmeric, chilli powder, cumin, and coriander., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 7: Add chopped spinach and cook until wilted., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 8: Add cooked chickpeas and water, then simmer until gravy thickens., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 9: Mash a few chickpeas to thicken the curry., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 10
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 10: Finish with garam masala, fenugreek leaves, and amchur., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 11
+https://vegan-masala.com/images/recipes/palak-chole.png Palak Chole (Spinach Chickpea Curry) cooking step 11: Serve hot with rice or flatbreads., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Palak Chole (Spinach Chickpea Curry), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

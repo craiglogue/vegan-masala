@@ -1,0 +1,52 @@
+# Midjourney Prompts — Instant Pot Chana Masala
+File: content/recipes/instant-pot-chana-masala.mdx
+Slug: instant-pot-chana-masala
+Hero reference: https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png
+
+## 1) HERO (generate first)
+Instant Pot Chana Masala, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 1: Drain soaked chickpeas and rinse well., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 2: Turn Instant Pot to sauté mode and heat oil., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 3: Add cumin, ajwain, bay leaf, cinnamon, cardamom and cloves and cook until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 4: Add onion and sauté until softened., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 5: Add ginger, garlic and green chillies and cook briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 6: Add tomatoes and cook until soft and pulpy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 7: Stir in turmeric and chilli powder., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 8: Add chickpeas, salt and water and scrape the bottom of the pot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 9: Pressure cook on high for 30 minutes, then natural release for 12–15 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 10
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 10: Switch to sauté mode and simmer to thicken., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 11
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 11: Mash a few chickpeas to thicken the gravy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 12
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 12: Stir in garam masala and amchur (or lemon juice)., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 13
+https://vegan-masala.com/images/recipes/instant-pot-chana-masala.png Instant Pot Chana Masala cooking step 13: Garnish with coriander and serve., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Instant Pot Chana Masala, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

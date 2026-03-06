@@ -1,0 +1,40 @@
+# Midjourney Prompts — Veg Makhanwala
+File: content/recipes/veg-makhanwala.mdx
+Slug: veg-makhanwala
+Hero reference: https://vegan-masala.com/images/recipes/veg-makhanwala.png
+
+## 1) HERO (generate first)
+Veg Makhanwala, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/veg-makhanwala.png Veg Makhanwala cooking step 1: Steam or sauté the mixed vegetables until just tender, then set aside., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/veg-makhanwala.png Veg Makhanwala cooking step 2: Blend tomatoes, soaked cashews, ginger and garlic into a smooth paste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/veg-makhanwala.png Veg Makhanwala cooking step 3: Heat vegan butter in a pan and sauté bay leaf for a few seconds., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/veg-makhanwala.png Veg Makhanwala cooking step 4: Add the tomato-cashew paste and cook until thick and glossy, with oil separating., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/veg-makhanwala.png Veg Makhanwala cooking step 5: Stir in turmeric and chilli powder and cook briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/veg-makhanwala.png Veg Makhanwala cooking step 6: Add water and green chilli and simmer until the gravy thickens slightly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/veg-makhanwala.png Veg Makhanwala cooking step 7: Add the cooked vegetables and season with salt and sugar., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/veg-makhanwala.png Veg Makhanwala cooking step 8: Stir in kasuri methi and plant cream and simmer gently., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+https://vegan-masala.com/images/recipes/veg-makhanwala.png Veg Makhanwala cooking step 9: Finish with garam masala and garnish before serving., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Veg Makhanwala, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

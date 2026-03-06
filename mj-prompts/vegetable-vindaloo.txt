@@ -1,0 +1,37 @@
+# Midjourney Prompts — Vegetable Vindaloo
+File: content/recipes/vegetable-vindaloo.mdx
+Slug: vegetable-vindaloo
+Hero reference: https://vegan-masala.com/images/recipes/vegetable-vindaloo.png
+
+## 1) HERO (generate first)
+Vegetable Vindaloo, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Vindaloo cooking step 1: Blend garlic, ginger, vinegar, and spices into a thick paste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Vindaloo cooking step 2: Toss cauliflower, mushrooms, and potatoes with the paste and marinate for 15–60 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Vindaloo cooking step 3: Heat oil and cook onions until deeply golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Vindaloo cooking step 4: Add marinated vegetables and cook for 5 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Vindaloo cooking step 5: Add tomato puree, cinnamon, and 1 cup of water., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Vindaloo cooking step 6: Simmer covered for 20–30 minutes until potatoes are tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Vindaloo cooking step 7: Stir in tofu, vegan sausage, and garam masala., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Vindaloo cooking step 8: Simmer for 5 minutes, garnish with coriander, and serve., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Vegetable Vindaloo, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

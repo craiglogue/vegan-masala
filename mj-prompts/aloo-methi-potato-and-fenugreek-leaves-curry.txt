@@ -1,0 +1,40 @@
+# Midjourney Prompts — Aloo Methi (Potato and Fenugreek Leaves Curry)
+File: content/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.mdx
+Slug: aloo-methi-potato-and-fenugreek-leaves-curry
+Hero reference: https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png
+
+## 1) HERO (generate first)
+Aloo Methi (Potato and Fenugreek Leaves Curry), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png Aloo Methi (Potato and Fenugreek Leaves Curry) cooking step 1: Heat oil in a pan over medium heat. Add fenugreek seeds, mustard seeds and cumin seeds. Allow them to sizzle., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png Aloo Methi (Potato and Fenugreek Leaves Curry) cooking step 2: Add sliced onions and sauté until translucent., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png Aloo Methi (Potato and Fenugreek Leaves Curry) cooking step 3: Add potatoes and cook for 1–2 minutes, stirring well., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png Aloo Methi (Potato and Fenugreek Leaves Curry) cooking step 4: Stir in minced ginger and garlic. Cook briefly until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png Aloo Methi (Potato and Fenugreek Leaves Curry) cooking step 5: Add ground cumin, coriander, paprika, turmeric and salt. Mix well., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png Aloo Methi (Potato and Fenugreek Leaves Curry) cooking step 6: Add chopped tomatoes and cook for 2–3 minutes until slightly softened., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png Aloo Methi (Potato and Fenugreek Leaves Curry) cooking step 7: Stir in the chopped methi leaves., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png Aloo Methi (Potato and Fenugreek Leaves Curry) cooking step 8: Cover and cook on low heat, stirring occasionally, until potatoes are soft. Add a splash of water if needed to prevent sticking., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+https://vegan-masala.com/images/recipes/aloo-methi-potato-and-fenugreek-leaves-curry.png Aloo Methi (Potato and Fenugreek Leaves Curry) cooking step 9: Cook until the vegetables are tender and the curry is semi-dry., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Aloo Methi (Potato and Fenugreek Leaves Curry), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

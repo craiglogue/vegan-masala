@@ -1,0 +1,43 @@
+# Midjourney Prompts — Kala Chana (Black Chickpea Curry)
+File: content/recipes/kala-chana-recipe.mdx
+Slug: kala-chana-recipe
+Hero reference: https://vegan-masala.com/images/recipes/kala-chana-recipe.png
+
+## 1) HERO (generate first)
+Kala Chana (Black Chickpea Curry), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 1: Soak black chickpeas overnight, then drain and rinse., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 2: Heat oil in a pressure cooker or pot. Add cumin seeds and let them crackle., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 3: Add onion and cook until lightly golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 4: Add garlic, ginger and green chilli. Cook until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 5: Add tomatoes and cook until soft and the oil begins to separate., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 6: Stir in turmeric, chilli powder, coriander powder and asafoetida., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 7: Add soaked chickpeas, water and salt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 8: Pressure cook for 10–12 whistles or until chickpeas are tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 9: Stir in garam masala and simmer for a few minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 10
+https://vegan-masala.com/images/recipes/kala-chana-recipe.png Kala Chana (Black Chickpea Curry) cooking step 10: Garnish with fresh coriander and serve hot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Kala Chana (Black Chickpea Curry), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

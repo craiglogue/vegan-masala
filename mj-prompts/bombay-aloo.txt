@@ -1,0 +1,31 @@
+# Midjourney Prompts — Bombay Aloo
+File: content/recipes/bombay-aloo.mdx
+Slug: bombay-aloo
+Hero reference: https://vegan-masala.com/images/recipes/bombay-aloo.png
+
+## 1) HERO (generate first)
+Bombay Aloo, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 1: Boil the potatoes until tender, then peel and cube them., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 2: Heat oil in a pan, add mustard seeds, and wait for them to crackle., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 3: Stir in cumin seeds, then add the boiled potatoes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 4: Sprinkle turmeric, chilli powder, coriander powder, garam masala, and salt over the potatoes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 5: Gently mix to coat the potatoes in the spices, cooking for about 5-7 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 6: Finish with fresh coriander and a squeeze of lemon juice before serving., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Bombay Aloo, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

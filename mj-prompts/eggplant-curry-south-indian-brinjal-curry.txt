@@ -1,0 +1,40 @@
+# Midjourney Prompts — South Indian Eggplant Curry
+File: content/recipes/eggplant-curry-south-indian-brinjal-curry.mdx
+Slug: eggplant-curry-south-indian-brinjal-curry
+Hero reference: https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png
+
+## 1) HERO (generate first)
+South Indian Eggplant Curry, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png South Indian Eggplant Curry cooking step 1: Heat oven to 240°C (220°C fan). Toss aubergine with 2 tbsp oil, salt and pepper., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png South Indian Eggplant Curry cooking step 2: Roast for 30 minutes until caramelised and soft., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png South Indian Eggplant Curry cooking step 3: Heat remaining oil in a large pot. Add mustard seeds and let them pop., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png South Indian Eggplant Curry cooking step 4: Add curry leaves and cook briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png South Indian Eggplant Curry cooking step 5: Add onion and cook until golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png South Indian Eggplant Curry cooking step 6: Add tomato, garlic and ginger. Cook until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png South Indian Eggplant Curry cooking step 7: Stir in all ground spices and cook into a thick paste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png South Indian Eggplant Curry cooking step 8: Add water and roasted aubergine. Simmer gently for 30 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+https://vegan-masala.com/images/recipes/eggplant-curry-south-indian-brinjal-curry.png South Indian Eggplant Curry cooking step 9: Stir in coconut milk and adjust seasoning., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+South Indian Eggplant Curry, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3
