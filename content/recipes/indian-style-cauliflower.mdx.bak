@@ -1,40 +1,67 @@
 ---
-title: "Indian-Style Cauliflower"
-slug: "indian-style-cauliflower"
-description: "Roasted cauliflower tossed in warm Indian spices with fresh ginger and lime."
-servings: "6–8 servings"
+title: Spiced Roasted Cauliflower
+slug: indian-style-cauliflower
+description: >-
+  Roasted cauliflower tossed in a medley of warm Indian spices, fresh ginger,
+  and zesty lime, perfect for a weeknight meal.
+servings: 4
 prepMinutes: 10
 cookMinutes: 15
-diet: ["vegan"]
-tags: ["cauliflower", "roasted vegetables", "sheet pan", "easy"]
-publishedAt: "2026-01-29"
-
+diet:
+  - vegan
+tags:
+  - cauliflower
+  - roasted vegetables
+  - spiced dish
+publishedAt: '2026-01-29'
 ingredients:
-  - "2 tbsp olive oil"
-  - "1 tsp coriander seeds"
-  - "1 tsp cumin seeds"
-  - "1 tsp curry powder"
-  - "1 tsp turmeric"
-  - "1 large cauliflower, cut into florets"
-  - "Salt and black pepper"
-  - "1 tsp grated ginger"
-  - "1 tsp lime zest"
-
+  - 2 tbsp oil
+  - 1 tsp cumin seeds
+  - 1 tsp curry powder
+  - 1/2 tsp turmeric
+  - 1 tsp salt
+  - 1/2 tsp black pepper
+  - '1 inch ginger, grated'
+  - '1 small cauliflower, cut into florets'
+  - '2 tbsp fresh coriander, chopped'
+  - zest of 1 lime
 instructions:
-  - "Preheat oven to 220°C / 450°F."
-  - "Mix oil, spices and turmeric in a large bowl."
-  - "Add cauliflower and toss to coat evenly."
-  - "Spread on a baking tray in a single layer."
-  - "Roast for 10–15 minutes until golden and tender."
-  - "Finish with grated ginger and lime zest before serving."
-
+  - Preheat oven to 220°C.
+  - >-
+    In a large bowl, mix oil, cumin seeds, curry powder, turmeric, salt, and
+    black pepper.
+  - Add the cauliflower florets and toss to coat evenly.
+  - Spread the coated cauliflower on a baking tray in a single layer.
+  - Roast for 10–15 minutes until golden and tender.
+  - 'Finish with grated ginger, lime zest, and chopped coriander before serving.'
+cuisine: Indian
+notes:
+  - Adjust spice levels to suit your taste.
+  - Pair with a side of basmati rice or naan.
+  - Store leftovers in an airtight container for up to 3 days.
+image: /images/recipes/indian-style-cauliflower.png
 ---
+## Ingredients
+- 2 tbsp oil
+- 1 tsp cumin seeds
+- 1 tsp curry powder
+- 1/2 tsp turmeric
+- 1 tsp salt
+- 1/2 tsp black pepper
+- 1 inch ginger, grated
+- 1 small cauliflower, cut into florets
+- 2 tbsp fresh coriander, chopped
+- zest of 1 lime
 
-## Indian-Style Cauliflower
+## Method
+1. Preheat oven to 220°C.
+2. In a large bowl, mix oil, cumin seeds, curry powder, turmeric, salt, and black pepper.
+3. Add the cauliflower florets and toss to coat evenly.
+4. Spread the coated cauliflower on a baking tray in a single layer.
+5. Roast for 10–15 minutes until golden and tender.
+6. Finish with grated ginger, lime zest, and chopped coriander before serving.
 
-A simple roasted side dish that pairs perfectly with curries, rice bowls or flatbreads.
-
-### Tips
-- Add chilli flakes for heat.
-- Great served with vegan yogurt or chutney.
-- Also works in wraps and grain bowls.
+## Notes
+- Adjust spice levels to suit your taste.
+- Pair with a side of basmati rice or naan.
+- Store leftovers in an airtight container for up to 3 days.

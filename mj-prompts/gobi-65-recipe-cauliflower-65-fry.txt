@@ -1,34 +1,34 @@
-# Midjourney Prompts — Gobi 65 (Crispy Cauliflower 65)
+# Midjourney Prompts — Crispy Cauliflower 65
 File: content/recipes/gobi-65-recipe-cauliflower-65-fry.mdx
 Slug: gobi-65-recipe-cauliflower-65-fry
 Hero reference: https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png
 
 ## 1) HERO (generate first)
-Gobi 65 (Crispy Cauliflower 65), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+Crispy Cauliflower 65, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
 
 Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Gobi 65 (Crispy Cauliflower 65) cooking step 1: Blanch cauliflower briefly in hot water, then rinse and drain well., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Crispy Cauliflower 65 cooking step 1: Blanch cauliflower briefly in hot water, then rinse and drain well., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Gobi 65 (Crispy Cauliflower 65) cooking step 2: Mix flour, rice flour, spices, ginger garlic paste, and water to make a thick batter., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Crispy Cauliflower 65 cooking step 2: Mix plain flour, rice flour, garam masala, black pepper, chilli powder, salt, and water to make a thick batter., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Gobi 65 (Crispy Cauliflower 65) cooking step 3: Coat cauliflower in the batter and deep fry until golden and crispy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Crispy Cauliflower 65 cooking step 3: Coat cauliflower in the batter and deep fry until golden and crispy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
-https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Gobi 65 (Crispy Cauliflower 65) cooking step 4: Heat oil in a pan and add cumin seeds, garlic, chillies, and curry leaves., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Crispy Cauliflower 65 cooking step 4: Heat oil in a pan and add cumin seeds, garlic, green chillies, and curry leaves., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Gobi 65 (Crispy Cauliflower 65) cooking step 5: Add chilli powder, garam masala, and yoghurt mixture, cooking until thick., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Crispy Cauliflower 65 cooking step 5: Stir in chilli powder and garam masala, then add the plant yoghurt, cooking until thick., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Gobi 65 (Crispy Cauliflower 65) cooking step 6: Toss in the fried cauliflower over high heat for 2–3 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Crispy Cauliflower 65 cooking step 6: Toss the fried cauliflower in the spicy mixture over high heat for 2–3 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 7
-https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Gobi 65 (Crispy Cauliflower 65) cooking step 7: Serve hot as a starter or snack., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/gobi-65-recipe-cauliflower-65-fry.png Crispy Cauliflower 65 cooking step 7: Serve hot as a starter or snack., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
-Gobi 65 (Crispy Cauliflower 65), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3
+Crispy Cauliflower 65, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

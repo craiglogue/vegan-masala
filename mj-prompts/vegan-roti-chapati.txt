@@ -1,0 +1,46 @@
+# Midjourney Prompts — Soft Chapati
+File: content/recipes/vegan-roti-chapati.mdx
+Slug: vegan-roti-chapati
+Hero reference: IMAGE_URL
+
+## 1) HERO (generate first)
+Soft Chapati, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+IMAGE_URL Soft Chapati cooking step 1: In a large mixing bowl, combine the atta flour and salt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+IMAGE_URL Soft Chapati cooking step 2: Gradually add water, mixing with a spatula or your hands until a dough forms. Adjust with more water or flour as needed., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+IMAGE_URL Soft Chapati cooking step 3: Knead the dough for a few minutes until smooth and elastic. Cover with a damp cloth and let it rest for 25-30 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+IMAGE_URL Soft Chapati cooking step 4: After resting, knead the dough briefly, then divide it into 8 equal portions., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+IMAGE_URL Soft Chapati cooking step 5: Roll one portion into a smooth ball, then flatten it slightly with your palm., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+IMAGE_URL Soft Chapati cooking step 6: Dust your work surface and rolling pin with some atta flour to prevent sticking., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+IMAGE_URL Soft Chapati cooking step 7: On the floured surface, roll the dough into an oval shape before turning it 90 degrees and rolling into a circle, about 5-6 inches in diameter., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+IMAGE_URL Soft Chapati cooking step 8: Repeat the rolling process for the remaining portions of dough., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+IMAGE_URL Soft Chapati cooking step 9: Heat a cast-iron or non-stick pan over medium-high heat., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 10
+IMAGE_URL Soft Chapati cooking step 10: Once hot, place a chapati in the pan and cook for 1-2 minutes until it begins to puff. Flip and cook for another minute until golden brown., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 11
+IMAGE_URL Soft Chapati cooking step 11: Continue cooking the remaining chapatis, serving hot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Soft Chapati, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

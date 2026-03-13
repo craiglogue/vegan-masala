@@ -1,12 +1,12 @@
 ---
-title: Aloo Muttar
+title: Aloo Matar
 slug: aloo-muttar
 diet:
   - vegan
 publishedAt: '2026-03-04'
 description: >-
-  A comforting vegan dish of potatoes and peas, perfect for weeknight dinners
-  and bursting with Indian spices.
+  A comforting dish of potatoes and peas, perfect for weeknight dinners and
+  bursting with Indian spices.
 prepMinutes: 10
 cookMinutes: 20
 tags:
@@ -14,22 +14,21 @@ tags:
   - potatoes
   - peas
   - one pot
-  - vegan
 ingredients:
-  - 'potatoes, peeled and cubed'
-  - 'green peas, fresh or frozen'
-  - 'onion, finely chopped'
-  - 'tomato, chopped'
-  - 'garlic, minced'
-  - 'ginger, grated'
-  - cumin seeds
-  - turmeric powder
-  - coriander powder
-  - garam masala
-  - 'green chilli, slit'
-  - oil
-  - salt
-  - 'coriander leaves, for garnish'
+  - 2 tbsp oil
+  - 1 tsp cumin seeds
+  - '4 cloves garlic, minced'
+  - '1 inch ginger, grated'
+  - 2 tsp coriander powder
+  - 1 tsp salt
+  - '200g green peas, fresh or frozen'
+  - 1 tsp garam masala
+  - '2 tbsp fresh coriander, chopped'
+  - '3 medium potatoes, cubed'
+  - '1 large onion, finely chopped'
+  - '1 medium tomato, chopped'
+  - 1/2 tsp turmeric powder
+  - '1 green chilli, finely chopped'
 instructions:
   - >-
     Heat oil in a pan over medium heat. Add cumin seeds and allow them to
@@ -51,22 +50,26 @@ notes:
   - Adjust the green chilli to control the spice level.
   - Frozen peas can be added directly without thawing.
   - Serve with rice or flatbreads for a delicious meal.
+  - Store leftovers in the fridge for up to three days.
+cuisine: Indian
+servings: 4
+image: /images/recipes/aloo-muttar.png
 ---
 ## Ingredients
-- potatoes, peeled and cubed
-- green peas, fresh or frozen
-- onion, finely chopped
-- tomato, chopped
-- garlic, minced
-- ginger, grated
-- cumin seeds
-- turmeric powder
-- coriander powder
-- garam masala
-- green chilli, slit
-- oil
-- salt
-- coriander leaves, for garnish
+- 2 tbsp oil
+- 1 tsp cumin seeds
+- 4 cloves garlic, minced
+- 1 inch ginger, grated
+- 2 tsp coriander powder
+- 1 tsp salt
+- 200g green peas, fresh or frozen
+- 1 tsp garam masala
+- 2 tbsp fresh coriander, chopped
+- 3 medium potatoes, cubed
+- 1 large onion, finely chopped
+- 1 medium tomato, chopped
+- 1/2 tsp turmeric powder
+- 1 green chilli, finely chopped
 
 ## Method
 1. Heat oil in a pan over medium heat. Add cumin seeds and allow them to sizzle.
@@ -82,3 +85,4 @@ notes:
 - Adjust the green chilli to control the spice level.
 - Frozen peas can be added directly without thawing.
 - Serve with rice or flatbreads for a delicious meal.
+- Store leftovers in the fridge for up to three days.

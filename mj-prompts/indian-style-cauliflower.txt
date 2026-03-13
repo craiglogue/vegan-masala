@@ -1,31 +1,31 @@
-# Midjourney Prompts — Indian-Style Cauliflower
+# Midjourney Prompts — Spiced Roasted Cauliflower
 File: content/recipes/indian-style-cauliflower.mdx
 Slug: indian-style-cauliflower
 Hero reference: https://vegan-masala.com/images/recipes/indian-style-cauliflower.png
 
 ## 1) HERO (generate first)
-Indian-Style Cauliflower, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+Spiced Roasted Cauliflower, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
 
 Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Indian-Style Cauliflower cooking step 1: Preheat oven to 220°C., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Spiced Roasted Cauliflower cooking step 1: Preheat oven to 220°C., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Indian-Style Cauliflower cooking step 2: Mix oil, spices, and turmeric in a large bowl., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Spiced Roasted Cauliflower cooking step 2: In a large bowl, mix oil, cumin seeds, curry powder, turmeric, salt, and black pepper., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Indian-Style Cauliflower cooking step 3: Add cauliflower and toss to coat evenly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Spiced Roasted Cauliflower cooking step 3: Add the cauliflower florets and toss to coat evenly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
-https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Indian-Style Cauliflower cooking step 4: Spread on a baking tray in a single layer., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Spiced Roasted Cauliflower cooking step 4: Spread the coated cauliflower on a baking tray in a single layer., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Indian-Style Cauliflower cooking step 5: Roast for 10–15 minutes until golden and tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Spiced Roasted Cauliflower cooking step 5: Roast for 10–15 minutes until golden and tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Indian-Style Cauliflower cooking step 6: Finish with grated ginger and lime zest before serving., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/indian-style-cauliflower.png Spiced Roasted Cauliflower cooking step 6: Finish with grated ginger, lime zest, and chopped coriander before serving., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
-Indian-Style Cauliflower, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3
+Spiced Roasted Cauliflower, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

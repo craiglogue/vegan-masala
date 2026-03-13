@@ -43,10 +43,10 @@ https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Masala (Punjabi K
 https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Masala (Punjabi Kidney Bean Curry) cooking step 11: Mash a few beans to thicken the gravy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 12
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Masala (Punjabi Kidney Bean Curry) cooking step 12: Finish with kasuri methi and plant cream (if using)., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Masala (Punjabi Kidney Bean Curry) cooking step 12: Finish with kasuri methi and oat cream if using., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 13
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Masala (Punjabi Kidney Bean Curry) cooking step 13: Garnish with coriander and serve hot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Masala (Punjabi Kidney Bean Curry) cooking step 13: Garnish with fresh coriander and serve hot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
 Rajma Masala (Punjabi Kidney Bean Curry), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

@@ -26,6 +26,20 @@ type HeroUploadResult =
   | { ok: true; slug: string; imagePublicPath: string; recipeRelPath: string }
   | { ok: false; error: string };
 
+type PipelineResult =
+  | {
+      ok: true;
+      log?: string;
+      mode?: string;
+      slug?: string;
+      importUrl?: string;
+    }
+  | {
+      ok: false;
+      error: string;
+      log?: string;
+    };
+
 export default function AdminImportPage() {
   const [url, setUrl] = useState("");
   const [rewrite, setRewrite] = useState(true);
@@ -43,9 +57,33 @@ export default function AdminImportPage() {
   const [heroBusy, setHeroBusy] = useState(false);
   const [heroMsg, setHeroMsg] = useState<string | null>(null);
 
+  // PIPELINE
+  const [pipelineMode, setPipelineMode] = useState<
+    "latest" | "slug" | "all" | "import-url"
+  >("latest");
+  const [pipelineSlug, setPipelineSlug] = useState("");
+  const [pipelineUrl, setPipelineUrl] = useState("");
+
+  const [skipRewrite, setSkipRewrite] = useState(false);
+  const [skipQuantities, setSkipQuantities] = useState(false);
+  const [skipStructure, setSkipStructure] = useState(false);
+  const [skipImages, setSkipImages] = useState(false);
+  const [skipPrompts, setSkipPrompts] = useState(false);
+
+  const [pipelineBusy, setPipelineBusy] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
+  const [pipelineLog, setPipelineLog] = useState<string>("Waiting…");
+
   const canSubmit = useMemo(() => {
     return url.trim().length > 0 && adminToken.trim().length > 0 && !loading;
   }, [url, adminToken, loading]);
+
+  const canRunPipeline = useMemo(() => {
+    if (!adminToken.trim() || pipelineBusy) return false;
+    if (pipelineMode === "slug" && !pipelineSlug.trim()) return false;
+    if (pipelineMode === "import-url" && !pipelineUrl.trim()) return false;
+    return true;
+  }, [adminToken, pipelineBusy, pipelineMode, pipelineSlug, pipelineUrl]);
 
   useEffect(() => {
     const saved = localStorage.getItem("vm_admin_token");
@@ -158,6 +196,51 @@ export default function AdminImportPage() {
       setHeroMsg(e?.message ?? "Upload failed.");
     } finally {
       setHeroBusy(false);
+    }
+  }
+
+  async function runPipeline(e: React.FormEvent) {
+    e.preventDefault();
+
+    const t = adminToken.trim();
+
+    setPipelineBusy(true);
+    setPipelineError(null);
+    setPipelineLog("Running pipeline...");
+
+    try {
+      const res = await fetch("/api/admin/pipeline", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-admin-token": t,
+        },
+        body: JSON.stringify({
+          mode: pipelineMode,
+          slug: pipelineSlug.trim(),
+          importUrl: pipelineUrl.trim(),
+          skipRewrite,
+          skipQuantities,
+          skipStructure,
+          skipImages,
+          skipPrompts,
+        }),
+      });
+
+      const data = (await res.json().catch(() => null)) as PipelineResult | null;
+
+      if (!res.ok || !data?.ok) {
+        setPipelineError(data?.error || `Pipeline failed (${res.status})`);
+        setPipelineLog(data?.log || "No log returned.");
+        return;
+      }
+
+      setPipelineLog(data.log || "✅ Pipeline complete.");
+    } catch (err: any) {
+      setPipelineError(err?.message || "Pipeline request failed");
+      setPipelineLog(String(err?.stack ?? err?.message ?? err));
+    } finally {
+      setPipelineBusy(false);
     }
   }
 
@@ -274,7 +357,6 @@ export default function AdminImportPage() {
               </div>
             </div>
 
-            {/* HERO UPLOAD */}
             <div className="border-t border-[var(--border)] pt-5">
               <div className="text-sm font-extrabold text-[var(--brand-gold)]">
                 Hero image (manual)
@@ -309,6 +391,139 @@ export default function AdminImportPage() {
           </div>
         )}
       </form>
+
+      <section className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm">
+        <h2 className="text-2xl font-extrabold text-[var(--brand-gold)]">
+          Recipe Pipeline
+        </h2>
+        <p className="mt-3 max-w-2xl text-[var(--text-soft)]">
+          Run your full recipe pipeline from one place: AI rewrite, ingredient quantities, structure cleanup, image fixing, and Midjourney prompt generation.
+        </p>
+
+        <form onSubmit={runPipeline} className="mt-8 space-y-6">
+          <div>
+            <label className="block text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
+              Pipeline mode
+            </label>
+            <select
+              value={pipelineMode}
+              onChange={(e) =>
+                setPipelineMode(
+                  e.target.value as "latest" | "slug" | "all" | "import-url"
+                )
+              }
+              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white"
+            >
+              <option value="latest">Latest recipe</option>
+              <option value="slug">Single recipe by slug</option>
+              <option value="all">All recipes</option>
+              <option value="import-url">Import URL and process</option>
+            </select>
+          </div>
+
+          {pipelineMode === "slug" && (
+            <div>
+              <label className="block text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
+                Recipe slug
+              </label>
+              <input
+                value={pipelineSlug}
+                onChange={(e) => setPipelineSlug(e.target.value)}
+                placeholder="bombay-aloo"
+                className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/40"
+              />
+            </div>
+          )}
+
+          {pipelineMode === "import-url" && (
+            <div>
+              <label className="block text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
+                Import URL
+              </label>
+              <input
+                value={pipelineUrl}
+                onChange={(e) => setPipelineUrl(e.target.value)}
+                placeholder="https://…"
+                className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/40"
+              />
+            </div>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="flex items-center gap-3 text-sm text-[var(--text-soft)]">
+              <input
+                type="checkbox"
+                checked={skipRewrite}
+                onChange={(e) => setSkipRewrite(e.target.checked)}
+                className="h-5 w-5 accent-[var(--brand-red)]"
+              />
+              Skip AI rewrite
+            </label>
+
+            <label className="flex items-center gap-3 text-sm text-[var(--text-soft)]">
+              <input
+                type="checkbox"
+                checked={skipQuantities}
+                onChange={(e) => setSkipQuantities(e.target.checked)}
+                className="h-5 w-5 accent-[var(--brand-red)]"
+              />
+              Skip ingredient quantities
+            </label>
+
+            <label className="flex items-center gap-3 text-sm text-[var(--text-soft)]">
+              <input
+                type="checkbox"
+                checked={skipStructure}
+                onChange={(e) => setSkipStructure(e.target.checked)}
+                className="h-5 w-5 accent-[var(--brand-red)]"
+              />
+              Skip structure cleanup
+            </label>
+
+            <label className="flex items-center gap-3 text-sm text-[var(--text-soft)]">
+              <input
+                type="checkbox"
+                checked={skipImages}
+                onChange={(e) => setSkipImages(e.target.checked)}
+                className="h-5 w-5 accent-[var(--brand-red)]"
+              />
+              Skip image fixing
+            </label>
+
+            <label className="flex items-center gap-3 text-sm text-[var(--text-soft)]">
+              <input
+                type="checkbox"
+                checked={skipPrompts}
+                onChange={(e) => setSkipPrompts(e.target.checked)}
+                className="h-5 w-5 accent-[var(--brand-red)]"
+              />
+              Skip Midjourney prompts
+            </label>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              disabled={!canRunPipeline}
+              className="inline-flex items-center justify-center rounded-xl bg-[var(--brand-red)] px-7 py-3 text-sm font-extrabold text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {pipelineBusy ? "Running pipeline…" : "Run Pipeline"}
+            </button>
+
+            {pipelineError && (
+              <div className="text-sm font-bold text-red-400">❌ {pipelineError}</div>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-2 text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
+              Pipeline log
+            </div>
+            <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-2xl border border-[var(--border)] bg-black/40 p-4 text-xs text-white/80">
+              {pipelineLog}
+            </pre>
+          </div>
+        </form>
+      </section>
     </main>
   );
 }

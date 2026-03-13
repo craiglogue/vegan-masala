@@ -1,0 +1,70 @@
+# Midjourney Prompts — Crispy Potato and Pea Samosas
+File: content/recipes/samosa-recipe.mdx
+Slug: samosa-recipe
+Hero reference: https://vegan-masala.com/images/recipes/rajma-recipe.png
+
+## 1) HERO (generate first)
+Crispy Potato and Pea Samosas, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 1: In a large mixing bowl, combine the plain flour, ajwain seeds, cold vegan butter, and salt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 2: Using your fingers, rub the butter into the flour until it resembles coarse crumbs., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 3: Gradually add water and knead to form a stiff but pliable dough., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 4: Cover the dough with a kitchen towel and let it rest for at least 30 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 5: Heat oil in a pan, then add the chopped green chillies and minced ginger. Sauté for about 30 seconds., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 6: Stir in the spices: ground cumin, coriander, coarsely ground fennel, amchur if using, and turmeric., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 7: Add the boiled potatoes and mix well, followed by the green peas., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 8: Season with salt to taste and cook for 3-5 minutes until warmed through., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 9: Mash the potato mixture lightly, leaving some chunks for texture, then let cool to room temperature., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 10
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 10: Divide the dough into seven portions and roll each into a ball., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 11
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 11: Roll one ball of dough into a circle of about 4-5 inches in diameter, slightly elongating the sides., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 12
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 12: Cut the circle through the center to create two semi-circles, setting them aside as you repeat with the remaining dough., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 13
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 13: Brush the edges of the pastry with water, then shape into a cone by bringing the two corners together and pressing firmly to seal., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 14
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 14: Fill each cone with two heaping teaspoons of the potato-pea filling, then seal the top by pressing the seam and folding slightly for stability., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 15
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 15: Repeat for the remaining pastry and filling., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 16
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 16: Heat enough peanut oil in a wok or deep fryer to submerge the samosas completely., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 17
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 17: Once the oil reaches 165°C (325°F), carefully drop in the samosas, frying them in batches to avoid overcrowding., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 18
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 18: Cook until golden-brown, flipping occasionally to ensure even frying, maintaining the oil temperature., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 19
+https://vegan-masala.com/images/recipes/rajma-recipe.png Crispy Potato and Pea Samosas cooking step 19: Once cooked, remove the samosas and drain on paper towels. Serve hot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Crispy Potato and Pea Samosas, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

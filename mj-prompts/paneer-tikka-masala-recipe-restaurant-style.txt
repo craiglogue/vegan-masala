@@ -1,52 +1,49 @@
-# Midjourney Prompts — Tofu Tikka Masala (Restaurant Style)
+# Midjourney Prompts — Tofu Tikka Masala
 File: content/recipes/paneer-tikka-masala-recipe-restaurant-style.mdx
 Slug: paneer-tikka-masala-recipe-restaurant-style
 Hero reference: https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png
 
 ## 1) HERO (generate first)
-Tofu Tikka Masala (Restaurant Style), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+Tofu Tikka Masala, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
 
 Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 1: Mix plant yoghurt, spices, lemon juice, and chickpea flour to create the marinade., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 1: Mix plant yoghurt, lemon juice, chilli powder, garam masala, turmeric, and salt to create the marinade., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 2: Add tofu, onion, and bell pepper; marinate for 1 hour., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 2: Add tofu, onion, and bell pepper; marinate for 1 hour., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 3: Bake at 200°C for 15–20 minutes or pan-fry until lightly charred., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 3: Bake at 200°C for 15–20 minutes or pan-fry until lightly charred., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 4: Blend onions into a paste and tomatoes into a puree., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 4: Blend the chopped onions into a paste and tomatoes into a puree., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 5: Heat oil and cook the onion paste until golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 5: Heat oil in a pan and cook the onion paste until golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 6: Add ginger garlic paste and sauté briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 6: Add minced garlic and sauté briefly until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 7
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 7: Stir in tomato puree and cook until oil separates., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 7: Stir in the tomato puree and cook until oil separates., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 8
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 8: Add dry spices and cook until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 8: Add coriander powder, cumin powder, and dried fenugreek; cook until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 9
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 9: Lower heat and carefully stir in plant yoghurt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 9: Lower heat and gently stir in the plant yoghurt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 10
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 10: Add water and simmer until the gravy thickens., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 10: Add water and simmer until the gravy thickens., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 11
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 11: Incorporate plant cream and dried fenugreek leaves., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 11: Incorporate oat cream and gently add grilled tofu tikka pieces; simmer for 2–3 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 12
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 12: Gently add grilled tofu tikka pieces and simmer for 2–3 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
-
-### Step 13
-https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala (Restaurant Style) cooking step 13: Garnish with coriander and serve hot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/paneer-tikka-masala-recipe-restaurant-style.png Tofu Tikka Masala cooking step 12: Garnish with fresh coriander and serve hot., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
-Tofu Tikka Masala (Restaurant Style), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3
+Tofu Tikka Masala, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

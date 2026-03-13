@@ -1,34 +1,34 @@
-# Midjourney Prompts — Vegan Chana Masala
+# Midjourney Prompts — Chana Masala
 File: content/recipes/chana-masala.mdx
 Slug: chana-masala
 Hero reference: https://vegan-masala.com/images/recipes/chana-masala.png
 
 ## 1) HERO (generate first)
-Vegan Chana Masala, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+Chana Masala, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
 
 Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/chana-masala.png Vegan Chana Masala cooking step 1: Heat oil in a pan and cook the onion until golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/chana-masala.png Chana Masala cooking step 1: Heat the oil in a pan and cook the onion until golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/chana-masala.png Vegan Chana Masala cooking step 2: Add garlic and ginger and cook briefly until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/chana-masala.png Chana Masala cooking step 2: Add the garlic and ginger, cooking briefly until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/chana-masala.png Vegan Chana Masala cooking step 3: Add garam masala, cumin, coriander, turmeric and chilli powder. Stir for 15 seconds., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/chana-masala.png Chana Masala cooking step 3: Stir in the garam masala, cumin, coriander, turmeric, and chilli powder for 15 seconds., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
-https://vegan-masala.com/images/recipes/chana-masala.png Vegan Chana Masala cooking step 4: Add chopped tomatoes and simmer until thickened., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/chana-masala.png Chana Masala cooking step 4: Add the chopped tomatoes and simmer until thickened., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/chana-masala.png Vegan Chana Masala cooking step 5: Add chickpeas and a splash of water. Simmer for 10 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/chana-masala.png Chana Masala cooking step 5: Incorporate the chickpeas and a splash of water, simmering for 10 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/chana-masala.png Vegan Chana Masala cooking step 6: Season with salt and lemon juice., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/chana-masala.png Chana Masala cooking step 6: Season with salt and stir in the lemon juice., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 7
-https://vegan-masala.com/images/recipes/chana-masala.png Vegan Chana Masala cooking step 7: Garnish with fresh coriander and serve., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/chana-masala.png Chana Masala cooking step 7: Garnish with fresh coriander before serving., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
-Vegan Chana Masala, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3
+Chana Masala, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

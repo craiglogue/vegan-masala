@@ -1,40 +1,40 @@
-# Midjourney Prompts — Rajma Madra (Himachali Yogurt Kidney Bean Curry)
+# Midjourney Prompts — Rajma Madra (Himachali Kidney Bean Curry)
 File: content/recipes/madra-recipe-himachali-rajma-madra-recipe.mdx
 Slug: madra-recipe-himachali-rajma-madra-recipe
 Hero reference: https://vegan-masala.com/images/recipes/rajma-recipe.png
 
 ## 1) HERO (generate first)
-Rajma Madra (Himachali Yogurt Kidney Bean Curry), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+Rajma Madra (Himachali Kidney Bean Curry), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
 
 Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Yogurt Kidney Bean Curry) cooking step 1: Soak kidney beans overnight, rinse, and pressure cook with whole spices until soft., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Kidney Bean Curry) cooking step 1: Soak kidney beans overnight, rinse, and pressure cook with cinnamon, cloves, bay leaf, and cardamoms until soft., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Yogurt Kidney Bean Curry) cooking step 2: Whisk plant-based yoghurt until smooth and set aside., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Kidney Bean Curry) cooking step 2: Whisk plant-based yoghurt until smooth and set aside., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Yogurt Kidney Bean Curry) cooking step 3: Heat oil in a pan and add cumin seeds and asafoetida., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Kidney Bean Curry) cooking step 3: Heat oil in a pan and add cumin seeds and asafoetida., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Yogurt Kidney Bean Curry) cooking step 4: Lower heat and slowly add yoghurt while stirring continuously., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Kidney Bean Curry) cooking step 4: Lower heat and slowly add the yoghurt while stirring continuously., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Yogurt Kidney Bean Curry) cooking step 5: Cook gently until the yoghurt thickens and oil begins to separate., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Kidney Bean Curry) cooking step 5: Cook gently until the yoghurt thickens and oil begins to separate., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Yogurt Kidney Bean Curry) cooking step 6: Add turmeric, cumin, garam masala, chilli powder, and coriander powder., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Kidney Bean Curry) cooking step 6: Add turmeric, ground cumin, garam masala, chilli powder, and coriander powder., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 7
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Yogurt Kidney Bean Curry) cooking step 7: Stir in cooked kidney beans and salt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Kidney Bean Curry) cooking step 7: Stir in cooked kidney beans and salt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 8
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Yogurt Kidney Bean Curry) cooking step 8: Simmer on low for 10–12 minutes until thick and creamy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Kidney Bean Curry) cooking step 8: Simmer on low for 10–12 minutes until thick and creamy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 9
-https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Yogurt Kidney Bean Curry) cooking step 9: Serve hot with rice or roti., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Rajma Madra (Himachali Kidney Bean Curry) cooking step 9: Serve hot with rice or roti., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
-Rajma Madra (Himachali Yogurt Kidney Bean Curry), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3
+Rajma Madra (Himachali Kidney Bean Curry), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

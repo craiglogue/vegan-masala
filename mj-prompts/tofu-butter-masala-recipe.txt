@@ -10,19 +10,19 @@ Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and repl
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 1: Sauté cardamom, onion, ginger and garlic in oil until the onion softens., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 1: Sauté cardamom, onion, ginger, and garlic in oil until the onion softens., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 2: Add tomatoes, cashews and salt, and cook until the tomatoes break down., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 2: Add tomatoes, cashews, and salt, cooking until the tomatoes break down., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 3: Stir in chilli powder, coriander and garam masala, and cook until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 3: Stir in chilli powder, coriander, and garam masala, cooking until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
 https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 4: Blend the mixture with water until completely smooth., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 5: Melt vegan butter in the pan with bay leaf, cinnamon and cloves if using., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 5: Melt vegan butter in the pan with bay leaf, cinnamon, and cloves if using., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
 https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 6: Pour the blended sauce back into the pan and simmer until slightly thick., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
@@ -31,7 +31,7 @@ https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butte
 https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 7: Add tofu cubes and simmer gently for a few minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 8
-https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 8: Stir in sugar, kasuri methi and plant cream, and cook briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 8: Stir in sugar, kasuri methi, and plant cream, cooking briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 9
 https://vegan-masala.com/images/recipes/tofu-butter-masala-recipe.png Tofu Butter Masala cooking step 9: Garnish with fresh coriander and serve., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5

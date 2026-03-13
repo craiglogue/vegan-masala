@@ -1,43 +1,43 @@
-# Midjourney Prompts — Aloo Baingan Recipe
+# Midjourney Prompts — Aloo Baingan Curry
 File: content/recipes/aloo-baingan-recipe.mdx
 Slug: aloo-baingan-recipe
 Hero reference: https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png
 
 ## 1) HERO (generate first)
-Aloo Baingan Recipe, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+Aloo Baingan Curry, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
 
 Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 1: Peel and slice the potatoes lengthwise and keep them in water until ready to use., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 1: Peel and slice the potatoes lengthwise, keeping them in water until ready to use., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 2: Soak sliced eggplants in lightly salted water to prevent browning., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 2: Soak sliced eggplants in lightly salted water to prevent browning., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 3: Heat oil in a pan and add cumin seeds. When they sizzle, add onions and green chilli and sauté until lightly golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 3: Heat oil in a pan and add cumin seeds. When they sizzle, add onions and green chilli, sautéing until lightly golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 4: Add ginger garlic paste and cook for 30–40 seconds until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 4: Add minced garlic and cook for 30–40 seconds until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 5: Drain potatoes and add to the pan. Stir fry for 3 minutes, then cover and cook until slightly tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 5: Drain potatoes and add them to the pan. Stir fry for 3 minutes, then cover and cook until slightly tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 6: Drain eggplants and add to the pan. Stir fry until they begin to soften., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 6: Drain eggplants and add to the pan. Stir fry until they begin to soften., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 7
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 7: Add salt, turmeric, chilli powder, garam masala and coriander powder. Mix well and pour in ½ cup water. Cover and cook until potatoes are tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 7: Add salt, turmeric, red chilli, garam masala, and coriander powder. Mix well and pour in ½ cup water. Cover and cook until potatoes are tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 8
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 8: Add tomato puree and cook until the raw tomato smell disappears., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 8: Add chopped tomatoes and cook until the raw tomato smell disappears., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 9
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 9: Add ¼ cup water for a semi-dry curry, or more hot water for gravy. Simmer until thick., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 9: Add ¼ cup water for a semi-dry curry, or more hot water for a gravy. Simmer until thickened., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 10
-https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Recipe cooking step 10: Garnish with coriander leaves and serve with rice or flatbread., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-baingan-recipe.png Aloo Baingan Curry cooking step 10: Garnish with fresh coriander and serve with rice or flatbread., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
-Aloo Baingan Recipe, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3
+Aloo Baingan Curry, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

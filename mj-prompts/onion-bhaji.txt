@@ -1,0 +1,37 @@
+# Midjourney Prompts — Crispy Onion Bhaji
+File: content/recipes/onion-bhaji.mdx
+Slug: onion-bhaji
+Hero reference: IMAGE_URL
+
+## 1) HERO (generate first)
+Crispy Onion Bhaji, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+IMAGE_URL Crispy Onion Bhaji cooking step 1: Trim and peel the onions, then slice them finely., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+IMAGE_URL Crispy Onion Bhaji cooking step 2: In a bowl, combine the sliced onions with the gram flour, rice flour, baking powder, turmeric, cayenne pepper, cumin, coriander, and salt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+IMAGE_URL Crispy Onion Bhaji cooking step 3: Gradually mix in the water until a thick, smooth batter forms., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+IMAGE_URL Crispy Onion Bhaji cooking step 4: Heat the sunflower oil in a deep pan until hot (check notes for tips)., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+IMAGE_URL Crispy Onion Bhaji cooking step 5: Using two tablespoons, shape tablespoonfuls of the mixture into bhajis and gently lower them into the oil. Fry without overcrowding., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+IMAGE_URL Crispy Onion Bhaji cooking step 6: Flip the bhajis with a slotted spoon when golden on one side, and fry until crispy and golden all over., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+IMAGE_URL Crispy Onion Bhaji cooking step 7: Remove the bhajis with a slotted spoon and place them on absorbent kitchen paper to drain., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+IMAGE_URL Crispy Onion Bhaji cooking step 8: Continue frying in batches until all the mixture is cooked. Serve immediately., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Crispy Onion Bhaji, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

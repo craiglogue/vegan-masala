@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
-
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
@@ -13,16 +12,18 @@ function die(msg) {
   console.error(`\n❌ ${msg}\n`);
   process.exit(1);
 }
+
 function ok(msg) {
   console.log(`✅ ${msg}`);
 }
+
 function warn(msg) {
   console.warn(`⚠️  ${msg}`);
 }
 
 function printHelp() {
   console.log(`
-AI Recipe Rewrite (Vegan Masala) — now enforces tags + prep/cook times
+AI Recipe Rewrite (Vegan Masala)
 
 USAGE
   node scripts/ai-rewrite-recipe.mjs --latest
@@ -31,21 +32,22 @@ USAGE
 
 OPTIONS
   Target:
-    --latest                 Rewrite newest recipe file in content/recipes
-    --file <path>            Rewrite an explicit .mdx/.md file
-    --slug <slug>            Find recipe by filename slug or frontmatter slug
+    --latest
+    --file <path>
+    --slug <slug>
+    --only <slug>            Alias for --slug
 
   AI:
-    --model <name>           Model name (default: gpt-4o-mini)
+    --model <name>           Default: gpt-4o-mini
 
   Behaviour:
-    --dry-run                Don’t call OpenAI or write; just show selected file + extracted info
-    --no-write               Call AI and print rewritten MDX to stdout, but do not overwrite file
-    --no-backup              Don’t create a .bak copy before overwriting (default: backup ON)
+    --dry-run                Don’t call OpenAI or write anything
+    --no-write               Call AI but print rewritten MDX instead of saving
+    --no-backup              Don’t create .bak backup before overwriting
 
 EXAMPLES
   node scripts/ai-rewrite-recipe.mjs --latest
-  node scripts/ai-rewrite-recipe.mjs --slug aloo-gobi --model gpt-4o-mini
+  node scripts/ai-rewrite-recipe.mjs --slug bombay-aloo
   node scripts/ai-rewrite-recipe.mjs --file content/recipes/x.mdx --no-write
 `);
 }
@@ -69,13 +71,11 @@ function getLatestRecipePath() {
 function findRecipeBySlug(slug) {
   const files = getAllRecipePaths();
 
-  // 1) filename match
   for (const p of files) {
     const base = path.basename(p).replace(/\.mdx?$/i, "");
     if (base === slug) return p;
   }
 
-  // 2) frontmatter slug match
   for (const p of files) {
     const raw = fs.readFileSync(p, "utf8");
     const fm = raw.match(/^---\s*[\s\S]*?\s*---/);
@@ -124,7 +124,7 @@ function ensureBullets(items) {
   return items
     .map((s) => String(s).trim())
     .filter(Boolean)
-    .map((s) => (s.startsWith("- ") ? s : `- ${s}`))
+    .map((s) => `- ${s}`)
     .join("\n");
 }
 
@@ -147,92 +147,111 @@ function jsonFromModel(text) {
 }
 
 function buildBody({ ingredients, instructions, notes }) {
-  const ing = ensureBullets(ingredients);
-  const method = ensureNumbered(instructions);
-  const n = ensureBullets(notes);
-
   return [
-    `## Ingredients`,
-    ing || `-`,
-    ``,
-    `## Method`,
-    method || `1. `,
-    ``,
-    `## Notes`,
-    n || `-`,
-    ``,
+    "## Ingredients",
+    ingredients.length ? ensureBullets(ingredients) : "-",
+    "",
+    "## Method",
+    instructions.length ? ensureNumbered(instructions) : "1. ",
+    "",
+    "## Notes",
+    notes.length ? ensureBullets(notes) : "-",
+    "",
   ].join("\n");
 }
 
-/**
- * Tag normalisation:
- * - lowercases
- * - strips punctuation
- * - removes duplicates
- * - removes junk/generic tags
- * - limits length
- */
-const JUNK_TAGS = new Set([
-  "lunch",
-  "dinner",
-  "breakfast",
-  "snack",
-  "easy",
-  "quick",
-  "recipe",
-  "recipes",
-  "vegan", // you already have diet for this
-  "indian", // cuisine already
-  "food",
-  "curry recipe",
-  "paneer recipe",
-  "dinner party",
-]);
+function cleanArray(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map((s) => String(s).trim()).filter(Boolean);
+}
 
-function cleanTag(t) {
-  return String(t)
+function norm(s) {
+  return String(s ?? "")
     .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/["']/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 36);
-}
-
-function normaliseTags(tags) {
-  const out = [];
-  const seen = new Set();
-  for (const raw of Array.isArray(tags) ? tags : []) {
-    const t = cleanTag(raw);
-    if (!t) continue;
-    if (JUNK_TAGS.has(t)) continue;
-    if (t.length < 3) continue;
-    if (seen.has(t)) continue;
-    seen.add(t);
-    out.push(t);
-  }
-  return out;
-}
-
-/**
- * Safe fallback time inference (if AI returns missing/invalid).
- * Keeps your recipe cards consistent (time badge always appears).
- */
-function fallbackTimes({ ingredientsCount, stepsCount }) {
-  // Prep: based on ingredient count, capped
-  const prep = Math.max(10, Math.min(30, Math.round(ingredientsCount * 1.2)));
-  // Cook: based on step count, capped
-  const cook = Math.max(15, Math.min(75, Math.round(stepsCount * 6)));
-  return { prepMinutes: prep, cookMinutes: cook };
+    .replace(/[()]/g, "")
+    .replace(/[_]/g, " ")
+    .replace(/\s+/g, " ");
 }
 
 function toInt(n) {
   const v = Number(n);
   if (!Number.isFinite(v)) return null;
   const i = Math.round(v);
-  if (i <= 0) return null;
-  return i;
+  return i > 0 ? i : null;
+}
+
+function reorderIngredientsByInstructions(ingredients, instructions) {
+  const instructionText = instructions.join(" ").toLowerCase();
+
+  const ranked = ingredients.map((ingredient, idx) => {
+    const base = String(ingredient)
+      .toLowerCase()
+      .split(",")[0]
+      .trim();
+
+    const candidates = [
+      base,
+      base.replace(/\bfinely chopped\b/g, "").trim(),
+      base.replace(/\bchopped\b/g, "").trim(),
+      base.replace(/\bminced\b/g, "").trim(),
+      base.replace(/\bgrated\b/g, "").trim(),
+      base.replace(/\bcubed\b/g, "").trim(),
+      base.replace(/^\d+([/.]\d+)?\s*(tsp|tbsp|cup|cups|g|kg|ml|l|clove|cloves|inch|inches)\s+/g, "").trim(),
+    ].filter(Boolean);
+
+    let found = 999999;
+    for (const c of candidates) {
+      const pos = instructionText.indexOf(c);
+      if (pos !== -1 && pos < found) found = pos;
+    }
+
+    return { ingredient, pos: found, idx };
+  });
+
+  ranked.sort((a, b) => {
+    if (a.pos === b.pos) return a.idx - b.idx;
+    return a.pos - b.pos;
+  });
+
+  return ranked.map((r) => r.ingredient);
+}
+
+function generateFallbackNotes({ title, slug, tags }) {
+  const txt = `${title ?? ""} ${slug ?? ""} ${(tags ?? []).join(" ")}`.toLowerCase();
+  const notes = [];
+
+  if (/\bdal|dahl|lentil|moong|masoor|urad\b/.test(txt)) {
+    notes.push("Add a splash of water when reheating if the dal thickens too much.");
+  }
+
+  if (/\bpotato|potatoes|aloo\b/.test(txt)) {
+    notes.push("Cut the potatoes evenly so they cook at the same rate.");
+  }
+
+  if (/\beggplant|aubergine|brinjal|baingan\b/.test(txt)) {
+    notes.push("Cook the aubergine until soft but still holding its shape for the best texture.");
+  }
+
+  if (/\btofu\b/.test(txt)) {
+    notes.push("Use firm tofu for the best texture and avoid stirring too aggressively once added.");
+  }
+
+  if (/\bchickpea|chana|chole|rajma|bean|beans\b/.test(txt)) {
+    notes.push("This dish often tastes even better the next day once the spices have had time to settle.");
+  }
+
+  if (/\bvindaloo\b/.test(txt)) {
+    notes.push("Adjust the chilli level to suit your preferred heat.");
+  }
+
+  if (/\bcurry|masala|korma|vindaloo|sabzi|baingan|dal\b/.test(txt)) {
+    notes.push("Serve with basmati rice, naan, or roti for a full meal.");
+  }
+
+  notes.push("Store leftovers in an airtight container in the fridge for up to 3 days.");
+
+  return Array.from(new Set(notes)).slice(0, 4);
 }
 
 async function main() {
@@ -257,10 +276,15 @@ async function main() {
   if (fileIdx !== -1 && !filePath) die("Missing value for --file");
 
   const slugIdx = args.indexOf("--slug");
-  const slug = slugIdx !== -1 ? args[slugIdx + 1] : null;
+  let slug = slugIdx !== -1 ? args[slugIdx + 1] : null;
   if (slugIdx !== -1 && !slug) die("Missing value for --slug");
 
-  // Also allow passing a direct .mdx/.md path as positional
+  const onlyIdx = args.indexOf("--only");
+  if (!slug && onlyIdx !== -1) {
+    slug = args[onlyIdx + 1];
+    if (!slug) die("Missing value for --only");
+  }
+
   if (!filePath) {
     const positional = args.find((a) => a.endsWith(".mdx") || a.endsWith(".md"));
     if (positional) filePath = positional;
@@ -291,12 +315,16 @@ async function main() {
   const { data, content } = matter(raw);
 
   const title = data?.title ? String(data.title) : null;
+  const recipeSlug =
+    typeof data?.slug === "string" && data.slug.trim()
+      ? String(data.slug).trim()
+      : path.basename(filePath).replace(/\.mdx?$/i, "");
   const cuisine = data?.cuisine ? String(data.cuisine) : "Indian";
   const description = data?.description ? String(data.description) : "";
 
   if (!title) die("Missing frontmatter title.");
 
-  const ingBlock = extractHeadingBlock(content, "Ingredients");
+  const ingBlock = extractHeadingBlock(content, "Ingredients|Ingredient");
   const methodBlock = extractHeadingBlock(content, "Method|Instructions");
   const notesBlock = extractHeadingBlock(content, "Notes|Tips");
 
@@ -315,10 +343,10 @@ async function main() {
       ? data.notes.map(String)
       : parseBullets(notesBlock);
 
-  const currentTags = normaliseTags(data?.tags ?? []);
+  const currentTags = cleanArray(data?.tags ?? []);
   const currentPrep = toInt(data?.prepMinutes);
   const currentCook = toInt(data?.cookMinutes);
-  const currentServings = toInt(data?.servings);
+  const currentServings = toInt(data?.servings) ?? toInt(data?.serves);
 
   console.log(`\n📄 Target: ${path.relative(process.cwd(), filePath)}`);
   console.log(`🧾 Title: ${title}`);
@@ -342,6 +370,7 @@ You are rewriting a Vegan Masala recipe entry in a consistent house style.
 
 Return ONLY valid JSON with this shape:
 {
+  "title": "recipe title",
   "description": "1-2 sentence punchy description (Indian, practical, weeknight-friendly).",
   "ingredients": ["..."],
   "instructions": ["Step 1...", "Step 2...", "..."],
@@ -357,29 +386,30 @@ Rules:
 - Do NOT mention the word "vegan" repeatedly in the ingredients list. Just do substitutions.
 - Keep the recipe authentic where possible.
 
-Non-vegan substitutions (examples):
-- paneer → firm tofu cubes OR vegan paneer
-- curd/yogurt → unsweetened plant-based yoghurt (coconut/soy)
-- cream → coconut cream OR oat cream
-- ghee/butter → vegan butter OR neutral oil
-- milk → unsweetened plant milk
-- honey → maple syrup or sugar
-- eggs → flax egg or chickpea flour mixture (only if needed)
-- chicken stock → vegetable stock
+Title rules:
+- Keep the original dish recognisable.
+- Improve clarity slightly if needed.
+- Do not make the title excessively long.
 
 Ingredients rules:
-- Keep simple ingredient phrases (no quantities needed if missing).
-- Remove duplicates, fix weird casing, remove junk words.
-- Use British English spellings (chilli, coriander, yoghurt).
+- Keep ingredients in the order they are used in the method.
+- Do NOT sort alphabetically.
+- If the recipe has a garnish or final finishing ingredient, place it near the end.
+- Add realistic quantities and brief prep notes where helpful (for example: "1 large onion, finely chopped").
+- Keep simple ingredient phrases.
+- Remove duplicates and obvious junk.
+- Use British English ingredient names (chilli, coriander, yoghurt).
 
 Instructions rules:
 - Clear, concise, British English, assume home cook.
 - If substitutions affect method (e.g. tofu instead of paneer), adjust steps accordingly.
 - Avoid fluff. Avoid brand names.
+- Make sure the order of ingredients matches the order they first appear in the instructions.
 
 Notes rules:
-- Useful tips, substitutions, storage/reheating, spice adjustments.
+- Helpful tips, substitutions, storage/reheating, spice adjustments.
 - Mention substitutions only if it matters.
+- If the source recipe has no notes, still return 2-4 useful notes.
 
 Tags rules:
 - Provide 3 to 8 tags.
@@ -412,6 +442,7 @@ If something is missing, don’t invent loads of new ingredients — only tiny e
             text: JSON.stringify(
               {
                 title,
+                slug: recipeSlug,
                 cuisine,
                 description,
                 ingredients,
@@ -443,96 +474,61 @@ If something is missing, don’t invent loads of new ingredients — only tiny e
     throw e;
   }
 
-  // ---- Extract + validate AI output ----
+  const newTitle = String(rewritten.title || "").trim();
   const newDescription = String(rewritten.description || "").trim();
 
-  const newIngredients = Array.isArray(rewritten.ingredients)
-    ? rewritten.ingredients.map((s) => String(s).trim()).filter(Boolean)
-    : [];
+  const newIngredients = cleanArray(rewritten.ingredients);
+  const newInstructions = cleanArray(rewritten.instructions);
+  let newNotes = cleanArray(rewritten.notes);
+  const newTags = cleanArray(rewritten.tags);
 
-  const newInstructions = Array.isArray(rewritten.instructions)
-    ? rewritten.instructions.map((s) => String(s).trim()).filter(Boolean)
-    : [];
-
-  const newNotes = Array.isArray(rewritten.notes)
-    ? rewritten.notes.map((s) => String(s).trim()).filter(Boolean)
-    : [];
-
-  const aiTagsRaw = Array.isArray(rewritten.tags) ? rewritten.tags : [];
-  const newTags = normaliseTags(aiTagsRaw);
-
-  let prepMinutes = toInt(rewritten.prepMinutes) ?? currentPrep;
-  let cookMinutes = toInt(rewritten.cookMinutes) ?? currentCook;
+  let prepMinutes = toInt(rewritten.prepMinutes) ?? currentPrep ?? 10;
+  let cookMinutes = toInt(rewritten.cookMinutes) ?? currentCook ?? 20;
   let servings = toInt(rewritten.servings) ?? currentServings ?? 4;
 
-  // If any are missing/invalid, apply safe fallbacks so cards ALWAYS show time
-  if (!prepMinutes || !cookMinutes) {
-    const fb = fallbackTimes({
-      ingredientsCount: newIngredients.length || ingredients.length,
-      stepsCount: newInstructions.length || instructions.length,
-    });
-    prepMinutes = prepMinutes ?? fb.prepMinutes;
-    cookMinutes = cookMinutes ?? fb.cookMinutes;
-  }
-
-  // Ensure tags ALWAYS exist (for card buttons)
-  const finalTags =
-    newTags.length >= 3
-      ? newTags
-      : // fallback tags if AI didn’t give enough
-        normaliseTags([
-          ...(newTags.length ? newTags : []),
-          // lightweight defaults based on title words
-          ...String(title)
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, "")
-            .split(/\s+/)
-            .filter((w) => w.length > 3)
-            .slice(0, 3),
-          "weeknight curry",
-          "indian mains",
-        ]).slice(0, 8);
-
+  if (!newTitle) warn("Model returned empty title; keeping existing.");
   if (!newDescription) warn("Model returned empty description; keeping existing.");
   if (!newIngredients.length) warn("Model returned no ingredients; keeping existing.");
   if (!newInstructions.length) warn("Model returned no instructions; keeping existing.");
-  if (!newNotes.length) warn("Model returned no notes; keeping existing.");
-  if (!finalTags.length) warn("No tags after normalisation; adding safe defaults.");
-  if (!prepMinutes || !cookMinutes) warn("Missing prep/cook even after fallback (unexpected).");
+  if (!newNotes.length) warn("Model returned no notes; generating fallback notes.");
 
+  const finalTitle = newTitle || title;
   const finalDescription = newDescription || description;
   const finalIngredients = newIngredients.length ? newIngredients : ingredients;
   const finalInstructions = newInstructions.length ? newInstructions : instructions;
-  const finalNotes = newNotes.length ? newNotes : notes;
 
-  // ---- Write back to MDX (frontmatter + body) ----
+  if (!newNotes.length) {
+    newNotes = generateFallbackNotes({
+      title: finalTitle,
+      slug: recipeSlug,
+      tags: newTags.length ? newTags : currentTags,
+    });
+  }
+
+  const finalNotes = newNotes.length ? newNotes : notes;
+  const finalTags = newTags.length ? newTags : currentTags;
+  const orderedIngredients = reorderIngredientsByInstructions(finalIngredients, finalInstructions);
+
   const fm = {
     ...data,
+    title: finalTitle,
     description: finalDescription,
     cuisine: data?.cuisine ?? cuisine,
-
-    // guaranteed for cards
     prepMinutes,
     cookMinutes,
     servings,
-
-    // guaranteed for buttons
     tags: finalTags,
-
-    // keep diet as-is, but ensure vegan is present
     diet: Array.isArray(data?.diet)
       ? Array.from(new Set([...data.diet.map(String), "vegan"]))
       : ["vegan"],
-
-    // keep arrays in frontmatter for your loader/cards/schema
-    ingredients: finalIngredients,
+    ingredients: orderedIngredients,
     instructions: finalInstructions,
     notes: finalNotes,
   };
 
   const nextMdx = matter.stringify(
     buildBody({
-      ingredients: finalIngredients,
+      ingredients: orderedIngredients,
       instructions: finalInstructions,
       notes: finalNotes,
     }),
@@ -557,6 +553,7 @@ If something is missing, don’t invent loads of new ingredients — only tiny e
   ok(`Updated: ${path.relative(process.cwd(), filePath)}`);
   ok(`Tags ensured: ${finalTags.length}`);
   ok(`Times ensured: prep ${prepMinutes} min / cook ${cookMinutes} min`);
+  ok(`Notes ensured: ${finalNotes.length}`);
 }
 
 main().catch((err) => {

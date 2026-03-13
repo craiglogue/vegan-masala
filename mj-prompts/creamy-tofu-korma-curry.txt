@@ -13,7 +13,7 @@ Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and repl
 https://vegan-masala.com/images/recipes/creamy-tofu-korma-curry.png Creamy Tofu Korma cooking step 1: Toast cumin and coriander seeds in a dry pan until fragrant, then grind into a powder., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/creamy-tofu-korma-curry.png Creamy Tofu Korma cooking step 2: Blend onion, garlic, ginger, tomato purée, spices, and the ground seeds into a smooth curry paste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/creamy-tofu-korma-curry.png Creamy Tofu Korma cooking step 2: Blend onion, garlic, ginger, tomato, spices, and the ground seeds into a smooth curry paste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
 https://vegan-masala.com/images/recipes/creamy-tofu-korma-curry.png Creamy Tofu Korma cooking step 3: Heat oil in a pan and fry cubed tofu until lightly golden. Set aside., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5

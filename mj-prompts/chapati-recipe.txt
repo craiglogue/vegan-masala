@@ -1,0 +1,46 @@
+# Midjourney Prompts — Soft Whole Wheat Chapati
+File: content/recipes/chapati-recipe.mdx
+Slug: chapati-recipe
+Hero reference: https://vegan-masala.com/images/recipes/rajma-recipe.png
+
+## 1) HERO (generate first)
+Soft Whole Wheat Chapati, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 1: In a large bowl, mix the whole wheat flour, salt, and 2 tablespoons of oil until well combined., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 2: Gradually add water, kneading until the dough is soft and smooth. Incorporate the remaining tablespoon of oil and knead again. Cover and let it rest for 20–30 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 3: Take a lemon-sized ball of dough, dust it with dry flour, and roll it into a 4-inch circle., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 4: Drizzle a few drops of oil on the circle, dust with flour, fold in half, and repeat the oil and flour step before folding into a triangle., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 5: You can either roll the triangle directly into a chapati or bring the ends together to form a circle for a more rounded shape., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 6: Roll the dough into a thin, round chapati (approximately 8–9 inches wide), dusting lightly with flour as necessary., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 7: Heat a cast-iron tawa or skillet over medium-high until hot. Cook the rolled chapati for 30–40 seconds until bubbles form., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 8: Flip and cook the other side, pressing gently with a kitchen towel or spatula to encourage puffing without applying too much pressure., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 9: Flip again, adding a light layer of oil on both sides. Once golden spots develop, remove the chapati from the tawa., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 10
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 10: While hot, clap the chapati gently between your hands to separate the layers, or use a kitchen towel for safety., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 11
+https://vegan-masala.com/images/recipes/rajma-recipe.png Soft Whole Wheat Chapati cooking step 11: Fold in half, then in half again, and store in a casserole to keep warm, or serve immediately for optimal taste and texture., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Soft Whole Wheat Chapati, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

@@ -1,46 +1,46 @@
-# Midjourney Prompts — Dal Makhani (Vegan)
+# Midjourney Prompts — Dal Makhani
 File: content/recipes/dal-makhani-recipe-authentic-punjabi-style.mdx
 Slug: dal-makhani-recipe-authentic-punjabi-style
 Hero reference: https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png
 
 ## 1) HERO (generate first)
-Dal Makhani (Vegan), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+Dal Makhani, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
 
 Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 1: Soak urad dal and kidney beans overnight, then rinse well., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 1: Soak urad dal and kidney beans overnight, then rinse well., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 2: Pressure cook with water until very soft and creamy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 2: Pressure cook with water until very soft and creamy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 3: Blend tomatoes into a smooth purée., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 3: Blend tomatoes into a smooth purée., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 4: Heat vegan butter or oil in a pan and add whole spices., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 4: Heat oil in a pan and add cumin seeds, cloves, cardamom pods, cinnamon stick, and bay leaf., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 5: Add onion and cook until lightly golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 5: Add onion and cook until lightly golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 6: Add ginger garlic paste and green chillies; cook briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 6: Add garlic, green chillies; cook briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 7
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 7: Stir in tomato purée, chilli powder and nutmeg; cook until thick and glossy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 7: Stir in tomato purée, chilli powder, and nutmeg; cook until thick and glossy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 8
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 8: Add cooked lentils with their cooking liquid and additional water., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 8: Add cooked lentils with their cooking liquid and additional water., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 9
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 9: Simmer on low heat for 25–30 minutes, stirring often., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 9: Simmer on low heat for 25–30 minutes, stirring often., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 10
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 10: Stir in cashew cream and kasuri methi., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 10: Stir in oat cream and kasuri methi., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 11
-https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani (Vegan) cooking step 11: Cook until creamy and rich. Finish with coriander., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/dal-makhani-recipe-authentic-punjabi-style.png Dal Makhani cooking step 11: Cook until creamy and rich. Finish with coriander., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
-Dal Makhani (Vegan), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3
+Dal Makhani, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

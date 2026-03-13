@@ -10,7 +10,7 @@ Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and repl
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/veg-kurma-recipe-hotel-style-vegetable-korma.png Veg Kurma cooking step 1: Blend coconut, cashews, spices, chillies, garlic, ginger and water into a smooth paste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/veg-kurma-recipe-hotel-style-vegetable-korma.png Veg Kurma cooking step 1: Blend coconut, cashews, fennel seeds, cumin seeds, cloves, cardamoms, peppercorns, chillies, garlic, ginger and water into a smooth paste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
 https://vegan-masala.com/images/recipes/veg-kurma-recipe-hotel-style-vegetable-korma.png Veg Kurma cooking step 2: Heat oil in a pot and sauté onion until soft and lightly golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5

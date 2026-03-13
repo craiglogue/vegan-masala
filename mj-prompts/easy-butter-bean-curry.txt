@@ -1,37 +1,37 @@
-# Midjourney Prompts — Easy Butter Bean Curry
+# Midjourney Prompts — Butter Bean Curry
 File: content/recipes/easy-butter-bean-curry.mdx
 Slug: easy-butter-bean-curry
 Hero reference: https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png
 
 ## 1) HERO (generate first)
-Easy Butter Bean Curry, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+Butter Bean Curry, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
 
 Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Easy Butter Bean Curry cooking step 1: Heat oil in a large pan and cook onions until soft and lightly golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Butter Bean Curry cooking step 1: Heat oil in a large pan and cook onions until soft and lightly golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Easy Butter Bean Curry cooking step 2: Add garlic and ginger; cook for 1 minute until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Butter Bean Curry cooking step 2: Add garlic and ginger; cook for 1 minute until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Easy Butter Bean Curry cooking step 3: Add tomatoes and salt; cook until softened and jammy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Butter Bean Curry cooking step 3: Add tomatoes and salt; cook until softened and jammy., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
-https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Easy Butter Bean Curry cooking step 4: Stir in all spices and cook for 2–3 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Butter Bean Curry cooking step 4: Stir in all spices and cook for 2–3 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Easy Butter Bean Curry cooking step 5: Add cooked butter beans and water; bring to a boil., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Butter Bean Curry cooking step 5: Add cooked butter beans and water; bring to a boil., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Easy Butter Bean Curry cooking step 6: Simmer for 10–15 minutes until thickened., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Butter Bean Curry cooking step 6: Simmer for 10–15 minutes until thickened., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 7
-https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Easy Butter Bean Curry cooking step 7: Finish with lemon juice and adjust salt to taste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Butter Bean Curry cooking step 7: Finish with lemon juice and adjust salt to taste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 8
-https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Easy Butter Bean Curry cooking step 8: Serve hot with basmati rice., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/easy-butter-bean-curry.png Butter Bean Curry cooking step 8: Serve hot with basmati rice., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
-Easy Butter Bean Curry, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3
+Butter Bean Curry, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

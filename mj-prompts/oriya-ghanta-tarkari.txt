@@ -16,7 +16,7 @@ https://vegan-masala.com/images/recipes/oriya-ghanta-tarkari.png Oriya Ghanta Ta
 https://vegan-masala.com/images/recipes/oriya-ghanta-tarkari.png Oriya Ghanta Tarkari cooking step 2: Add chopped onion and green chilli, cooking until the onion is translucent., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
-https://vegan-masala.com/images/recipes/oriya-ghanta-tarkari.png Oriya Ghanta Tarkari cooking step 3: Stir in ginger-garlic paste and sauté for a couple of minutes until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/oriya-ghanta-tarkari.png Oriya Ghanta Tarkari cooking step 3: Stir in minced garlic and sauté for a couple of minutes until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
 https://vegan-masala.com/images/recipes/oriya-ghanta-tarkari.png Oriya Ghanta Tarkari cooking step 4: Add the mixed vegetables, turmeric, coriander powder, and salt. Cook for a few minutes, stirring occasionally., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
@@ -25,7 +25,7 @@ https://vegan-masala.com/images/recipes/oriya-ghanta-tarkari.png Oriya Ghanta Ta
 https://vegan-masala.com/images/recipes/oriya-ghanta-tarkari.png Oriya Ghanta Tarkari cooking step 5: Add tofu cubes and a splash of water if necessary. Cover the pan and let it simmer until the vegetables are tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/oriya-ghanta-tarkari.png Oriya Ghanta Tarkari cooking step 6: Finish with lemon juice and chopped coriander leaves before serving., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/oriya-ghanta-tarkari.png Oriya Ghanta Tarkari cooking step 6: Finish with lemon juice and chopped coriander before serving., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
 Oriya Ghanta Tarkari, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

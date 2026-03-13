@@ -1,0 +1,37 @@
+# Midjourney Prompts — Peshwari Naan
+File: content/recipes/vegan-peshwari-naan-recipe.mdx
+Slug: vegan-peshwari-naan-recipe
+Hero reference: IMAGE_URL
+
+## 1) HERO (generate first)
+Peshwari Naan, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+IMAGE_URL Peshwari Naan cooking step 1: In a bowl, combine the bread flour, salt, sugar, and yeast. Make a well in the centre and add the warm water. Stir until you have a rough dough., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+IMAGE_URL Peshwari Naan cooking step 2: Knead the dough by hand for about 10 minutes until smooth and soft., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+IMAGE_URL Peshwari Naan cooking step 3: Oil a mixing bowl, place the dough inside, and cover with cling film. Leave in a warm place to prove for an hour, or until doubled in size., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+IMAGE_URL Peshwari Naan cooking step 4: Once proved, punch the dough down and knead for another minute. Weigh the dough and divide it into 6 equal pieces., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+IMAGE_URL Peshwari Naan cooking step 5: For the filling, either blend the filling ingredients in a blender or mix them in a bowl. Roll each piece of dough into a ball and flatten it into a disc, about 10-15 cm in diameter. Place a portion of filling in the centre, fold the edges over, and seal them together. Turn the sealed side down., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+IMAGE_URL Peshwari Naan cooking step 6: Roll the filled dough disc to about 5 mm thick, ensuring it retains a teardrop shape without tearing., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+IMAGE_URL Peshwari Naan cooking step 7: Heat a tablespoon of oil in a frying pan over medium heat. Cook each naan for about 5 minutes, flipping halfway, until golden and puffed. Press down with a spatula if it bubbles excessively., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+IMAGE_URL Peshwari Naan cooking step 8: For garlic naan, mix the oil and garlic as the naans cook. Brush the hot naans with this garlic oil and sprinkle with coriander leaves if desired., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Peshwari Naan, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

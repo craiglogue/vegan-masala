@@ -15,22 +15,22 @@ tags:
   - spinach
   - one pot
 ingredients:
-  - spinach
-  - potatoes
-  - onion
-  - tomato
-  - garlic
-  - ginger
-  - cumin seeds
-  - coriander powder
-  - garam masala
-  - turmeric
-  - chilli powder
-  - vegan butter or oil
-  - salt
-  - water
+  - 2 tbsp oil
+  - 1 tsp cumin seeds
+  - '1 inch ginger, grated'
+  - '4 cloves garlic, minced'
+  - 1 tsp garam masala
+  - 1/2 tsp turmeric
+  - 1 tsp chilli powder
+  - 1 cup water
+  - 200 g spinach
+  - 1 tsp salt
+  - '3 medium potatoes, cubed'
+  - '1 large onion, finely chopped'
+  - '1 medium tomato, chopped'
+  - 2 tsp coriander powder
 instructions:
-  - Heat vegan butter or oil in a pan; add cumin seeds and cook until fragrant.
+  - Heat oil in a pan; add cumin seeds and cook until fragrant.
   - 'Sauté onions until golden, then add ginger and garlic; cook for 1-2 minutes.'
   - >-
     Stir in chopped tomatoes and spices (coriander, garam masala, turmeric,
@@ -47,26 +47,29 @@ notes:
   - >-
     Adjust spice levels based on your preference; add more chilli for extra
     heat.
-image: /recipes/saag-aloo.png
+  - Serve with rice or naan for a complete meal.
+image: /images/recipes/saag-aloo.png
+cuisine: Indian
+servings: 4
 ---
 ## Ingredients
-- spinach
-- potatoes
-- onion
-- tomato
-- garlic
-- ginger
-- cumin seeds
-- coriander powder
-- garam masala
-- turmeric
-- chilli powder
-- vegan butter or oil
-- salt
-- water
+- 2 tbsp oil
+- 1 tsp cumin seeds
+- 1 inch ginger, grated
+- 4 cloves garlic, minced
+- 1 tsp garam masala
+- 1/2 tsp turmeric
+- 1 tsp chilli powder
+- 1 cup water
+- 200 g spinach
+- 1 tsp salt
+- 3 medium potatoes, cubed
+- 1 large onion, finely chopped
+- 1 medium tomato, chopped
+- 2 tsp coriander powder
 
 ## Method
-1. Heat vegan butter or oil in a pan; add cumin seeds and cook until fragrant.
+1. Heat oil in a pan; add cumin seeds and cook until fragrant.
 2. Sauté onions until golden, then add ginger and garlic; cook for 1-2 minutes.
 3. Stir in chopped tomatoes and spices (coriander, garam masala, turmeric, chilli powder), cooking until tomatoes soften.
 4. Add diced potatoes, stir to coat in spices, then add water; cover and cook until potatoes are tender.
@@ -76,3 +79,4 @@ image: /recipes/saag-aloo.png
 - For creaminess, consider adding coconut cream towards the end.
 - Store leftovers in an airtight container for up to three days.
 - Adjust spice levels based on your preference; add more chilli for extra heat.
+- Serve with rice or naan for a complete meal.

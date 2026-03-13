@@ -13,7 +13,7 @@ Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and repl
 https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 1: Boil the potatoes until tender, then peel and cube them., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 2: Heat oil in a pan, add mustard seeds, and wait for them to crackle., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 2: Heat the oil in a pan, add mustard seeds, and wait for them to crackle., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
 https://vegan-masala.com/images/recipes/bombay-aloo.png Bombay Aloo cooking step 3: Stir in cumin seeds, then add the boiled potatoes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5

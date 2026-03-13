@@ -76,7 +76,6 @@ function canonicalizeTag(raw: string): string | null {
     urad: "dal-and-lentils",
     masoor: "dal-and-lentils",
 
-    // ✅ FIX: prevent dal-and-lentils appearing twice under different keys
     "dal-and-lentils": "dal-and-lentils",
 
     tofu: "tofu",
@@ -316,7 +315,6 @@ export default async function RecipesPage({
         </div>
       </div>
 
-      {/* ✅ NEW: Recipe Hub Links */}
       <section className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
         <h2 className="text-lg font-extrabold text-[var(--brand-gold)]">
           Browse by Ingredient
@@ -361,7 +359,6 @@ export default async function RecipesPage({
       </section>
 
       <section className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm space-y-5">
-        {/* COLLECTION BUTTONS */}
         <div className="flex flex-wrap gap-3">
           <Link
             href="/recipes"
@@ -396,7 +393,6 @@ export default async function RecipesPage({
           })}
         </div>
 
-        {/* TAG BUTTONS */}
         {allTags.length ? (
           <div className="flex flex-wrap gap-3">
             {allTags.map((t) => {
@@ -434,7 +430,11 @@ export default async function RecipesPage({
 
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((r: any) => {
-          const img = getRecipeImage(r.slug);
+          const img =
+            typeof r.image === "string" && r.image.trim().length > 0
+              ? r.image
+              : getRecipeImage(r.slug);
+
           const placeholder = isPlaceholderImage(img);
           const time = minutesLabel(r.prepMinutes, r.cookMinutes);
 

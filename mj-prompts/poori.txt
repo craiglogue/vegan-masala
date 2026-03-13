@@ -1,0 +1,43 @@
+# Midjourney Prompts — Puffed Indian Bread (Poori)
+File: content/recipes/poori.mdx
+Slug: poori
+Hero reference: IMAGE_URL
+
+## 1) HERO (generate first)
+Puffed Indian Bread (Poori), Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 1: In a mixing bowl, combine the whole wheat flour and salt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 2: Add 1 tablespoon of oil and mix well., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 3: Gradually add water a little at a time, kneading to form a soft, smooth dough., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 4: Cover the dough with a damp cloth and let it rest for 20-30 minutes., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 5: After resting, divide the dough into small balls, about the size of a golf ball., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 6: On a floured surface, roll each ball into a thin disc, about 5 inches in diameter., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 7
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 7: Heat oil in a deep frying pan over medium heat., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 8
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 8: Once the oil is hot, carefully slide in one rolled disc at a time., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 9
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 9: Fry until the poori puffs up and turns golden, about 30 seconds each side., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 10
+IMAGE_URL Puffed Indian Bread (Poori) cooking step 10: Remove with a slotted spoon and drain on paper towels. Serve warm., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Puffed Indian Bread (Poori), Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

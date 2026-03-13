@@ -10,34 +10,34 @@ Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and repl
 
 ## 2) STEPS (use hero as reference image)
 ### Step 1
-https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 1: Pat tofu dry, cube, and pan-fry until lightly golden. Set aside., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 1: Pat tofu dry, cube, and pan-fry in a little oil until lightly golden. Set aside., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 2
-https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 2: Heat oil in a pan and add cumin seeds. Let them sizzle., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 2: In a pan, heat oil and add cumin seeds. Let them sizzle., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 3
 https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 3: Add onion and cook until deep golden., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 4
-https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 4: Add garlic and ginger and cook until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 4: Stir in garlic and ginger, cooking until fragrant., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 5
-https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 5: Add tomatoes and green chillies. Cook until the masala thickens and oil begins to separate., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 5: Add tomatoes and green chillies, cooking until the masala thickens and oil begins to separate., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 6
-https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 6: Add coriander, cumin, turmeric and chilli powder. Stir briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 6: Mix in coriander, ground cumin, turmeric, and chilli powder. Stir briefly., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 7
-https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 7: Add potatoes and water. Cover and simmer until potatoes are tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 7: Add cubed potatoes and water. Cover and simmer until potatoes are tender., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 8
-https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 8: Add tofu and simmer until it absorbs the masala., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 8: Gently fold in tofu and simmer until it absorbs the masala., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 9
-https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 9: Stir in garam masala and optional sugar. Adjust seasoning., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 9: Stir in garam masala and optional sugar. Adjust seasoning to taste., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ### Step 10
-https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 10: Finish with coriander and a squeeze of lemon., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+https://vegan-masala.com/images/recipes/aloo-tofu-recipe.png Aloo Tofu Masala cooking step 10: Finish with fresh coriander and a squeeze of lemon., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
 
 ## 3) PINTEREST (optional 2:3)
 Aloo Tofu Masala, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

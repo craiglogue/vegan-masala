@@ -1,0 +1,31 @@
+# Midjourney Prompts — Vegetable Pakora
+File: content/recipes/vegetable-pakora.mdx
+Slug: vegetable-pakora
+Hero reference: https://vegan-masala.com/images/recipes/vegetable-vindaloo.png
+
+## 1) HERO (generate first)
+Vegetable Pakora, Indian cooking, finished dish plated, rustic Indian home kitchen, natural window light, professional food photography, realistic textures, shot on 85mm lens --style raw --v 6 --ar 1:1
+
+Tip: Upload your chosen Recraft hero to Midjourney, copy its image URL, and replace the reference above.
+
+## 2) STEPS (use hero as reference image)
+### Step 1
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Pakora cooking step 1: In a mixing bowl, combine gram flour, cumin seeds, garam masala, turmeric powder, and salt., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 2
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Pakora cooking step 2: Add the sliced potato, onion, spinach, and cauliflower to the mixture., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 3
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Pakora cooking step 3: Mix well, adding water gradually until a thick batter coats the vegetables., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 4
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Pakora cooking step 4: Heat oil in a deep pan over medium heat., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 5
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Pakora cooking step 5: Once the oil is hot, spoon small portions of the batter-coated vegetables into the oil., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+### Step 6
+https://vegan-masala.com/images/recipes/vegetable-vindaloo.png Vegetable Pakora cooking step 6: Fry until golden and crispy, about 5-7 minutes. Drain on paper towels., realistic Indian home kitchen, natural window light, professional food photography, shot on 85mm lens --style raw --v 6 --ar 1:1 --iw 1.5
+
+## 3) PINTEREST (optional 2:3)
+Vegetable Pakora, Indian recipe, Pinterest-style recipe image, overhead shot, bold appetising colours, rustic Indian food styling, natural light, professional food photography --style raw --v 6 --ar 2:3

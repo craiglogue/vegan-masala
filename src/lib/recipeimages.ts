@@ -4,15 +4,13 @@ import path from "node:path";
 
 const PLACEHOLDER = "/brand/image-coming-soon.jpg";
 
-// ✅ Manual overrides for slugs that won't match filenames cleanly
+// Manual overrides for slugs that don't match filenames cleanly
 const OVERRIDES: Record<string, string> = {
   "easy-butter-bean-curry": "/images/recipes/butterbean-curry.png",
   "eggplant-curry-south-indian-brinjal-curry": "/images/recipes/egg-plant-curry.png",
   "veg-kurma-recipe-hotel-style-vegetable-korma": "/images/recipes/veg-kurma.png",
   "sweet-potato-chickpea-spinach-curry": "/images/recipes/sweetpotato-chickpea-spinach-recipe.png",
-    "instant-pot-chana-masala": "/images/recipes/instant-pot-chana-masala.png",
-
-  // ✅ FIX: dal makhani was fuzzy-matching to moong dal image
+  "instant-pot-chana-masala": "/images/recipes/instant-pot-chana-masala.png",
   "dal-makhani-recipe-authentic-punjabi-style": "/images/recipes/dahl-makhani.png",
 };
 
@@ -26,10 +24,6 @@ function norm(input: string) {
     .replace(/^-|-$/g, "");
 }
 
-function tokens(s: string) {
-  return new Set(norm(s).split("-").filter(Boolean));
-}
-
 function existsPublic(assetPath: string) {
   const full = path.join(process.cwd(), "public", assetPath.replace(/^\//, ""));
   return fs.existsSync(full);
@@ -39,7 +33,6 @@ type ImgEntry = {
   file: string;
   rel: string;
   key: string;
-  toks: Set<string>;
 };
 
 let IMAGES: ImgEntry[] | null = null;
@@ -56,7 +49,6 @@ function loadImages(): ImgEntry[] {
     file,
     rel: `/images/recipes/${file}`,
     key: norm(file),
-    toks: tokens(file),
   }));
 }
 
@@ -65,42 +57,29 @@ function getImages() {
   return IMAGES;
 }
 
-function scoreMatch(slug: string, entry: ImgEntry) {
-  const slugKey = norm(slug);
-  const slugToks = tokens(slug);
+function buildSafeCandidates(slug: string): string[] {
+  const s = norm(slug);
 
-  if (slugKey === entry.key) return 999;
+  const variants = new Set<string>([
+    s,
+    s.replace(/-recipe$/g, ""),
+    s.replace(/-recipe/g, ""),
+    s.replace(/-authentic/g, ""),
+    s.replace(/-restaurant-style/g, ""),
+    s.replace(/-hotel-style/g, ""),
+  ]);
 
-  let overlap = 0;
-  for (const t of entry.toks) {
-    if (slugToks.has(t)) overlap += 1;
-  }
+  return Array.from(variants).filter(Boolean);
+}
 
-  const union = new Set([...slugToks, ...entry.toks]).size || 1;
-  const jaccard = overlap / union;
-
-  const containsBonus =
-    slugKey.includes(entry.key) || entry.key.includes(slugKey) ? 0.25 : 0;
-
-  const simplifiedSlug = slugKey
-    .replace(/-recipe$/g, "")
-    .replace(/-recipe/g, "")
-    .replace(/-authentic/g, "")
-    .replace(/-restaurant-style/g, "")
-    .replace(/-hotel-style/g, "");
-
-  const simplifiedBonus =
-    simplifiedSlug.includes(entry.key) || entry.key.includes(simplifiedSlug)
-      ? 0.2
-      : 0;
-
-  const dalBonus =
-    (slugKey.includes("dal") && entry.key.includes("dahl")) ||
-    (slugKey.includes("dahl") && entry.key.includes("dal"))
-      ? 0.1
-      : 0;
-
-  return jaccard + containsBonus + simplifiedBonus + dalBonus;
+function buildDirectPathCandidates(base: string): string[] {
+  return [
+    `/images/recipes/${base}.png`,
+    `/images/recipes/${base}.jpg`,
+    `/images/recipes/${base}.jpeg`,
+    `/images/recipes/${base}.webp`,
+    `/images/recipes/${base}.avif`,
+  ];
 }
 
 export function getRecipeImage(slug: string): string {
@@ -111,26 +90,37 @@ export function getRecipeImage(slug: string): string {
   const images = getImages();
   if (!images.length) return PLACEHOLDER;
 
-  // 1) direct slug.png/jpg fast path
-  const directCandidates = [
-    `/images/recipes/${slug}.png`,
-    `/images/recipes/${slug}.jpg`,
-    `/images/recipes/${slug}.jpeg`,
-    `/images/recipes/${slug}.webp`,
-  ];
-  for (const c of directCandidates) {
-    if (existsPublic(c)) return c;
+  // 1) direct exact file path candidates
+  const bases = buildSafeCandidates(slug);
+  for (const base of bases) {
+    const directCandidates = buildDirectPathCandidates(base);
+    for (const candidate of directCandidates) {
+      if (existsPublic(candidate)) return candidate;
+    }
   }
 
-  // 2) fuzzy best match
-  let best: { rel: string; score: number } | null = null;
+  // 2) exact normalized filename match only
+  const imageMap = new Map(images.map((img) => [img.key, img.rel]));
+  for (const base of bases) {
+    const hit = imageMap.get(base);
+    if (hit && existsPublic(hit)) return hit;
+  }
+
+  // 3) very safe alias-only matches
+  // Only allow these when one side is basically a cleaned version of the other.
   for (const img of images) {
-    const s = scoreMatch(slug, img);
-    if (!best || s > best.score) best = { rel: img.rel, score: s };
+    for (const base of bases) {
+      if (
+        img.key === base ||
+        img.key === `${base}-recipe` ||
+        base === `${img.key}-recipe`
+      ) {
+        if (existsPublic(img.rel)) return img.rel;
+      }
+    }
   }
 
-  if (best && best.score >= 0.22 && existsPublic(best.rel)) return best.rel;
-
+  // 4) no fuzzy guessing — better to show placeholder than the wrong dish
   return PLACEHOLDER;
 }
 
