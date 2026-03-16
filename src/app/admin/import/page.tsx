@@ -230,10 +230,16 @@ export default function AdminImportPage() {
       const data = (await res.json().catch(() => null)) as PipelineResult | null;
 
       if (!res.ok || !data?.ok) {
-        setPipelineError(data?.error || `Pipeline failed (${res.status})`);
-        setPipelineLog(data?.log || "No log returned.");
-        return;
-      }
+  const errorMessage =
+    data && "error" in data ? data.error : `Pipeline failed (${res.status})`;
+
+  const logMessage =
+    data && "log" in data && data.log ? data.log : "No log returned.";
+
+  setPipelineError(errorMessage);
+  setPipelineLog(logMessage);
+  return;
+}
 
       setPipelineLog(data.log || "✅ Pipeline complete.");
     } catch (err: any) {

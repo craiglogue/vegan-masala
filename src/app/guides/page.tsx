@@ -97,7 +97,7 @@ function GuideCard({
 }
 
 export default function GuidesIndexPage() {
-  const guides = getAllGuides();
+  const guides = getAllGuides() as Guide[];
 
   const featuredSlugs = [
     "vegan-indian-pantry-staples",
