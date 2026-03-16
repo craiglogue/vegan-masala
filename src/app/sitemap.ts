@@ -11,6 +11,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
     "https://vegan-masala.com";
 
+  const now = new Date();
+
   const staticRoutes = [
     "",
     "/recipes",
@@ -26,26 +28,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
 
-    // Static pages
+    // Core pages
     ...staticRoutes.map((p) => ({
       url: `${siteUrl}${p}`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "weekly" as const,
-      priority: p === "" ? 1 : 0.7,
+      priority:
+        p === ""
+          ? 1
+          : p === "/recipes" || p === "/guides"
+          ? 0.9
+          : 0.7,
     })),
 
     // Recipes
     ...recipeSlugs.map((slug) => ({
       url: `${siteUrl}/recipes/${slug}`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
 
-    // Guides (NEW)
+    // Guides
     ...guideSlugs.map((slug) => ({
       url: `${siteUrl}/guides/${slug}`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.75,
     })),
