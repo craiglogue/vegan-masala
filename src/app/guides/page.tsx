@@ -9,6 +9,21 @@ type Guide = {
   category?: string;
 };
 
+function getGuideImage(guide: Guide) {
+  const slugImage = `/images/guides/${guide.slug}.png`;
+
+  const legacyMap: Record<string, string> = {
+    "spices": "/images/guides/indian-spices-guide.png",
+    "vegan-dairy-alternatives": "/images/guides/dairy.jpg",
+    "equipment": "/images/guides/equipment.jpg",
+    "herbs": "/images/guides/herbs.jpg",
+  };
+
+  if (legacyMap[guide.slug]) return legacyMap[guide.slug];
+
+  return slugImage || guide.image || "/images/guides/spices.jpg";
+}
+
 function GuideCard({
   guide,
   featured = false,
@@ -16,6 +31,8 @@ function GuideCard({
   guide: Guide;
   featured?: boolean;
 }) {
+  const image = getGuideImage(guide);
+
   return (
     <Link
       href={`/guides/${guide.slug}`}
@@ -69,7 +86,7 @@ function GuideCard({
         ].join(" ")}
       >
         <img
-          src={guide.image || "/images/guides/spices.jpg"}
+          src={image}
           alt={guide.title}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
@@ -84,7 +101,7 @@ export default function GuidesIndexPage() {
 
   const featuredSlugs = [
     "vegan-indian-pantry-staples",
-    "indian-spices-explained",
+    "indian-spices-explained-for-beginners",
     "how-to-build-a-curry-base",
   ];
 
@@ -114,7 +131,6 @@ export default function GuidesIndexPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
-      {/* HERO */}
       <section className="overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-black/40" />
@@ -128,9 +144,9 @@ export default function GuidesIndexPage() {
             </h1>
 
             <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--text-soft)]">
-              Explore practical guides on Indian spices, pantry staples, vegan
-              swaps, kitchen setup, and essential techniques to help you cook
-              with more confidence at home.
+              Explore practical guides on Indian spices, pantry staples, vegan swaps,
+              kitchen setup, and essential techniques to help you cook with more
+              confidence at home.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3 text-sm font-bold text-[var(--text-soft)]">
@@ -148,7 +164,6 @@ export default function GuidesIndexPage() {
         </div>
       </section>
 
-      {/* FEATURED */}
       {featured.length ? (
         <section className="mt-10">
           <div className="mb-5">
@@ -156,8 +171,7 @@ export default function GuidesIndexPage() {
               Start here
             </h2>
             <p className="mt-2 max-w-3xl text-sm text-[var(--text-soft)]">
-              These are the best guides to begin with if you are new to vegan
-              Indian cooking.
+              These are the best guides to begin with if you are new to vegan Indian cooking.
             </p>
           </div>
 
@@ -169,20 +183,17 @@ export default function GuidesIndexPage() {
         </section>
       ) : null}
 
-      {/* GROUPED GUIDES */}
       <div className="mt-12 space-y-12">
         {[...orderedGroups, ...extraGroups].map((groupName) => (
           <section key={groupName}>
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-wide text-[var(--brand-gold)]">
-                  {groupName}
-                </h2>
-                <p className="mt-2 text-sm text-[var(--text-soft)]">
-                  {grouped[groupName].length} guide
-                  {grouped[groupName].length === 1 ? "" : "s"}
-                </p>
-              </div>
+            <div className="mb-5">
+              <h2 className="text-2xl font-extrabold tracking-wide text-[var(--brand-gold)]">
+                {groupName}
+              </h2>
+              <p className="mt-2 text-sm text-[var(--text-soft)]">
+                {grouped[groupName].length} guide
+                {grouped[groupName].length === 1 ? "" : "s"}
+              </p>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">
@@ -194,14 +205,12 @@ export default function GuidesIndexPage() {
         ))}
       </div>
 
-      {/* CTA */}
       <section className="mt-12 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-sm">
         <h2 className="text-2xl font-extrabold text-[var(--brand-gold)]">
           Want to start cooking straight away?
         </h2>
         <p className="mt-3 text-[var(--text-soft)]">
-          Browse the recipe collection for curries, dals, tofu dishes, and easy
-          weeknight meals.
+          Browse the recipe collection for curries, dals, tofu dishes, and easy weeknight meals.
         </p>
         <div className="mt-6">
           <Link
