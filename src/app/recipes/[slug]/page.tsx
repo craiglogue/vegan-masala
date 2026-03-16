@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { getRecipeBySlug } from "@/lib/recipes";
 import { getRecipeImage, isPlaceholderImage } from "@/lib/recipeimages";
 import PrintButton from "@/components/PrintButton";
+import RelatedGuides from "@/components/RelatedGuides";
 
 /**
  * Extract sections from MDX body.
@@ -82,6 +83,85 @@ function absUrl(siteUrl: string, maybePath: string) {
   return `${siteUrl}${maybePath.startsWith("/") ? "" : "/"}${maybePath}`;
 }
 
+function getRelatedGuideTags(recipe: any) {
+  const text = [
+    recipe.title ?? "",
+    recipe.slug ?? "",
+    ...(recipe.tags ?? []),
+    ...(recipe.diet ?? []),
+    recipe.description ?? "",
+    recipe.cuisine ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const tags = new Set<string>();
+
+  if (
+    /\b(dal|dahl|lentil|masoor|moong|urad|toor|chana dal|rajma|beans?|kidney beans?)\b/.test(
+      text
+    )
+  ) {
+    tags.add("lentils");
+    tags.add("dal");
+    tags.add("lentil");
+    tags.add("rajma");
+    tags.add("chana");
+  }
+
+  if (/\b(curry|masala|vindaloo|korma|makhani|makhanwala)\b/.test(text)) {
+    tags.add("curry");
+    tags.add("masala");
+    tags.add("spices");
+  }
+
+  if (/\b(rice|biryani|pulao|jeera rice)\b/.test(text)) {
+    tags.add("rice");
+    tags.add("biryani");
+    tags.add("basmati");
+  }
+
+  if (/\b(chickpea|chickpeas|chana|chole)\b/.test(text)) {
+    tags.add("chana");
+    tags.add("chickpea");
+    tags.add("lentils");
+  }
+
+  if (/\b(tofu|paneer)\b/.test(text)) {
+    tags.add("tofu");
+    tags.add("vegan dairy");
+  }
+
+  if (/\b(aloo|potato|potatoes)\b/.test(text)) {
+    tags.add("beginner");
+    tags.add("easy");
+  }
+
+  if (/\b(naan|chapati|roti|flatbread|poori)\b/.test(text)) {
+    tags.add("pantry");
+    tags.add("beginner");
+  }
+
+  if (/\b(palak|spinach|herbs|coriander|mint|curry leaves)\b/.test(text)) {
+    tags.add("herbs");
+  }
+
+  if (
+    typeof recipe.prepMinutes === "number" &&
+    typeof recipe.cookMinutes === "number" &&
+    recipe.prepMinutes + recipe.cookMinutes <= 35
+  ) {
+    tags.add("easy");
+    tags.add("beginner");
+  }
+
+  // sensible defaults so every recipe can surface useful guides
+  tags.add("spices");
+  tags.add("curry");
+
+  return Array.from(tags);
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -95,7 +175,11 @@ export async function generateMetadata({
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
-  const hero = getRecipeImage(recipe.slug);
+  const hero =
+    typeof recipe.image === "string" && recipe.image.trim().length > 0
+      ? recipe.image
+      : getRecipeImage(recipe.slug);
+
   const heroAbs = absUrl(siteUrl, hero);
 
   const title = recipe?.title ? String(recipe.title) : "Recipe";
@@ -139,7 +223,11 @@ export default async function RecipePage({
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
-  const hero = getRecipeImage(recipe.slug);
+  const hero =
+    typeof recipe.image === "string" && recipe.image.trim().length > 0
+      ? recipe.image
+      : getRecipeImage(recipe.slug);
+
   const placeholder = isPlaceholderImage(hero);
 
   // ✅ robust raw body source (covers lots of shapes)
@@ -215,6 +303,7 @@ export default async function RecipePage({
 
   const canonicalUrl = `${siteUrl}/recipes/${recipe.slug}`;
   const heroAbs = absUrl(siteUrl, hero);
+  const relatedGuideTags = getRelatedGuideTags(recipe);
 
   // ---------- JSON-LD ----------
   const breadcrumbJsonLd = {
@@ -261,12 +350,10 @@ export default async function RecipePage({
       url: siteUrl,
     },
 
-    // Helpful fields for Google
     recipeCuisine: recipe.cuisine || "Indian",
     recipeCategory: "Vegan Indian Recipes",
     keywords: Array.isArray(recipe.tags) ? recipe.tags.join(", ") : undefined,
 
-    // Yield (servings)
     recipeYield:
       typeof recipe.servings === "number"
         ? `${recipe.servings} servings`
@@ -274,12 +361,10 @@ export default async function RecipePage({
         ? `${recipe.serves} servings`
         : undefined,
 
-    // Times (ISO8601 durations)
     prepTime: isoDurationFromMinutes(recipe.prepMinutes),
     cookTime: isoDurationFromMinutes(recipe.cookMinutes),
     totalTime: isoDurationFromMinutes(totalMins ?? undefined),
 
-    // Ingredients + instructions
     recipeIngredient: ingredients.length ? ingredients : undefined,
     recipeInstructions: instructions.length
       ? instructions.map((step: string, i: number) => ({
@@ -296,7 +381,6 @@ export default async function RecipePage({
     <main className="mx-auto max-w-6xl px-6 py-10">
       <style>{`html { scroll-behavior: smooth; }`}</style>
 
-      {/* JSON-LD */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -313,10 +397,8 @@ export default async function RecipePage({
         ← Back to recipes
       </Link>
 
-      {/* TOP CARD */}
       <section className="mt-6 overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <div className="grid gap-6 p-6 lg:grid-cols-[340px_1fr] lg:items-start">
-          {/* HERO IMAGE */}
           <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-black/25">
             <div className="relative aspect-[4/3] w-full">
               <Image
@@ -332,7 +414,6 @@ export default async function RecipePage({
             </div>
           </div>
 
-          {/* TITLE + META */}
           <div>
             <h1 className="text-3xl font-extrabold tracking-wide text-[var(--brand-gold)] sm:text-4xl">
               {recipe.title}
@@ -389,7 +470,6 @@ export default async function RecipePage({
               </div>
             ) : null}
 
-            {/* JUMP TO SECTION BUTTONS + PRINT */}
             <div className="mt-6 flex flex-wrap gap-3">
               <a
                 href="#ingredients"
@@ -416,9 +496,7 @@ export default async function RecipePage({
         </div>
       </section>
 
-      {/* CONTENT GRID */}
       <section className="mt-10 grid gap-10 lg:grid-cols-[1fr_420px] lg:items-start">
-        {/* METHOD */}
         <div
           id="method"
           className={`rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm ${anchorOffsetClass}`}
@@ -445,9 +523,7 @@ export default async function RecipePage({
           )}
         </div>
 
-        {/* RIGHT COLUMN */}
         <div className="space-y-10">
-          {/* INGREDIENTS */}
           <div
             id="ingredients"
             className={`rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm ${anchorOffsetClass}`}
@@ -472,7 +548,6 @@ export default async function RecipePage({
             )}
           </div>
 
-          {/* NOTES */}
           <div
             id="notes"
             className={`rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm ${anchorOffsetClass}`}
@@ -498,6 +573,12 @@ export default async function RecipePage({
           </div>
         </div>
       </section>
+
+      <RelatedGuides
+        title="Learn the technique"
+        tags={relatedGuideTags}
+        max={3}
+      />
     </main>
   );
 }

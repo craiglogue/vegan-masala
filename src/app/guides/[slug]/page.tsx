@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import RelatedRecipes from "@/components/RelatedRecipes";
 
 import { getAllGuideSlugs, getGuideBySlug } from "@/lib/guides";
 
@@ -25,6 +26,24 @@ function extractSections(raw: string) {
   return sections;
 }
 
+function extractFAQs(content: string) {
+  const faqs: { question: string; answer: string }[] = [];
+
+  const faqBlock = content.split("## Frequently Asked Questions")[1];
+  if (!faqBlock) return [];
+
+  const matches = faqBlock.matchAll(/### (.*?)\n([\s\S]*?)(?=\n###|\n##|$)/g);
+
+  for (const m of matches) {
+    faqs.push({
+      question: m[1].trim(),
+      answer: m[2].trim().replace(/\n/g, " "),
+    });
+  }
+
+  return faqs;
+}
+
 function getObjectPosition(token?: string) {
   switch ((token || "").toLowerCase()) {
     case "top30":
@@ -42,10 +61,7 @@ function getObjectPosition(token?: string) {
   }
 }
 
-function getGuideImage(guide: {
-  slug: string;
-  image?: string;
-}) {
+function getGuideImage(guide: { slug: string; image?: string }) {
   const slugImage = `/images/guides/${guide.slug}.png`;
 
   const legacyMap: Record<string, string> = {
@@ -58,7 +74,79 @@ function getGuideImage(guide: {
 
   if (legacyMap[guide.slug]) return legacyMap[guide.slug];
 
-  return slugImage || guide.image || "/images/guides/spices.jpg";
+  return guide.image || slugImage || "/images/guides/spices.jpg";
+}
+
+function getRelatedRecipeTags(slug: string) {
+  const guideRecipeMap: Record<string, string[]> = {
+    "vegan-indian-pantry-staples": [
+      "chana",
+      "rajma",
+      "rice",
+      "curry",
+      "dal",
+    ],
+    "indian-spices-explained-for-beginners": [
+      "curry",
+      "masala",
+      "dal",
+      "chana",
+    ],
+    "how-to-build-a-curry-base": [
+      "curry",
+      "masala",
+      "vindaloo",
+      "korma",
+    ],
+    "lentils-and-dal": [
+      "dal",
+      "lentil",
+      "rajma",
+      "chana",
+      "moong",
+    ],
+    "how-to-temper-spices": [
+      "dal",
+      "lentil",
+      "chana",
+      "rajma",
+    ],
+    "beginner-friendly-vegan-indian-recipes": [
+      "easy",
+      "chana",
+      "dal",
+      "potato",
+      "tofu",
+      "rice",
+    ],
+    "how-to-cook-basmati-rice": [
+      "rice",
+      "biryani",
+      "chana",
+      "rajma",
+      "curry",
+    ],
+    "vegan-dairy-alternatives": [
+      "tofu",
+      "korma",
+      "makhanwala",
+      "butter",
+    ],
+    herbs: [
+      "palak",
+      "spinach",
+      "curry",
+      "chutney",
+    ],
+    equipment: [
+      "instant-pot",
+      "pressure-cooker",
+      "one-pot",
+      "rice",
+    ],
+  };
+
+  return guideRecipeMap[slug] || [];
 }
 
 function renderBlock(body: string) {
@@ -187,6 +275,21 @@ function renderBlock(body: string) {
       continue;
     }
 
+    if (line.startsWith("### ")) {
+      flushAll();
+
+      out.push(
+        <h3
+          key={`h3-${out.length}`}
+          className="mt-6 text-lg font-extrabold text-[var(--brand-gold)]"
+        >
+          {line.replace(/^###\s+/, "").trim()}
+        </h3>
+      );
+
+      continue;
+    }
+
     if (/^\d+\.\s+/.test(line)) {
       flushPara();
       flushBullets();
@@ -261,10 +364,32 @@ export default async function GuidePage({
   if (!guide) return notFound();
 
   const sections = extractSections(guide.content);
+  const faqs = extractFAQs(guide.content);
   const heroImage = getGuideImage(guide);
+  const relatedTags = getRelatedRecipeTags(guide.slug);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
+      {faqs.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: faqs.map((f) => ({
+                "@type": "Question",
+                name: f.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: f.answer,
+                },
+              })),
+            }),
+          }}
+        />
+      )}
+
       <Link
         href="/guides"
         className="text-sm text-[var(--text-soft)] hover:underline"
@@ -308,6 +433,12 @@ export default async function GuidePage({
           </div>
         ))}
       </section>
+
+      <RelatedRecipes
+        title="Recipes to try next"
+        tags={relatedTags}
+        max={6}
+      />
     </main>
   );
 }
