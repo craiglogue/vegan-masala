@@ -6,7 +6,6 @@ import { getAllRecipeSlugs } from "@/lib/recipes";
 import { getAllGuideSlugs } from "@/lib/guides";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
     "https://vegan-masala.com";
@@ -23,12 +22,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/cookies",
   ];
 
+  const recipeHubRoutes = [
+    "/recipes/hub/chickpea",
+    "/recipes/hub/tofu",
+    "/recipes/hub/potato",
+    "/recipes/hub/lentil",
+    "/recipes/hub/cauliflower",
+  ];
+
   const recipeSlugs = getAllRecipeSlugs();
   const guideSlugs = getAllGuideSlugs();
 
   return [
-
-    // Core pages
     ...staticRoutes.map((p) => ({
       url: `${siteUrl}${p}`,
       lastModified: now,
@@ -41,7 +46,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
           : 0.7,
     })),
 
-    // Recipes
+    ...recipeHubRoutes.map((p) => ({
+      url: `${siteUrl}${p}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.85,
+    })),
+
     ...recipeSlugs.map((slug) => ({
       url: `${siteUrl}/recipes/${slug}`,
       lastModified: now,
@@ -49,13 +60,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     })),
 
-    // Guides
     ...guideSlugs.map((slug) => ({
       url: `${siteUrl}/guides/${slug}`,
       lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.75,
     })),
-
   ];
 }
