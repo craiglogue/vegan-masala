@@ -16,7 +16,7 @@ function ensureFileExists(filePath: string) {
 }
 
 async function uploadMedia(imagePath: string) {
-  const accessToken = getPinterestAccessToken();
+  const accessToken = await getPinterestAccessToken();
 
   if (!accessToken) {
     throw new Error("Pinterest not connected");

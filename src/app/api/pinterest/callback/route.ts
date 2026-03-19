@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+import { savePinterestToken } from "@/lib/social/core/pinterestToken";
 
 function base64Credentials(clientId: string, clientSecret: string) {
   return Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+}
+
+function getAdminRedirect(req: Request) {
+  return new URL("/admin/social/queue", req.url);
 }
 
 export async function GET(req: Request) {
@@ -12,21 +17,12 @@ export async function GET(req: Request) {
     const error = searchParams.get("error");
 
     if (error) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error,
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error }, { status: 400 });
     }
 
     if (!code) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "No authorization code returned by Pinterest",
-        },
+        { ok: false, error: "No authorization code returned by Pinterest" },
         { status: 400 }
       );
     }
@@ -37,10 +33,7 @@ export async function GET(req: Request) {
 
     if (!clientId || !clientSecret || !redirectUri) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing Pinterest environment variables",
-        },
+        { ok: false, error: "Missing Pinterest environment variables" },
         { status: 500 }
       );
     }
@@ -73,13 +66,9 @@ export async function GET(req: Request) {
       );
     }
 
-    // TEMP: just show success so we confirm auth works
-    return NextResponse.json({
-      ok: true,
-      message: "Pinterest connected",
-      token_received: !!tokenData.access_token
-    });
+    await savePinterestToken(tokenData);
 
+    return NextResponse.redirect(getAdminRedirect(req));
   } catch (err: any) {
     return NextResponse.json(
       {

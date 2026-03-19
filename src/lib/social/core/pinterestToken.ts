@@ -1,52 +1,43 @@
-import fs from "node:fs";
-import path from "node:path";
+import { Redis } from "@upstash/redis";
 
-export type PinterestTokenData = {
-  access_token?: string;
-  refresh_token?: string;
-  token_type?: string;
-  scope?: string;
-  expires_in?: number;
-  refresh_token_expires_in?: number;
-  [key: string]: unknown;
-};
+const KEY = "pinterest_token";
 
-function getTokenFilePath() {
-  if (process.env.VERCEL) {
-    return "/tmp/pinterest-token.json";
+function getRedis() {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+
+  if (!url || !token) {
+    throw new Error("KV environment variables are missing");
   }
 
-  return path.join(process.cwd(), "generated", "pinterest-token.json");
+  return new Redis({
+    url,
+    token,
+  });
 }
 
-export function loadPinterestToken(): PinterestTokenData | null {
-  try {
-    const file = getTokenFilePath();
+export async function savePinterestToken(data: any) {
+  const redis = getRedis();
 
-    if (!fs.existsSync(file)) {
-      return null;
-    }
+  await redis.set(KEY, data);
 
-    return JSON.parse(fs.readFileSync(file, "utf8"));
-  } catch {
+  return true;
+}
+
+export async function loadPinterestToken() {
+  const redis = getRedis();
+
+  const token = await redis.get(KEY);
+
+  return token;
+}
+
+export async function getPinterestAccessToken() {
+  const token: any = await loadPinterestToken();
+
+  if (!token) {
     return null;
   }
-}
 
-export function savePinterestToken(data: PinterestTokenData) {
-  const file = getTokenFilePath();
-
-  if (process.env.VERCEL) {
-    fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
-    return file;
-  }
-
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
-  return file;
-}
-
-export function getPinterestAccessToken() {
-  const token = loadPinterestToken();
-  return token?.access_token || null;
+  return token.access_token || null;
 }
