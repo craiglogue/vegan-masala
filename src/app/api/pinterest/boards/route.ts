@@ -1,21 +1,53 @@
 import { NextResponse } from "next/server";
-import { loadPinterestToken } from "@/lib/social/core/pinterestToken";
+import { getPinterestAccessToken } from "@/lib/social/core/pinterestToken";
 
 export async function GET() {
   try {
-    const token: any = await loadPinterestToken();
+    const accessToken = await getPinterestAccessToken();
+
+    if (!accessToken) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Pinterest not connected",
+          items: [],
+        },
+        { status: 400 }
+      );
+    }
+
+    const res = await fetch("https://api.pinterest.com/v5/boards", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Failed to fetch Pinterest boards",
+          details: data,
+          items: [],
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       ok: true,
-      hasToken: !!token,
-      hasAccessToken: !!token?.access_token,
-      tokenKeys: token ? Object.keys(token) : [],
+      items: data.items || [],
+      raw: data,
     });
   } catch (err: any) {
     return NextResponse.json(
       {
         ok: false,
-        error: err?.message || "Boards debug failed",
+        error: err?.message || "Boards request failed",
+        items: [],
       },
       { status: 500 }
     );
