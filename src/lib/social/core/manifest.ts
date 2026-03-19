@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const ROOT = process.cwd();
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const FILE = path.join(ROOT, "generated", "manifest.json");
 
 export type ManifestPlatformEntry = {

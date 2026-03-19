@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { generateInstagramBySlug } from "@/lib/social/generateInstagram";
 
-const ROOT = process.cwd();
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const GRAPH_BASE = "https://graph.facebook.com/v23.0";
 
 type PublishFacebookInput = {

@@ -19,14 +19,11 @@ import { backgroundBuffer, findContentImage, logoBuffer } from "./core/images";
 import { buildInstagramCaption, saveCaption } from "./core/captions";
 import { updateManifest } from "./core/manifest";
 
-const ROOT = process.cwd();
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const OUTPUT = path.join(ROOT, "generated", "instagram");
-const PUBLIC_OUTPUT = path.join(
-  ROOT,
-  "public",
-  "generated",
-  "instagram"
-);
+const PUBLIC_OUTPUT = process.env.VERCEL
+  ? null
+  : path.join(ROOT,"public","generated","instagram");
 
 const WIDTH = 1080;
 const HEIGHT = 1080;
@@ -296,12 +293,14 @@ async function createPost(slug: string, title: string, type: ContentType) {
     .png()
     .toFile(out);
 
-    const publicOut = path.join(
-  PUBLIC_OUTPUT,
-  `${slug}.png`
-);
+  if (PUBLIC_OUTPUT) {
+  const publicOut = path.join(
+    PUBLIC_OUTPUT,
+    `${slug}.png`
+  );
 
-fs.copyFileSync(out, publicOut);
+  fs.copyFileSync(out, publicOut);
+}
 
   const caption = buildInstagramCaption(slug, type);
   saveCaption("instagram", slug, caption);

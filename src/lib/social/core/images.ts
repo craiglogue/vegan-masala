@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { findBrandLogo } from "./brand";
 import type { ContentType } from "./content";
 
-const ROOT = process.cwd();
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 
 export function findContentImage(
   slug: string,

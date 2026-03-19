@@ -11,7 +11,7 @@ import { BRAND, getBrandFont } from "@/lib/social/core/brand";
 
 const execFileAsync = promisify(execFile);
 
-const ROOT = process.cwd();
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 
 const GENERATED_IMAGE_DIR = path.join(ROOT, "generated", "instagram");
 const VIDEO_DIR = path.join(ROOT, "generated", "video");

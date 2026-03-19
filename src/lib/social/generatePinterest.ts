@@ -16,7 +16,7 @@ import { backgroundBuffer, findContentImage, logoBuffer } from "./core/images";
 import { buildPinterestCaption, saveCaption } from "./core/captions";
 import { updateManifest } from "./core/manifest";
 
-const ROOT = process.cwd();
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const OUTPUT = path.join(ROOT, "generated", "pinterest");
 
 const WIDTH = 1000;

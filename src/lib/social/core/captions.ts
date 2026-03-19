@@ -2,8 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ContentType } from "./content";
 
-const ROOT = process.cwd();
-
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const CAPTION_DIR = path.join(ROOT,"generated","captions");
 
 function ensure(dir:string){

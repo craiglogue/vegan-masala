@@ -5,10 +5,6 @@ function base64Credentials(clientId: string, clientSecret: string) {
   return Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 }
 
-function getAdminRedirect(req: Request) {
-  return new URL("/admin/social/queue", req.url);
-}
-
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -68,7 +64,12 @@ export async function GET(req: Request) {
 
     await savePinterestToken(tokenData);
 
-    return NextResponse.redirect(getAdminRedirect(req));
+    return NextResponse.json({
+      ok: true,
+      saved: true,
+      hasAccessToken: !!tokenData?.access_token,
+      tokenKeys: Object.keys(tokenData || {}),
+    });
   } catch (err: any) {
     return NextResponse.json(
       {

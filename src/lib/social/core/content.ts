@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const ROOT = process.cwd();
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 
 export const RECIPES_DIR = path.join(ROOT, "content", "recipes");
 export const GUIDES_DIR = path.join(ROOT, "content", "guides");
@@ -9,7 +9,21 @@ export const GUIDES_DIR = path.join(ROOT, "content", "guides");
 export type ContentType = "recipe" | "guide";
 
 export function ensureDir(dir: string) {
-  fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+  }catch{
+
+    const tmpDir = dir.replace(process.cwd(),"/tmp");
+
+    if(!fs.existsSync(tmpDir)){
+      fs.mkdirSync(tmpDir,{recursive:true});
+    }
+
+  }
+
 }
 
 export function contentFiles(dir: string): string[] {
