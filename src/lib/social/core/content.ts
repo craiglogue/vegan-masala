@@ -1,13 +1,37 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
-
 export type ContentType = "recipe" | "guide";
 
-export function ensureDir(dir: string) {
+/* Ignore backup files */
+function isRealContentFile(file: string) {
 
-  if (!fs.existsSync(dir)) {
+  const lower = file.toLowerCase();
+
+  const isMarkdown =
+    lower.endsWith(".md") ||
+    lower.endsWith(".mdx");
+
+  const isBackup =
+    lower.includes(".bak");
+
+  return isMarkdown && !isBackup;
+
+}
+
+function listContentFiles(dir: string){
+
+  if(!fs.existsSync(dir)) return [];
+
+  return fs
+    .readdirSync(dir)
+    .filter(isRealContentFile);
+
+}
+
+export function ensureDir(dir:string){
+
+  if(!fs.existsSync(dir)){
 
     fs.mkdirSync(dir,{
       recursive:true
@@ -33,14 +57,47 @@ export function titleFromSlug(slug:string){
 
 }
 
-export function detectContentTypeBySlug(slug:string):ContentType | null{
+export function detectContentTypeBySlug(
+  slug:string
+):ContentType | null{
 
-  const recipePath=path.join(process.cwd(),"content","recipes",`${slug}.md`);
-  const guidePath=path.join(process.cwd(),"content","guides",`${slug}.md`);
+  const recipeMd=path.join(
+    process.cwd(),
+    "content",
+    "recipes",
+    `${slug}.md`
+  );
 
-  if(fs.existsSync(recipePath)) return "recipe";
+  const recipeMdx=path.join(
+    process.cwd(),
+    "content",
+    "recipes",
+    `${slug}.mdx`
+  );
 
-  if(fs.existsSync(guidePath)) return "guide";
+  const guideMd=path.join(
+    process.cwd(),
+    "content",
+    "guides",
+    `${slug}.md`
+  );
+
+  const guideMdx=path.join(
+    process.cwd(),
+    "content",
+    "guides",
+    `${slug}.mdx`
+  );
+
+  if(
+    fs.existsSync(recipeMd) ||
+    fs.existsSync(recipeMdx)
+  ) return "recipe";
+
+  if(
+    fs.existsSync(guideMd) ||
+    fs.existsSync(guideMdx)
+  ) return "guide";
 
   return null;
 
@@ -48,44 +105,47 @@ export function detectContentTypeBySlug(slug:string):ContentType | null{
 
 export function latestContent(){
 
-  const recipesDir=path.join(process.cwd(),"content","recipes");
-  const guidesDir=path.join(process.cwd(),"content","guides");
+  const recipesDir=path.join(
+    process.cwd(),
+    "content",
+    "recipes"
+  );
+
+  const guidesDir=path.join(
+    process.cwd(),
+    "content",
+    "guides"
+  );
 
   const items:any[]=[];
 
-  if(fs.existsSync(recipesDir)){
+  for(const file of listContentFiles(recipesDir)){
 
-    for(const file of fs.readdirSync(recipesDir)){
+    items.push({
 
-      items.push({
+      file,
+      type:"recipe",
 
-        file,
-        type:"recipe",
-        time:fs.statSync(
-          path.join(recipesDir,file)
-        ).mtime.getTime()
+      time:fs.statSync(
+        path.join(recipesDir,file)
+      ).mtime.getTime()
 
-      });
-
-    }
+    });
 
   }
 
-  if(fs.existsSync(guidesDir)){
+  for(const file of listContentFiles(guidesDir)){
 
-    for(const file of fs.readdirSync(guidesDir)){
+    items.push({
 
-      items.push({
+      file,
+      type:"guide",
 
-        file,
-        type:"guide",
-        time:fs.statSync(
-          path.join(guidesDir,file)
-        ).mtime.getTime()
+      time:fs.statSync(
+        path.join(guidesDir,file)
+      ).mtime.getTime()
 
-      });
-
-    }
+    });
 
   }
 
@@ -99,38 +159,39 @@ export function latestContent(){
 
 export function allContent(){
 
-  const recipesDir=path.join(process.cwd(),"content","recipes");
-  const guidesDir=path.join(process.cwd(),"content","guides");
+  const recipesDir=path.join(
+    process.cwd(),
+    "content",
+    "recipes"
+  );
+
+  const guidesDir=path.join(
+    process.cwd(),
+    "content",
+    "guides"
+  );
 
   const items:any[]=[];
 
-  if(fs.existsSync(recipesDir)){
+  for(const file of listContentFiles(recipesDir)){
 
-    for(const file of fs.readdirSync(recipesDir)){
+    items.push({
 
-      items.push({
+      file,
+      type:"recipe"
 
-        file,
-        type:"recipe"
-
-      });
-
-    }
+    });
 
   }
 
-  if(fs.existsSync(guidesDir)){
+  for(const file of listContentFiles(guidesDir)){
 
-    for(const file of fs.readdirSync(guidesDir)){
+    items.push({
 
-      items.push({
+      file,
+      type:"guide"
 
-        file,
-        type:"guide"
-
-      });
-
-    }
+    });
 
   }
 
