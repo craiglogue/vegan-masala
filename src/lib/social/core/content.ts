@@ -3,101 +3,137 @@ import path from "node:path";
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 
-export const RECIPES_DIR = path.join(ROOT, "content", "recipes");
-export const GUIDES_DIR = path.join(ROOT, "content", "guides");
-
 export type ContentType = "recipe" | "guide";
 
 export function ensureDir(dir: string) {
+
   if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+
+    fs.mkdirSync(dir,{
+      recursive:true
+    });
+
   }
+
 }
 
-  }catch{
+export function slugFromFile(file:string){
 
-    const tmpDir = dir.replace(process.cwd(),"/tmp");
+  return file
+    .replace(".md","")
+    .replace(".mdx","");
 
-    if(!fs.existsSync(tmpDir)){
-      fs.mkdirSync(tmpDir,{recursive:true});
+}
+
+export function titleFromSlug(slug:string){
+
+  return slug
+    .replace(/-/g," ")
+    .replace(/\b\w/g,c=>c.toUpperCase());
+
+}
+
+export function detectContentTypeBySlug(slug:string):ContentType | null{
+
+  const recipePath=path.join(process.cwd(),"content","recipes",`${slug}.md`);
+  const guidePath=path.join(process.cwd(),"content","guides",`${slug}.md`);
+
+  if(fs.existsSync(recipePath)) return "recipe";
+
+  if(fs.existsSync(guidePath)) return "guide";
+
+  return null;
+
+}
+
+export function latestContent(){
+
+  const recipesDir=path.join(process.cwd(),"content","recipes");
+  const guidesDir=path.join(process.cwd(),"content","guides");
+
+  const items:any[]=[];
+
+  if(fs.existsSync(recipesDir)){
+
+    for(const file of fs.readdirSync(recipesDir)){
+
+      items.push({
+
+        file,
+        type:"recipe",
+        time:fs.statSync(
+          path.join(recipesDir,file)
+        ).mtime.getTime()
+
+      });
+
     }
 
   }
 
-}
+  if(fs.existsSync(guidesDir)){
 
-export function contentFiles(dir: string): string[] {
-  if (!fs.existsSync(dir)) return [];
+    for(const file of fs.readdirSync(guidesDir)){
 
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith(".md") || f.endsWith(".mdx"))
-    .map((f) => path.join(dir, f));
-}
+      items.push({
 
-export function latestFile(files: string[]): string | null {
-  if (!files.length) return null;
+        file,
+        type:"guide",
+        time:fs.statSync(
+          path.join(guidesDir,file)
+        ).mtime.getTime()
 
-  return [...files].sort(
-    (a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs
-  )[0];
-}
+      });
 
-export function slugFromFile(file: string): string {
-  return path.basename(file).replace(/\.mdx?$/i, "");
-}
+    }
 
-export function titleFromSlug(slug: string): string {
-  return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-export function detectContentTypeBySlug(slug: string): ContentType | null {
-  const candidates = [
-    { type: "recipe" as const, file: path.join(RECIPES_DIR, `${slug}.mdx`) },
-    { type: "recipe" as const, file: path.join(RECIPES_DIR, `${slug}.md`) },
-    { type: "guide" as const, file: path.join(GUIDES_DIR, `${slug}.mdx`) },
-    { type: "guide" as const, file: path.join(GUIDES_DIR, `${slug}.md`) },
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate.file)) return candidate.type;
   }
 
-  return null;
+  if(!items.length) return null;
+
+  items.sort((a,b)=>b.time-a.time);
+
+  return items[0];
+
 }
 
-export function latestContent():
-  | { file: string; type: ContentType }
-  | null {
-  const recipes = contentFiles(RECIPES_DIR);
-  const guides = contentFiles(GUIDES_DIR);
+export function allContent(){
 
-  const latestRecipe = latestFile(recipes);
-  const latestGuide = latestFile(guides);
+  const recipesDir=path.join(process.cwd(),"content","recipes");
+  const guidesDir=path.join(process.cwd(),"content","guides");
 
-  if (!latestRecipe && !latestGuide) return null;
+  const items:any[]=[];
 
-  if (
-    latestRecipe &&
-    (!latestGuide ||
-      fs.statSync(latestRecipe).mtimeMs >= fs.statSync(latestGuide).mtimeMs)
-  ) {
-    return { file: latestRecipe, type: "recipe" };
+  if(fs.existsSync(recipesDir)){
+
+    for(const file of fs.readdirSync(recipesDir)){
+
+      items.push({
+
+        file,
+        type:"recipe"
+
+      });
+
+    }
+
   }
 
-  return { file: latestGuide as string, type: "guide" };
-}
+  if(fs.existsSync(guidesDir)){
 
-export function allContent(): Array<{ file: string; type: ContentType }> {
-  const recipes = contentFiles(RECIPES_DIR).map((file) => ({
-    file,
-    type: "recipe" as const,
-  }));
+    for(const file of fs.readdirSync(guidesDir)){
 
-  const guides = contentFiles(GUIDES_DIR).map((file) => ({
-    file,
-    type: "guide" as const,
-  }));
+      items.push({
 
-  return [...recipes, ...guides];
+        file,
+        type:"guide"
+
+      });
+
+    }
+
+  }
+
+  return items;
+
 }
