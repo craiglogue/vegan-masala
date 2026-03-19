@@ -43,3 +43,12 @@ vegan-masala.zip
 
 # local artifacts
 vegan-masala.zip
+
+node_modules
+.next
+out
+
+generated/
+.env.local
+.next/
+node_modules/

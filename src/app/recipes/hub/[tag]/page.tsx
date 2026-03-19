@@ -4,11 +4,11 @@ import { getAllRecipes } from "@/lib/recipes";
 export default function RecipeHubPage({
   params,
 }: {
-  params: { tag: string };
+  params: { slug: string };
 }) {
-  const recipes = getAllRecipes();
+  const recipes = getAllRecipes() || [];
 
-  const tag = params.tag.replace(/-/g, " ");
+  const tag = params.slug.replace(/-/g, " ");
 
   const filtered = recipes.filter((r: any) =>
     r.tags?.some((t: string) =>
@@ -26,7 +26,7 @@ export default function RecipeHubPage({
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="text-4xl font-extrabold text-[var(--brand-gold)] mb-8">
+      <h1 className="mb-8 text-4xl font-extrabold text-[var(--brand-gold)]">
         {tag.replace(/\b\w/g, (c) => c.toUpperCase())} Recipes
       </h1>
 
@@ -35,14 +35,14 @@ export default function RecipeHubPage({
           <Link
             key={recipe.slug}
             href={`/recipes/${recipe.slug}`}
-            className="block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 hover:shadow-lg transition"
+            className="block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:shadow-lg"
           >
             <h2 className="text-lg font-bold text-[var(--brand-gold)]">
               {recipe.title}
             </h2>
 
             {recipe.description && (
-              <p className="mt-2 text-sm text-[var(--text-soft)] line-clamp-3">
+              <p className="mt-2 line-clamp-3 text-sm text-[var(--text-soft)]">
                 {recipe.description}
               </p>
             )}
