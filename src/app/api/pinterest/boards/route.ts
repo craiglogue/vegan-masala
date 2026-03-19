@@ -1,31 +1,15 @@
-import fs from "node:fs";
-import path from "node:path";
 import { NextResponse } from "next/server";
-
-const ROOT = process.cwd();
-const TOKEN_FILE = path.join(ROOT, "generated", "pinterest-token.json");
+import { getPinterestAccessToken } from "@/lib/social/core/pinterestToken";
 
 export async function GET() {
   try {
-    if (!fs.existsSync(TOKEN_FILE)) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Pinterest not connected",
-          items: [],
-        },
-        { status: 400 }
-      );
-    }
-
-    const tokenData = JSON.parse(fs.readFileSync(TOKEN_FILE, "utf8"));
-    const accessToken = tokenData?.access_token;
+    const accessToken = getPinterestAccessToken();
 
     if (!accessToken) {
       return NextResponse.json(
         {
           ok: false,
-          error: "No Pinterest access token found",
+          error: "Pinterest not connected",
           items: [],
         },
         { status: 400 }

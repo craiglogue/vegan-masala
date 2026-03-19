@@ -1,9 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
 import { NextResponse } from "next/server";
-
-const ROOT = process.cwd();
-const TOKEN_FILE = path.join(ROOT, "generated", "pinterest-token.json");
 
 function base64Credentials(clientId: string, clientSecret: string) {
   return Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
@@ -78,10 +73,13 @@ export async function GET(req: Request) {
       );
     }
 
-    fs.mkdirSync(path.dirname(TOKEN_FILE), { recursive: true });
-    fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokenData, null, 2), "utf8");
+    // TEMP: just show success so we confirm auth works
+    return NextResponse.json({
+      ok: true,
+      message: "Pinterest connected",
+      token_received: !!tokenData.access_token
+    });
 
-    return NextResponse.redirect("http://localhost:3000/admin/social");
   } catch (err: any) {
     return NextResponse.json(
       {

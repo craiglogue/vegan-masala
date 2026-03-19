@@ -1,43 +1,66 @@
 import fs from "node:fs";
-import path from "node:path";
+import { getPinterestAccessToken } from "@/lib/social/core/pinterestToken";
 
-const ROOT = process.cwd();
-const TOKEN_FILE = path.join(ROOT, "generated", "pinterest-token.json");
-
-function getAccessToken() {
-  if (!fs.existsSync(TOKEN_FILE)) {
-    throw new Error("Pinterest not connected");
-  }
-
-  const tokenData = JSON.parse(fs.readFileSync(TOKEN_FILE, "utf8"));
-  const accessToken = tokenData?.access_token;
-
-  if (!accessToken) {
-    throw new Error("Pinterest access token missing");
-  }
-
-  return accessToken as string;
-}
-
-export async function postPinterestPin(input: {
+type PostPinterestPinInput = {
   title: string;
   description: string;
   link: string;
   imagePath: string;
   boardId: string;
-}) {
-  const accessToken = getAccessToken();
+};
 
-  if (!input.boardId) {
-    throw new Error("Pinterest board ID missing");
+function ensureFileExists(filePath: string) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Pinterest image not found: ${filePath}`);
+  }
+}
+
+async function uploadMedia(imagePath: string) {
+  const accessToken = getPinterestAccessToken();
+
+  if (!accessToken) {
+    throw new Error("Pinterest not connected");
   }
 
-  if (!fs.existsSync(input.imagePath)) {
-    throw new Error(`Pinterest image not found: ${input.imagePath}`);
+  ensureFileExists(imagePath);
+
+  const form = new FormData();
+  const fileBuffer = fs.readFileSync(imagePath);
+  const blob = new Blob([fileBuffer], { type: "image/png" });
+
+  form.append("media_type", "image");
+  form.append("file", blob, "pin-image.png");
+
+  const res = await fetch("https://api.pinterest.com/v5/media", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: form,
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || "Pinterest media upload failed");
   }
 
-  const imageBuffer = fs.readFileSync(input.imagePath);
-  const imageBase64 = imageBuffer.toString("base64");
+  return data;
+}
+
+export async function postPinterestPin(input: PostPinterestPinInput) {
+  const accessToken = getPinterestAccessToken();
+
+  if (!accessToken) {
+    throw new Error("Pinterest not connected");
+  }
+
+  const media = await uploadMedia(input.imagePath);
+  const mediaId = media?.id;
+
+  if (!mediaId) {
+    throw new Error("Pinterest media ID missing");
+  }
 
   const res = await fetch("https://api.pinterest.com/v5/pins", {
     method: "POST",
@@ -53,7 +76,7 @@ export async function postPinterestPin(input: {
       media_source: {
         source_type: "image_base64",
         content_type: "image/png",
-        data: imageBase64,
+        data: fs.readFileSync(input.imagePath).toString("base64"),
       },
     }),
   });
@@ -61,9 +84,7 @@ export async function postPinterestPin(input: {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(
-      data?.message || JSON.stringify(data) || "Pinterest post failed"
-    );
+    throw new Error(data?.message || data?.error || "Pinterest pin creation failed");
   }
 
   return data;
