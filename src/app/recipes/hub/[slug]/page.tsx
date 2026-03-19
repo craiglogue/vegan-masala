@@ -8,7 +8,9 @@ export default function RecipeHubPage({
 }) {
   const recipes = getAllRecipes() || [];
 
-  const tag = params.slug.replace(/-/g, " ");
+  const tag = (params?.slug || "").replace(/-/g," ");
+
+  const recipes = getAllRecipes() || [];
 
   const filtered = recipes.filter((r: any) =>
     r.tags?.some((t: string) =>

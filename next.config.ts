@@ -5,3 +5,17 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+module.exports = {
+  experimental: {
+    serverComponentsExternalPackages: ["sharp"]
+  },
+
+  outputFileTracingExcludes: {
+    "*": [
+      "./public/images/**/*",
+      "./public/generated/**/*",
+      "./public/audio/**/*"
+    ]
+  }
+};
