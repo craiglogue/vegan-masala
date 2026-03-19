@@ -41,20 +41,14 @@ export function ensureDir(dir:string){
 
 }
 
-export function slugFromFile(file:string){
-
-  return file
-    .replace(".md","")
-    .replace(".mdx","");
-
+export function slugFromFile(file: string) {
+  return file.replace(/\.mdx?$/i, "");
 }
 
-export function titleFromSlug(slug:string){
-
+export function titleFromSlug(slug: string) {
   return slug
-    .replace(/-/g," ")
-    .replace(/\b\w/g,c=>c.toUpperCase());
-
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function detectContentTypeBySlug(
