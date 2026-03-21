@@ -33,8 +33,7 @@ type PinterestBoard={
 export default function SocialQueuePage(){
 
 const [queueSlug,setQueueSlug]=useState("");
-const [queuePlatform,setQueuePlatform]=
-useState<QueuePlatform>("instagram");
+const [queuePlatform,setQueuePlatform]=useState<QueuePlatform>("instagram");
 
 const [scheduledFor,setScheduledFor]=useState("");
 const [board,setBoard]=useState("");
@@ -106,6 +105,8 @@ try{
 
 setBoardsLoading(true);
 
+setBoards([]);
+
 const res=await fetch(
 "/api/pinterest/boards",
 {cache:"no-store"}
@@ -113,20 +114,34 @@ const res=await fetch(
 
 const data=await res.json();
 
-if(data.ok){
+if(!res.ok){
+
+setLog(data.error||"Failed to load boards");
+
+return;
+
+}
+
+if(!data.ok){
+
+setLog("Pinterest not connected");
+
+return;
+
+}
 
 setBoards(data.items||[]);
 
-}else{
+if(!data.items?.length){
 
-setBoards([]);
-
-}
+setLog("No Pinterest boards found");
 
 }
-catch{
 
-setBoards([]);
+}
+catch(err:any){
+
+setLog(err?.message||"Board load failed");
 
 }
 finally{
@@ -141,8 +156,7 @@ async function refresh(){
 
 await Promise.all([
 loadQueue(),
-loadSlugs(),
-loadBoards()
+loadSlugs()
 ]);
 
 }
@@ -152,6 +166,23 @@ useEffect(()=>{
 void refresh();
 
 },[]);
+
+/* LOAD BOARDS WHEN PINTEREST SELECTED */
+
+useEffect(()=>{
+
+if(queuePlatform==="pinterest"){
+
+void loadBoards();
+
+}else{
+
+setBoard("");
+setBoards([]);
+
+}
+
+},[queuePlatform]);
 
 async function queuePost(){
 
@@ -173,7 +204,7 @@ return;
 
 if(queuePlatform==="pinterest" && !board){
 
-setLog("Select board");
+setLog("Select Pinterest board");
 
 return;
 
@@ -187,6 +218,7 @@ const res=await fetch(
 "/api/admin/social/queue",
 {
 method:"POST",
+
 headers:{
 "Content-Type":"application/json"
 },
@@ -196,11 +228,7 @@ body:JSON.stringify({
 slug:queueSlug,
 platform:queuePlatform,
 scheduledFor,
-
-board:
-queuePlatform==="pinterest"
-?board
-:null
+board:queuePlatform==="pinterest"?board:null
 
 })
 
@@ -210,13 +238,13 @@ const data=await res.json();
 
 if(!res.ok){
 
-setLog(data.error||"Failed");
+setLog(data.error||"Queue failed");
 
 return;
 
 }
 
-setLog("Queued");
+setLog("Post queued");
 
 setQueueSlug("");
 setScheduledFor("");
@@ -227,7 +255,7 @@ await loadQueue();
 }
 catch(err:any){
 
-setLog(err?.message||"Failed");
+setLog(err?.message||"Queue failed");
 
 }
 finally{
@@ -253,22 +281,20 @@ const data=await res.json();
 
 if(!res.ok){
 
-setLog(data.error||"Failed");
+setLog(data.error||"Run failed");
 
 return;
 
 }
 
-setLog(
-`Processed ${data.count||0}`
-);
+setLog(`Processed ${data.count||0}`);
 
 await loadQueue();
 
 }
 catch(err:any){
 
-setLog(err?.message||"Failed");
+setLog(err?.message||"Run failed");
 
 }
 finally{
@@ -299,7 +325,7 @@ await loadQueue();
 }
 catch{
 
-setLog("Failed");
+setLog("Clear failed");
 
 }
 finally{
@@ -314,7 +340,7 @@ async function build30(){
 
 if(!board){
 
-setLog("Select board");
+setLog("Select board first");
 
 return;
 
@@ -345,16 +371,14 @@ board
 
 const data=await res.json();
 
-setLog(
-`Created ${data.count||0}`
-);
+setLog(`Created ${data.count||0}`);
 
 await loadQueue();
 
 }
 catch{
 
-setLog("Failed");
+setLog("Build failed");
 
 }
 finally{
@@ -391,7 +415,6 @@ Social Queue
 
 </div>
 
-
 <section className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
 
 <h2 className="text-xl font-bold text-[var(--brand-gold)]">
@@ -414,7 +437,7 @@ className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4
 >
 
 <option value="">
-{slugsLoading?"Loading":"Select"}
+{slugsLoading?"Loading...":"Select content"}
 </option>
 
 {availableSlugs.map(item=>(
@@ -429,7 +452,6 @@ className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4
 
 </div>
 
-
 <div>
 
 <label className="text-sm font-bold text-[var(--brand-gold)]">
@@ -438,11 +460,7 @@ Platform
 
 <select
 value={queuePlatform}
-onChange={e=>
-setQueuePlatform(
-e.target.value as QueuePlatform
-)
-}
+onChange={e=>setQueuePlatform(e.target.value as QueuePlatform)}
 
 className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-white"
 >
@@ -454,7 +472,6 @@ className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4
 </select>
 
 </div>
-
 
 <div>
 
@@ -475,7 +492,11 @@ className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4
 >
 
 <option value="">
-{boardsLoading?"Loading":"Select"}
+{queuePlatform!=="pinterest"
+?"Select Pinterest first"
+:boardsLoading
+?"Loading boards..."
+:"Select board"}
 </option>
 
 {boards.map(b=>(
@@ -489,7 +510,6 @@ className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4
 </select>
 
 </div>
-
 
 <div>
 
@@ -513,77 +533,45 @@ className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4
 
 </div>
 
-
 <div className="mt-6 flex flex-wrap gap-3">
 
 <button
-
-onClick={()=>queuePost()}
-
+onClick={queuePost}
 disabled={queueLoading}
-
 className="rounded-xl bg-[var(--brand-red)] px-6 py-3 text-white font-bold"
-
 >
-
 Queue
-
 </button>
 
-
 <button
-
-onClick={()=>runQueue()}
-
+onClick={runQueue}
 disabled={queueLoading}
-
 className="rounded-xl border border-[var(--border)] px-6 py-3 text-[var(--brand-gold)] font-bold"
-
 >
-
 Run Queue
-
 </button>
 
-
 <button
-
-onClick={()=>build30()}
-
+onClick={build30}
 disabled={queueLoading||!board}
-
 className="rounded-xl bg-[var(--brand-gold)] px-6 py-3 text-black font-bold"
-
 >
-
 Build 30 days
-
 </button>
-
 
 <button
-
-onClick={()=>clearQueue()}
-
+onClick={clearQueue}
 disabled={queueLoading}
-
 className="rounded-xl border border-red-500 px-6 py-3 text-red-400 font-bold"
-
 >
-
 Clear Queue
-
 </button>
-
 
 </div>
 
 </section>
 
-
-<section className="mt-8 grid gap-8 lg:grid-cols-2">
-
-<div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
+<section className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
 
 <h2 className="text-xl font-bold text-[var(--brand-gold)]">
 Log
@@ -594,59 +582,6 @@ Log
 {log}
 
 </pre>
-
-</div>
-
-
-<div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-
-<h2 className="text-xl font-bold text-[var(--brand-gold)]">
-Queue
-</h2>
-
-<div className="mt-4 space-y-3">
-
-{queueItems.map(item=>(
-
-<div
-key={item.id}
-
-className="rounded-xl border border-[var(--border)] bg-black/20 p-4"
->
-
-<div className="font-bold text-[var(--brand-gold)]">
-{item.title||item.slug}
-</div>
-
-<div className="text-xs text-[var(--text-soft)]">
-{item.slug}
-</div>
-
-<div className="mt-2 text-xs">
-{item.platform}
-{item.board?` • ${boardName(item.board)}`:""}
- • {item.status}
-</div>
-
-<div className="text-xs mt-1">
-{new Date(item.scheduledFor).toLocaleString()}
-</div>
-
-{item.error&&(
-
-<div className="text-red-400 text-xs mt-2">
-{item.error}
-</div>
-
-)}
-
-</div>
-
-))}
-
-</div>
-
-</div>
 
 </section>
 

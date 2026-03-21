@@ -3,192 +3,119 @@ import path from "node:path";
 
 export type ContentType = "recipe" | "guide";
 
-/* Ignore backup files */
-function isRealContentFile(file: string) {
+const ROOT =
+process.env.VERCEL
+? "/var/task"
+: process.cwd();
 
-  const lower = file.toLowerCase();
+const RECIPES_DIR =
+path.join(ROOT,"content","recipes");
 
-  const isMarkdown =
-    lower.endsWith(".md") ||
-    lower.endsWith(".mdx");
-
-  const isBackup =
-    lower.includes(".bak");
-
-  return isMarkdown && !isBackup;
-
-}
-
-function listContentFiles(dir: string){
-
-  if(!fs.existsSync(dir)) return [];
-
-  return fs
-    .readdirSync(dir)
-    .filter(isRealContentFile);
-
-}
+const GUIDES_DIR =
+path.join(ROOT,"content","guides");
 
 export function ensureDir(dir:string){
 
-  if(!fs.existsSync(dir)){
+if(!fs.existsSync(dir)){
 
-    fs.mkdirSync(dir,{
-      recursive:true
-    });
-
-  }
+fs.mkdirSync(dir,{
+recursive:true
+});
 
 }
 
-export function slugFromFile(file: string) {
-  return file.replace(/\.mdx?$/i, "");
 }
 
-export function titleFromSlug(slug: string) {
-  return slug
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
+function list(dir:string,type:ContentType){
 
-export function detectContentTypeBySlug(
-  slug:string
-):ContentType | null{
+if(!fs.existsSync(dir)) return [];
 
-  const recipeMd=path.join(
-    process.cwd(),
-    "content",
-    "recipes",
-    `${slug}.md`
-  );
+return fs.readdirSync(dir)
 
-  const recipeMdx=path.join(
-    process.cwd(),
-    "content",
-    "recipes",
-    `${slug}.mdx`
-  );
+.filter(f=>
+f.endsWith(".mdx") ||
+f.endsWith(".md")
+)
 
-  const guideMd=path.join(
-    process.cwd(),
-    "content",
-    "guides",
-    `${slug}.md`
-  );
+.filter(f=>
+!f.includes(".bak")
+)
 
-  const guideMdx=path.join(
-    process.cwd(),
-    "content",
-    "guides",
-    `${slug}.mdx`
-  );
+.map(file=>({
 
-  if(
-    fs.existsSync(recipeMd) ||
-    fs.existsSync(recipeMdx)
-  ) return "recipe";
+file,
 
-  if(
-    fs.existsSync(guideMd) ||
-    fs.existsSync(guideMdx)
-  ) return "guide";
+type
 
-  return null;
-
-}
-
-export function latestContent(){
-
-  const recipesDir=path.join(
-    process.cwd(),
-    "content",
-    "recipes"
-  );
-
-  const guidesDir=path.join(
-    process.cwd(),
-    "content",
-    "guides"
-  );
-
-  const items:any[]=[];
-
-  for(const file of listContentFiles(recipesDir)){
-
-    items.push({
-
-      file,
-      type:"recipe",
-
-      time:fs.statSync(
-        path.join(recipesDir,file)
-      ).mtime.getTime()
-
-    });
-
-  }
-
-  for(const file of listContentFiles(guidesDir)){
-
-    items.push({
-
-      file,
-      type:"guide",
-
-      time:fs.statSync(
-        path.join(guidesDir,file)
-      ).mtime.getTime()
-
-    });
-
-  }
-
-  if(!items.length) return null;
-
-  items.sort((a,b)=>b.time-a.time);
-
-  return items[0];
+}));
 
 }
 
 export function allContent(){
 
-  const recipesDir=path.join(
-    process.cwd(),
-    "content",
-    "recipes"
-  );
+return [
 
-  const guidesDir=path.join(
-    process.cwd(),
-    "content",
-    "guides"
-  );
+...list(RECIPES_DIR,"recipe"),
 
-  const items:any[]=[];
+...list(GUIDES_DIR,"guide")
 
-  for(const file of listContentFiles(recipesDir)){
+];
 
-    items.push({
+}
 
-      file,
-      type:"recipe"
+export function slugFromFile(file:string){
 
-    });
+return file
 
-  }
+.replace(".mdx","")
+.replace(".md","");
 
-  for(const file of listContentFiles(guidesDir)){
+}
 
-    items.push({
+export function titleFromSlug(slug:string){
 
-      file,
-      type:"guide"
+return slug
 
-    });
+.replace(/-/g," ")
 
-  }
+.replace(/\b\w/g,
+c=>c.toUpperCase()
+);
 
-  return items;
+}
+
+export function detectContentTypeBySlug(slug:string){
+
+const recipePath =
+path.join(
+RECIPES_DIR,
+`${slug}.mdx`
+);
+
+const guidePath =
+path.join(
+GUIDES_DIR,
+`${slug}.mdx`
+);
+
+if(fs.existsSync(recipePath))
+return "recipe";
+
+if(fs.existsSync(guidePath))
+return "guide";
+
+return null;
+
+}
+
+export function latestContent(){
+
+const items =
+allContent();
+
+if(!items.length)
+return null;
+
+return items[items.length-1];
 
 }

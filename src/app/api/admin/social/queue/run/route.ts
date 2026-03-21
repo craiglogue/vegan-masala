@@ -1,107 +1,173 @@
-import path from "node:path";
 import { NextResponse } from "next/server";
 
 import {
-  dueQueueItems,
-  markQueueItemFailed,
-  markQueueItemPosted,
+
+dueQueueItems,
+markQueueItemFailed,
+markQueueItemPosted
+
 } from "@/lib/social/core/queue";
 
-import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
-import { postPinterestPin } from "@/lib/social/core/pinterestPost";
+import {
 
-import { publishInstagram } from "@/lib/social/publishers/publishInstagram";
-import { publishFacebook } from "@/lib/social/publishers/publishFacebook";
+generatePinterestBySlug
 
-const ROOT = process.cwd();
+} from "@/lib/social/generatePinterest";
 
-export async function POST(req: Request) {
-  try {
-    const requiredSecret = process.env.SOCIAL_SCHEDULER_SECRET;
-    const providedSecret = req.headers.get("x-scheduler-secret");
+import {
 
-    if (requiredSecret && providedSecret !== requiredSecret) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Unauthorized scheduler request",
-        },
-        { status: 401 }
-      );
-    }
+postPinterestPin
 
-    const due = dueQueueItems();
-    let count = 0;
+} from "@/lib/social/core/pinterestPost";
 
-    for (const item of due) {
-      try {
-        if (item.platform === "pinterest") {
-          if (!item.board) {
-            throw new Error("Pinterest board missing");
-          }
+import {
 
-          await generatePinterestBySlug(item.slug);
+publishInstagram
 
-          const imagePath = path.join(
-            ROOT,
-            "generated",
-            "pinterest",
-            `${item.slug}.png`
-          );
+} from "@/lib/social/publishers/publishInstagram";
 
-          await postPinterestPin({
-            title: item.title || item.slug,
-            description: item.caption || "",
-            link: item.url || "",
-            imagePath,
-            boardId: item.board,
-          });
+import {
 
-          markQueueItemPosted(item.id);
-          count++;
-          continue;
-        }
+publishFacebook
 
-        if (item.platform === "instagram") {
-          await publishInstagram({
-            slug: item.slug,
-            caption: item.caption || "",
-          });
+} from "@/lib/social/publishers/publishFacebook";
 
-          markQueueItemPosted(item.id);
-          count++;
-          continue;
-        }
+export async function POST(){
 
-        if (item.platform === "facebook") {
-          await publishFacebook({
-            slug: item.slug,
-            caption: item.caption || "",
-          });
+try{
 
-          markQueueItemPosted(item.id);
-          count++;
-          continue;
-        }
+const due=
+dueQueueItems();
 
-        markQueueItemFailed(item.id, `Unsupported platform: ${item.platform}`);
-      } catch (err: any) {
-        markQueueItemFailed(item.id, err?.message || "Queue run failed");
-      }
-    }
+let count=0;
 
-    return NextResponse.json({
-      ok: true,
-      count,
-      message: "Due posts processed",
-    });
-  } catch (err: any) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: err?.message || "Failed to run queue",
-      },
-      { status: 500 }
-    );
-  }
+for(const item of due){
+
+try{
+
+if(item.platform==="pinterest"){
+
+if(!item.board){
+
+throw new Error(
+"Board missing"
+);
+
+}
+
+const generated=
+await generatePinterestBySlug(
+item.slug
+);
+
+await postPinterestPin({
+
+title:
+item.title || item.slug,
+
+description:
+item.caption || "",
+
+link:
+item.url || "",
+
+imageUrl:
+generated.imageUrl,
+
+boardId:
+item.board
+
+});
+
+markQueueItemPosted(
+item.id
+);
+
+count++;
+
+continue;
+
+}
+
+if(item.platform==="instagram"){
+
+await publishInstagram({
+
+slug:item.slug,
+
+caption:
+item.caption||""
+
+});
+
+markQueueItemPosted(
+item.id);
+
+count++;
+
+continue;
+
+}
+
+if(item.platform==="facebook"){
+
+await publishFacebook({
+
+slug:item.slug,
+
+caption:
+item.caption||""
+
+});
+
+markQueueItemPosted(
+item.id);
+
+count++;
+
+continue;
+
+}
+
+markQueueItemFailed(
+
+item.id,
+
+"Unsupported platform"
+
+);
+
+}catch(err:any){
+
+markQueueItemFailed(
+
+item.id,
+
+err?.message||
+"Queue failed"
+
+);
+
+}
+
+}
+
+return NextResponse.json({
+
+ok:true,
+count
+
+});
+
+}catch(err:any){
+
+return NextResponse.json({
+
+ok:false,
+error:err?.message
+
+},{status:500});
+
+}
+
 }

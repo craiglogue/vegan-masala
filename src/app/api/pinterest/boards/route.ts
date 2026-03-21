@@ -1,55 +1,85 @@
 import { NextResponse } from "next/server";
 import { getPinterestAccessToken } from "@/lib/social/core/pinterestToken";
 
-export async function GET() {
-  try {
-    const accessToken = await getPinterestAccessToken();
+export async function GET(){
 
-    if (!accessToken) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Pinterest not connected",
-          items: [],
-        },
-        { status: 400 }
-      );
-    }
+try{
 
-    const res = await fetch("https://api.pinterest.com/v5/boards", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      cache: "no-store",
-    });
+const token =
+await getPinterestAccessToken();
 
-    const data = await res.json();
+if(!token){
 
-    if (!res.ok) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Failed to fetch Pinterest boards",
-          details: data,
-          items: [],
-        },
-        { status: 500 }
-      );
-    }
+return NextResponse.json({
 
-    return NextResponse.json({
-      ok: true,
-      items: data.items || [],
-      raw: data,
-    });
-  } catch (err: any) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: err?.message || "Boards request failed",
-        items: [],
-      },
-      { status: 500 }
-    );
-  }
+ok:false,
+items:[]
+
+});
+
+}
+
+const res = await fetch(
+
+"https://api.pinterest.com/v5/boards",
+
+{
+
+headers:{
+
+Authorization:`Bearer ${token}`
+
+}
+
+}
+
+);
+
+const data =
+await res.json();
+
+if(!res.ok){
+
+return NextResponse.json({
+
+ok:false,
+items:[]
+
+});
+
+}
+
+const boards =
+(data?.items || []).map(
+
+(b:any)=>({
+
+id:b.id,
+
+name:b.name
+
+})
+
+);
+
+return NextResponse.json({
+
+ok:true,
+
+items:boards
+
+});
+
+}catch{
+
+return NextResponse.json({
+
+ok:false,
+
+items:[]
+
+});
+
+}
+
 }

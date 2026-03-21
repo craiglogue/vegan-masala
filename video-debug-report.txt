@@ -1,0 +1,229 @@
+VIDEO GENERATOR DEBUG SCAN
+==========================
+Root: /Users/craiglogue/Desktop/vegan-masala
+Git HEAD: 5860451
+Working tree dirty: YES
+
+=== Duplicate likely-target files ===
+
+generateInstagram.ts:
+  - src/lib/social/generateInstagram.ts
+
+generatePinterest.ts:
+  - src/lib/social/generatePinterest.ts
+
+buildRecipeVideo.ts:
+  - src/lib/social/video/buildRecipeVideo.ts
+
+route.ts:
+  - src/app/admin/social/caption/route.ts
+  - src/app/api/admin/hero/route.ts
+  - src/app/api/admin/import/route.ts
+  - src/app/api/admin/pipeline/route.ts
+  - src/app/api/admin/social/auto/route.ts
+  - src/app/api/admin/social/automation/growth/route.ts
+  - src/app/api/admin/social/automation/route.ts
+  - src/app/api/admin/social/caption/route.ts
+  - src/app/api/admin/social/manifest/route.ts
+  - src/app/api/admin/social/queue/route.ts
+  - src/app/api/admin/social/queue/run/route.ts
+  - src/app/api/admin/social/route.ts
+  - src/app/api/admin/social/slugs/route.ts
+  - src/app/api/admin/social/video/route.ts
+  - src/app/api/admin/upload/route.ts
+  - src/app/api/contact/route.ts
+  - src/app/api/pinterest/boards/route.ts
+  - src/app/api/pinterest/callback/route.ts
+  - src/app/api/pinterest/connect/route.ts
+  - src/lib/admin/import/route.ts
+  - src/lib/admin/rewrite/route.ts
+
+=== Search: import satori ===
+- scripts/generate-instagram-posts.mjs:6
+  import satori from "satori";
+- scripts/generate-pins.mjs:6
+  import satori from "satori";
+- src/lib/social/generatePinterest.ts:3
+  import satori from "satori";
+
+=== Search: await satori( ===
+- scripts/debug-video-generator.js:165
+  console.log(`    await satori(): ${currentHasAwaitSatori ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:174
+  console.log(`    await satori(): ${headHasAwaitSatori ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:213
+  reportSection("Search: await satori(");
+- scripts/debug-video-generator.js:261
+  if (satoriCalls.length) console.log(`- await satori(...) count: ${satoriCalls.length}`);
+- scripts/generate-instagram-posts.mjs:455
+  const svg = await satori(element, {
+- scripts/generate-pins.mjs:503
+  const svg = await satori(element, {
+- src/lib/social/generatePinterest.ts:283
+  const svg=await satori(
+
+=== Search: generateInstagramBySlug( ===
+- scripts/debug-video-generator.js:166
+  console.log(`    calls generateInstagramBySlug(): ${currentCallsGenerateInstagram ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:175
+  console.log(`    calls generateInstagramBySlug(): ${headCallsGenerateInstagram ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:216
+  reportSection("Search: generateInstagramBySlug(");
+- scripts/debug-video-generator.js:262
+  if (instaCalls.length) console.log(`- generateInstagramBySlug(...) call count: ${instaCalls.length}`);
+- src/app/api/admin/social/automation/growth/route.ts:71
+  await generateInstagramBySlug(slug);
+- src/app/api/admin/social/automation/route.ts:102
+  await generateInstagramBySlug(slug);
+- src/app/api/admin/social/route.ts:42
+  if (mode === "single" && slug) count = (await generateInstagramBySlug(slug)).count ?? 0;
+- src/app/api/admin/social/route.ts:63
+  generateInstagramBySlug(slug),
+- src/lib/social/generateInstagram.ts:292
+  export async function generateInstagramBySlug(slug: string) {
+- src/lib/social/publishers/publishFacebook.ts:83
+  await generateInstagramBySlug(input.slug);
+- src/lib/social/publishers/publishInstagram.ts:106
+  await generateInstagramBySlug(input.slug);
+
+=== Search: buildRecipeVideo( ===
+- scripts/debug-video-generator.js:167
+  console.log(`    calls buildRecipeVideo(): ${currentCallsBuildRecipeVideo ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:176
+  console.log(`    calls buildRecipeVideo(): ${headCallsBuildRecipeVideo ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:219
+  reportSection("Search: buildRecipeVideo(");
+- src/app/api/admin/social/automation/growth/route.ts:75
+  await buildRecipeVideo(slug);
+- src/app/api/admin/social/automation/route.ts:115
+  await buildRecipeVideo(slug);
+- src/lib/social/video/buildRecipeVideo.ts:1
+  export async function buildRecipeVideo(slug: string) {
+
+=== Search: explicit video route ===
+- scripts/debug-video-generator.js:166
+  console.log(`    calls generateInstagramBySlug(): ${currentCallsGenerateInstagram ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:167
+  console.log(`    calls buildRecipeVideo(): ${currentCallsBuildRecipeVideo ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:175
+  console.log(`    calls generateInstagramBySlug(): ${headCallsGenerateInstagram ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:176
+  console.log(`    calls buildRecipeVideo(): ${headCallsBuildRecipeVideo ? "YES" : "no"}`);
+- scripts/debug-video-generator.js:216
+  reportSection("Search: generateInstagramBySlug(");
+- scripts/debug-video-generator.js:219
+  reportSection("Search: buildRecipeVideo(");
+- scripts/debug-video-generator.js:235
+  "src/app/api/admin/social/video/route.ts",
+- scripts/debug-video-generator.js:262
+  if (instaCalls.length) console.log(`- generateInstagramBySlug(...) call count: ${instaCalls.length}`);
+- src/app/admin/social/page.tsx:39
+  href:"/admin/social/video",
+- src/app/admin/social/page.tsx:103
+  href="/admin/social/video"
+- src/app/admin/social/video/page.tsx:57
+  const res = await fetch("/api/admin/social/video", {
+- src/app/api/admin/social/automation/growth/route.ts:71
+  await generateInstagramBySlug(slug);
+- src/app/api/admin/social/automation/growth/route.ts:75
+  await buildRecipeVideo(slug);
+- src/app/api/admin/social/automation/route.ts:102
+  await generateInstagramBySlug(slug);
+- src/app/api/admin/social/automation/route.ts:115
+  await buildRecipeVideo(slug);
+- src/app/api/admin/social/route.ts:42
+  if (mode === "single" && slug) count = (await generateInstagramBySlug(slug)).count ?? 0;
+- src/app/api/admin/social/route.ts:63
+  generateInstagramBySlug(slug),
+- src/lib/social/generateInstagram.ts:292
+  export async function generateInstagramBySlug(slug: string) {
+- src/lib/social/publishers/publishFacebook.ts:83
+  await generateInstagramBySlug(input.slug);
+- src/lib/social/publishers/publishInstagram.ts:106
+  await generateInstagramBySlug(input.slug);
+- src/lib/social/video/buildRecipeVideo.ts:1
+  export async function buildRecipeVideo(slug: string) {
+
+=== Target file state ===
+
+File: src/lib/social/generateInstagram.ts
+  Exists: yes
+  Changed vs HEAD: no
+  Working tree:
+    imports satori: no
+    await satori(): no
+    calls generateInstagramBySlug(): YES
+    calls buildRecipeVideo(): no
+  HEAD commit version:
+    imports satori: no
+    await satori(): no
+    calls generateInstagramBySlug(): YES
+    calls buildRecipeVideo(): no
+
+File: src/lib/social/generatePinterest.ts
+  Exists: yes
+  Changed vs HEAD: YES
+  Working tree:
+    imports satori: YES
+    await satori(): YES
+    calls generateInstagramBySlug(): no
+    calls buildRecipeVideo(): no
+  HEAD commit version:
+    imports satori: YES
+    await satori(): YES
+    calls generateInstagramBySlug(): no
+    calls buildRecipeVideo(): no
+
+File: src/lib/social/video/buildRecipeVideo.ts
+  Exists: yes
+  Changed vs HEAD: no
+  Working tree:
+    imports satori: no
+    await satori(): no
+    calls generateInstagramBySlug(): no
+    calls buildRecipeVideo(): YES
+  HEAD commit version:
+    imports satori: no
+    await satori(): no
+    calls generateInstagramBySlug(): no
+    calls buildRecipeVideo(): YES
+
+File: src/app/api/admin/social/video/route.ts
+  Exists: yes
+  Changed vs HEAD: no
+  Working tree:
+    imports satori: no
+    await satori(): no
+    calls generateInstagramBySlug(): no
+    calls buildRecipeVideo(): no
+  HEAD commit version:
+    imports satori: no
+    await satori(): no
+    calls generateInstagramBySlug(): no
+    calls buildRecipeVideo(): no
+
+=== Git changed files ===
+D content/recipes/aloo-tikki.mdx
+ M public/generated/instagram/aloo-baingan-recipe.png
+ M public/generated/instagram/chana-masala.png
+ M public/generated/instagram/gobi-65-recipe-cauliflower-65-fry.png
+ M src/app/admin/social/queue/page.tsx
+ M src/app/admin/social/video/page.tsx
+ M src/app/api/admin/social/queue/route.ts
+ M src/app/api/admin/social/queue/run/route.ts
+ M src/app/api/admin/social/slugs/route.ts
+ M src/app/api/pinterest/boards/route.ts
+ M src/lib/social/core/content.ts
+ M src/lib/social/core/pinterestPost.ts
+ M src/lib/social/generatePinterest.ts
+?? public/vercel.json
+?? scripts/debug-video-generator.js
+?? vegan-masala-debug-small.zip
+?? video-debug-report.txt
+
+=== Quick diagnosis ===
+Potential live problem paths still exist:
+- satori import count: 3
+- await satori(...) count: 7
+- generateInstagramBySlug(...) call count: 11
+If these appear in HEAD commit output above, Vercel can still be deploying them.
