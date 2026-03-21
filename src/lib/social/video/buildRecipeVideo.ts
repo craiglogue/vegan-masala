@@ -4,6 +4,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import sharp from "sharp";
+import { put } from "@vercel/blob";
 
 import {
   detectContentTypeBySlug,
@@ -21,7 +22,7 @@ const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const GENERATED_IMAGE_DIR = path.join(ROOT, "generated", "instagram");
 const VIDEO_DIR = path.join(ROOT, "generated", "video");
 const TEMP_DIR = path.join(ROOT, "generated", "video-temp");
-const PUBLIC_VIDEO_DIR = path.join(process.cwd(), "public", "generated", "video");
+const LOCAL_PUBLIC_VIDEO_DIR = path.join(process.cwd(), "public", "generated", "video");
 
 const WIDTH = 1080;
 const HEIGHT = 1920;
@@ -260,7 +261,10 @@ async function concat(intro: string, main: string, outro: string, final: string)
 export async function buildRecipeVideo(slug: string) {
   ensureDir(VIDEO_DIR);
   ensureDir(TEMP_DIR);
-  ensureDir(PUBLIC_VIDEO_DIR);
+
+  if (!process.env.VERCEL) {
+    ensureDir(LOCAL_PUBLIC_VIDEO_DIR);
+  }
 
   const logs: string[] = [];
   logs.push(`Build start: ${slug}`);
@@ -284,8 +288,6 @@ export async function buildRecipeVideo(slug: string) {
   const outroMp4 = path.join(TEMP_DIR, `${slug}-outro.mp4`);
 
   const final = path.join(VIDEO_DIR, `${slug}.mp4`);
-  const publicFile = path.join(PUBLIC_VIDEO_DIR, `${slug}.mp4`);
-  const publicUrl = `/generated/video/${slug}.mp4?v=${Date.now()}`;
 
   const introText =
     type === "guide" ? "Indian Cooking Guide" : "Vegan Indian Recipe";
@@ -311,15 +313,39 @@ export async function buildRecipeVideo(slug: string) {
   logs.push("Concatenating clips");
   await concat(introMp4, mainMp4, outroMp4, final);
 
-  logs.push("Copying video to public folder");
-  fs.copyFileSync(final, publicFile);
+  if (process.env.VERCEL) {
+    logs.push("Uploading video to Vercel Blob");
 
-  logs.push(`Public URL: ${publicUrl}`);
+    const fileBuffer = fs.readFileSync(final);
+
+    const blob = await put(`videos/${slug}.mp4`, fileBuffer, {
+      access: "public",
+      contentType: "video/mp4",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+
+    logs.push(`Blob URL: ${blob.url}`);
+    logs.push("Build complete");
+
+    return {
+      success: true,
+      video: blob.url,
+      logs,
+    };
+  }
+
+  const localPublicFile = path.join(LOCAL_PUBLIC_VIDEO_DIR, `${slug}.mp4`);
+  fs.copyFileSync(final, localPublicFile);
+
+  const localUrl = `/generated/video/${slug}.mp4?v=${Date.now()}`;
+
+  logs.push(`Local URL: ${localUrl}`);
   logs.push("Build complete");
 
   return {
     success: true,
-    video: publicUrl,
+    video: localUrl,
     logs,
   };
 }
