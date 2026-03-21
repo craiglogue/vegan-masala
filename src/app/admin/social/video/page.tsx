@@ -2,8 +2,17 @@
 
 import { useEffect, useState } from "react";
 
+type SlugItem =
+  | string
+  | {
+      slug?: string;
+      type?: string;
+      title?: string;
+      label?: string;
+    };
+
 type SlugResponse = {
-  slugs?: string[];
+  slugs?: SlugItem[];
 };
 
 type VideoApiResponse = {
@@ -14,6 +23,13 @@ type VideoApiResponse = {
     success?: boolean;
     video?: string;
   };
+};
+
+type NormalizedSlug = {
+  slug: string;
+  label: string;
+  type?: string;
+  title?: string;
 };
 
 async function safeJson(res: Response) {
@@ -29,8 +45,41 @@ async function safeJson(res: Response) {
   }
 }
 
+function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
+  if (typeof item === "string") {
+    const slug = item.trim();
+    if (!slug) return null;
+
+    return {
+      slug,
+      label: slug,
+    };
+  }
+
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const slug = typeof item.slug === "string" ? item.slug.trim() : "";
+  if (!slug) return null;
+
+  const label =
+    typeof item.label === "string" && item.label.trim()
+      ? item.label.trim()
+      : typeof item.title === "string" && item.title.trim()
+      ? item.title.trim()
+      : slug;
+
+  return {
+    slug,
+    label,
+    type: typeof item.type === "string" ? item.type : undefined,
+    title: typeof item.title === "string" ? item.title : undefined,
+  };
+}
+
 export default function AdminSocialVideoPage() {
-  const [slugs, setSlugs] = useState<string[]>([]);
+  const [slugs, setSlugs] = useState<NormalizedSlug[]>([]);
   const [selectedSlug, setSelectedSlug] = useState("");
   const [status, setStatus] = useState("");
   const [loadingSlugs, setLoadingSlugs] = useState(true);
@@ -59,11 +108,15 @@ export default function AdminSocialVideoPage() {
           throw new Error(data?.error || "Failed to load slugs");
         }
 
-        const nextSlugs = Array.isArray(data?.slugs) ? data.slugs : [];
+        const rawItems = Array.isArray(data?.slugs) ? data.slugs : [];
+        const nextSlugs = rawItems
+          .map(normalizeSlugItem)
+          .filter((item): item is NormalizedSlug => item !== null);
+
         setSlugs(nextSlugs);
 
         if (nextSlugs.length > 0) {
-          setSelectedSlug(nextSlugs[0]);
+          setSelectedSlug(nextSlugs[0].slug);
         } else {
           setSelectedSlug("");
           setStatus("No slugs found");
@@ -145,9 +198,9 @@ export default function AdminSocialVideoPage() {
           ) : slugs.length === 0 ? (
             <option value="">No slugs found</option>
           ) : (
-            slugs.map((slug) => (
-              <option key={slug} value={slug}>
-                {slug}
+            slugs.map((item) => (
+              <option key={item.slug} value={item.slug}>
+                {item.label}
               </option>
             ))
           )}
