@@ -1,9 +1,8 @@
 import path from "node:path";
 import fs from "node:fs";
 import sharp from "sharp";
-import satori from "satori";
 
-import { BRAND, getBrandFont } from "./core/brand";
+import { BRAND } from "./core/brand";
 import {
   allContent,
   detectContentTypeBySlug,
@@ -29,29 +28,16 @@ import { updateManifest } from "./core/manifest";
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 
-const OUTPUT = path.join(
-  ROOT,
-  "generated",
-  "instagram"
-);
+const OUTPUT = path.join(ROOT, "generated", "instagram");
 
-const PUBLIC_OUTPUT =
-  process.env.VERCEL
-    ? null
-    : path.join(
-        ROOT,
-        "public",
-        "generated",
-        "instagram"
-      );
+const PUBLIC_OUTPUT = process.env.VERCEL
+  ? null
+  : path.join(ROOT, "public", "generated", "instagram");
 
 const WIDTH = 1080;
 const HEIGHT = 1080;
 
-const FONT = getBrandFont();
-
-async function topGradient(){
-
+async function topGradient() {
   return sharp(
     Buffer.from(`
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -64,51 +50,41 @@ async function topGradient(){
             <stop offset="100%" stop-color="black" stop-opacity="0"/>
           </linearGradient>
         </defs>
-
         <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#g)"/>
-
       </svg>
     `)
   )
-  .png()
-  .toBuffer();
-
+    .png()
+    .toBuffer();
 }
 
-async function vignetteOverlay(){
-
+async function vignetteOverlay() {
   return sharp(
     Buffer.from(`
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-
         <defs>
           <radialGradient id="v" cx="50%" cy="50%" r="75%">
             <stop offset="58%" stop-color="black" stop-opacity="0"/>
             <stop offset="100%" stop-color="black" stop-opacity="0.24"/>
           </radialGradient>
         </defs>
-
         <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#v)"/>
-
       </svg>
     `)
   )
-  .png()
-  .toBuffer();
-
+    .png()
+    .toBuffer();
 }
 
-async function frameOverlay(){
-
+async function frameOverlay() {
   return sharp(
     Buffer.from(`
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-
         <rect
           x="14"
           y="14"
-          width="${WIDTH-28}"
-          height="${HEIGHT-28}"
+          width="${WIDTH - 28}"
+          height="${HEIGHT - 28}"
           rx="34"
           ry="34"
           fill="none"
@@ -116,400 +92,255 @@ async function frameOverlay(){
           stroke-opacity="0.9"
           stroke-width="2"
         />
-
       </svg>
     `)
   )
-  .png()
-  .toBuffer();
-
+    .png()
+    .toBuffer();
 }
 
-function titleLines(text:string){
+function wrapTitle(text: string) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
 
-  const words=text.split(/\s+/).filter(Boolean);
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
 
-  const lines:string[]=[];
-
-  let current="";
-
-  for(const word of words){
-
-    const next=current
-      ? `${current} ${word}`
-      : word;
-
-    if(next.length<=16){
-
-      current=next;
-
-    }else{
-
-      if(current) lines.push(current);
-
-      current=word;
-
-      if(lines.length>=1) break;
-
+    if (next.length <= 16) {
+      current = next;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+      if (lines.length >= 1) break;
     }
-
   }
 
-  if(current && lines.length<2){
-
+  if (current && lines.length < 2) {
     lines.push(current);
-
   }
 
   return lines;
-
 }
 
-function buildBadge(type:ContentType){
-
-  return type==="recipe"
-    ? "RECIPE"
-    : "GUIDE";
-
+function buildBadge(type: ContentType) {
+  return type === "recipe" ? "RECIPE" : "GUIDE";
 }
 
-function buildSubtitle(type:ContentType){
-
-  return type==="recipe"
+function buildSubtitle(type: ContentType) {
+  return type === "recipe"
     ? "Vegan Indian Recipe"
-    : "Beginner Guide";
+    : "Indian Cooking Guide";
+}
 
+function esc(text: string) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }
 
 async function textOverlay(
-  title:string,
-  subtitle:string,
-  badge:string
-){
+  title: string,
+  subtitle: string,
+  badge: string
+) {
+  const lines = wrapTitle(title);
 
-  const lines=titleLines(title);
+  const lineSvgs = lines
+    .map(
+      (line, i) => `
+        <text
+          x="540"
+          y="${470 + i * 95}"
+          text-anchor="middle"
+          font-size="90"
+          font-weight="700"
+          fill="${BRAND.gold}"
+          font-family="Arial"
+        >
+          ${esc(line)}
+        </text>
+      `
+    )
+    .join("");
 
-  const element={
+  const svg = `
+    <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="${WIDTH}" height="${HEIGHT}" fill="transparent"/>
 
-    type:"div",
+      <rect
+        x="70"
+        y="70"
+        rx="28"
+        ry="28"
+        width="170"
+        height="56"
+        fill="${BRAND.red}"
+      />
 
-    props:{
+      <text
+        x="155"
+        y="107"
+        text-anchor="middle"
+        font-size="28"
+        font-weight="700"
+        fill="#ffffff"
+        font-family="Arial"
+      >
+        ${esc(badge)}
+      </text>
 
-      style:{
-        width:WIDTH,
-        height:HEIGHT,
-        display:"flex",
-        flexDirection:"column",
-        position:"relative",
-        fontFamily:"Rajdhani",
-      },
+      ${lineSvgs}
 
-      children:[
+      <text
+        x="540"
+        y="${470 + lines.length * 95 + 40}"
+        text-anchor="middle"
+        font-size="42"
+        font-weight="600"
+        fill="${BRAND.soft}"
+        font-family="Arial"
+      >
+        ${esc(subtitle)}
+      </text>
 
-        {
-          type:"div",
+      <text
+        x="540"
+        y="970"
+        text-anchor="middle"
+        font-size="34"
+        fill="#ffffff"
+        font-family="Arial"
+      >
+        vegan-masala.com
+      </text>
+    </svg>
+  `;
 
-          props:{
-
-            style:{
-              position:"absolute",
-              top:42,
-              left:52,
-              width:690,
-              color:BRAND.gold,
-              fontSize:82,
-              fontWeight:700,
-            },
-
-            children:lines
-
-          }
-
-        },
-
-        {
-          type:"div",
-
-          props:{
-
-            style:{
-              position:"absolute",
-              top:214,
-              left:52,
-              color:BRAND.soft,
-              fontSize:50,
-              fontWeight:600,
-            },
-
-            children:subtitle
-
-          }
-
-        },
-
-        {
-          type:"div",
-
-          props:{
-
-            style:{
-              position:"absolute",
-              top:52,
-              right:52,
-              backgroundColor:BRAND.red,
-              color:"#fff",
-              borderRadius:18,
-              padding:12,
-              fontSize:28,
-              fontWeight:700,
-            },
-
-            children:badge
-
-          }
-
-        }
-
-      ]
-
-    }
-
-  };
-
-  const svg=await satori(
-    element as any,
-    {
-      width:WIDTH,
-      height:HEIGHT,
-      fonts:[
-        {
-          name:"Rajdhani",
-          data:FONT,
-          weight:700,
-          style:"normal"
-        }
-      ]
-    }
-  );
-
-  return sharp(
-    Buffer.from(svg)
-  ).png().toBuffer();
-
+  return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
 async function createPost(
-  slug:string,
-  title:string,
-  type:ContentType
-){
-
+  slug: string,
+  title: string,
+  type: ContentType
+) {
   ensureDir(OUTPUT);
 
-  if(PUBLIC_OUTPUT){
-
+  if (PUBLIC_OUTPUT) {
     ensureDir(PUBLIC_OUTPUT);
-
   }
 
-  const img=findContentImage(slug,type);
+  const img = findContentImage(slug, type);
 
-  const bg=await backgroundBuffer(
-    WIDTH,
-    HEIGHT,
-    img,
-    BRAND.bg
-  );
+  const bg = await backgroundBuffer(WIDTH, HEIGHT, img, BRAND.bg);
+  const grad = await topGradient();
+  const vignette = await vignetteOverlay();
+  const frame = await frameOverlay();
 
-  const grad=await topGradient();
-
-  const vignette=await vignetteOverlay();
-
-  const frame=await frameOverlay();
-
-  const text=await textOverlay(
+  const text = await textOverlay(
     title,
     buildSubtitle(type),
     buildBadge(type)
   );
 
-  const logo=await logoBuffer(250);
+  const logo = await logoBuffer(250);
 
-  const out=path.join(
-    OUTPUT,
-    `${slug}.png`
-  );
+  const out = path.join(OUTPUT, `${slug}.png`);
 
-  const comps:sharp.OverlayOptions[]=[
-
-    {input:bg,left:0,top:0},
-
-    {input:grad,left:0,top:0},
-
-    {input:vignette,left:0,top:0},
-
-    {input:text,left:0,top:0},
-
-    {input:frame,left:0,top:0},
-
+  const comps: sharp.OverlayOptions[] = [
+    { input: bg, left: 0, top: 0 },
+    { input: grad, left: 0, top: 0 },
+    { input: vignette, left: 0, top: 0 },
+    { input: text, left: 0, top: 0 },
+    { input: frame, left: 0, top: 0 },
   ];
 
-  if(logo){
-
+  if (logo) {
     comps.push({
-
-      input:logo,
-
-      top:HEIGHT-290,
-
-      left:WIDTH-290
-
+      input: logo,
+      top: HEIGHT - 290,
+      left: WIDTH - 290,
     });
-
   }
 
   await sharp({
-
-    create:{
-      width:WIDTH,
-      height:HEIGHT,
-      channels:4,
-      background:BRAND.bg
-    }
-
+    create: {
+      width: WIDTH,
+      height: HEIGHT,
+      channels: 4,
+      background: BRAND.bg,
+    },
   })
-  .composite(comps)
-  .png()
-  .toFile(out);
+    .composite(comps)
+    .png()
+    .toFile(out);
 
-  if(PUBLIC_OUTPUT){
-
-    const publicOut=path.join(
-      PUBLIC_OUTPUT,
-      `${slug}.png`
-    );
-
-    fs.copyFileSync(
-      out,
-      publicOut
-    );
-
+  if (PUBLIC_OUTPUT) {
+    const publicOut = path.join(PUBLIC_OUTPUT, `${slug}.png`);
+    fs.copyFileSync(out, publicOut);
   }
 
-  const caption=buildInstagramCaption(
-    slug,
-    type
-  );
-
-  saveCaption(
-    "instagram",
-    slug,
-    caption
-  );
-
-  updateManifest(
-    slug,
-    "instagram"
-  );
+  const caption = buildInstagramCaption(slug, type);
+  saveCaption("instagram", slug, caption);
+  updateManifest(slug, "instagram");
 
   return out;
-
 }
 
-export async function generateInstagramBySlug(slug:string){
+export async function generateInstagramBySlug(slug: string) {
+  const type = detectContentTypeBySlug(slug);
 
-  const type=detectContentTypeBySlug(slug);
-
-  if(!type){
-
+  if (!type) {
     throw new Error("Slug not found");
-
   }
 
-  await createPost(
-    slug,
-    titleFromSlug(slug),
-    type
-  );
+  await createPost(slug, titleFromSlug(slug), type);
 
-  return{
-
-    success:true,
-
-    count:1,
-
-    message:`Instagram generated for ${slug}`
-
+  return {
+    success: true,
+    count: 1,
+    message: `Instagram generated for ${slug}`,
   };
-
 }
 
-export async function generateLatestInstagram(){
+export async function generateLatestInstagram() {
+  const chosen = latestContent();
 
-  const chosen=latestContent();
-
-  if(!chosen){
-
-    return{
-      success:false,
-      count:0,
-      message:"No content"
+  if (!chosen) {
+    return {
+      success: false,
+      count: 0,
+      message: "No content",
     };
-
   }
 
-  const slug=slugFromFile(
-    chosen.file
-  );
+  const slug = slugFromFile(chosen.file);
 
-  await createPost(
-    slug,
-    titleFromSlug(slug),
-    chosen.type
-  );
+  await createPost(slug, titleFromSlug(slug), chosen.type);
 
-  return{
-
-    success:true,
-
-    count:1,
-
-    message:"Instagram generated"
-
+  return {
+    success: true,
+    count: 1,
+    message: "Instagram generated",
   };
-
 }
 
-export async function generateAllInstagram(){
+export async function generateAllInstagram() {
+  const items = allContent();
+  let count = 0;
 
-  const items=allContent();
+  for (const item of items) {
+    const slug = slugFromFile(item.file);
 
-  let count=0;
-
-  for(const item of items){
-
-    const slug=slugFromFile(
-      item.file
-    );
-
-    await createPost(
-      slug,
-      titleFromSlug(slug),
-      item.type
-    );
-
+    await createPost(slug, titleFromSlug(slug), item.type);
     count++;
-
   }
 
-  return{
-
-    success:true,
-
+  return {
+    success: true,
     count,
-
-    message:"All generated"
-
+    message: "All generated",
   };
-
 }
