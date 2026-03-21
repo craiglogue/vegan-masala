@@ -5,21 +5,60 @@ import { findBrandLogo } from "./brand";
 import type { ContentType } from "./content";
 
 const ROOT = process.cwd();
+const PUBLIC_DIR = path.join(ROOT, "public");
+
+function walk(dir: string, results: string[] = []) {
+  if (!fs.existsSync(dir)) return results;
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      walk(full, results);
+    } else {
+      results.push(full);
+    }
+  }
+
+  return results;
+}
+
+function imageExts() {
+  return [".png", ".jpg", ".jpeg", ".webp"];
+}
+
+function exactCandidates(slug: string, type: ContentType) {
+  const folder = type === "recipe" ? "recipes" : "guides";
+
+  return imageExts().flatMap((ext) => [
+    path.join(PUBLIC_DIR, "images", folder, `${slug}${ext}`),
+    path.join(PUBLIC_DIR, "images", `${slug}${ext}`),
+    path.join(PUBLIC_DIR, `${slug}${ext}`),
+  ]);
+}
 
 export function findContentImage(
   slug: string,
   type: ContentType
 ): string | null {
-  const folder = type === "recipe" ? "recipes" : "guides";
-  const base = path.join(ROOT, "public", "images", folder);
-  const exts = ["png", "jpg", "jpeg", "webp"];
-
-  for (const ext of exts) {
-    const p = path.join(base, `${slug}.${ext}`);
-    if (fs.existsSync(p)) return p;
+  for (const candidate of exactCandidates(slug, type)) {
+    if (fs.existsSync(candidate)) return candidate;
   }
 
-  return null;
+  const allFiles = walk(PUBLIC_DIR);
+  const lowerSlug = slug.toLowerCase();
+
+  const fallback = allFiles.find((file) => {
+    const ext = path.extname(file).toLowerCase();
+    if (!imageExts().includes(ext)) return false;
+
+    const base = path.basename(file, ext).toLowerCase();
+    return base === lowerSlug;
+  });
+
+  return fallback ?? null;
 }
 
 export async function backgroundBuffer(
@@ -41,7 +80,10 @@ export async function backgroundBuffer(
       .toBuffer();
   }
 
-  return sharp(img).resize(width, height, { fit: "cover" }).png().toBuffer();
+  return sharp(img)
+    .resize(width, height, { fit: "cover" })
+    .png()
+    .toBuffer();
 }
 
 export async function logoBuffer(size: number) {

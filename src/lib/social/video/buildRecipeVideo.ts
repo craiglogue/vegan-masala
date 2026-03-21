@@ -269,8 +269,9 @@ export async function buildRecipeVideo(slug: string) {
   const logs: string[] = [];
   logs.push(`Build start: ${slug}`);
 
-  const type = detectContentTypeBySlug(slug) || "recipe";
+    const type = detectContentTypeBySlug(slug) || "recipe";
   logs.push(`Detected type: ${type}`);
+  logs.push(`process.cwd(): ${process.cwd()}`);
 
   const image = resolveVideoSourceImage(slug, type);
 
