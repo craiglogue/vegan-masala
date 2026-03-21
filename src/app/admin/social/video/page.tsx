@@ -6,7 +6,7 @@ type SlugResponse = {
   slugs?: string[];
 };
 
-type ApiResponse = {
+type VideoApiResponse = {
   ok?: boolean;
   error?: string;
   slug?: string;
@@ -16,34 +16,66 @@ type ApiResponse = {
   };
 };
 
+async function safeJson(res: Response) {
+  const text = await res.text();
+
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {
+      ok: false,
+      error: text || "Invalid server response",
+    };
+  }
+}
+
 export default function AdminSocialVideoPage() {
   const [slugs, setSlugs] = useState<string[]>([]);
   const [selectedSlug, setSelectedSlug] = useState("");
   const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingSlugs, setLoadingSlugs] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    let mounted = true;
 
     async function loadSlugs() {
       try {
+        setLoadingSlugs(true);
+        setStatus("");
+
         const res = await fetch("/api/admin/social/slugs", {
+          method: "GET",
           cache: "no-store",
         });
 
-        const data: SlugResponse = await res.json();
+        const data = (await safeJson(res)) as SlugResponse & {
+          error?: string;
+        };
 
-        if (cancelled) return;
+        if (!mounted) return;
+
+        if (!res.ok) {
+          throw new Error(data?.error || "Failed to load slugs");
+        }
 
         const nextSlugs = Array.isArray(data?.slugs) ? data.slugs : [];
         setSlugs(nextSlugs);
 
-        if (nextSlugs.length && !selectedSlug) {
+        if (nextSlugs.length > 0) {
           setSelectedSlug(nextSlugs[0]);
+        } else {
+          setSelectedSlug("");
+          setStatus("No slugs found");
         }
       } catch (err: any) {
-        if (!cancelled) {
-          setStatus(err?.message || "Failed to load slugs");
+        if (!mounted) return;
+        setStatus(err?.message || "Failed to load slugs");
+        setSlugs([]);
+        setSelectedSlug("");
+      } finally {
+        if (mounted) {
+          setLoadingSlugs(false);
         }
       }
     }
@@ -51,9 +83,9 @@ export default function AdminSocialVideoPage() {
     loadSlugs();
 
     return () => {
-      cancelled = true;
+      mounted = false;
     };
-  }, [selectedSlug]);
+  }, []);
 
   async function handleGenerate() {
     if (!selectedSlug.trim()) {
@@ -61,10 +93,10 @@ export default function AdminSocialVideoPage() {
       return;
     }
 
-    setLoading(true);
-    setStatus("Generating video...");
-
     try {
+      setGenerating(true);
+      setStatus("Generating video...");
+
       const res = await fetch("/api/admin/social/video", {
         method: "POST",
         headers: {
@@ -75,7 +107,7 @@ export default function AdminSocialVideoPage() {
         }),
       });
 
-      const data: ApiResponse = await res.json();
+      const data = (await safeJson(res)) as VideoApiResponse;
 
       if (!res.ok || !data?.ok) {
         throw new Error(data?.error || "Video generation failed");
@@ -85,7 +117,7 @@ export default function AdminSocialVideoPage() {
     } catch (err: any) {
       setStatus(err?.message || "Video generation failed");
     } finally {
-      setLoading(false);
+      setGenerating(false);
     }
   }
 
@@ -94,33 +126,40 @@ export default function AdminSocialVideoPage() {
       <h1 className="mb-6 text-3xl font-bold">Video Generator</h1>
 
       <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-        <label className="mb-2 block text-sm font-medium text-yellow-200">
+        <label
+          htmlFor="video-slug"
+          className="mb-2 block text-sm font-medium text-yellow-200"
+        >
           Select slug
         </label>
 
         <select
+          id="video-slug"
           value={selectedSlug}
           onChange={(e) => setSelectedSlug(e.target.value)}
-          className="w-full rounded-xl border border-yellow-700/40 bg-neutral-900 px-4 py-3 text-white outline-none"
+          disabled={loadingSlugs || generating || slugs.length === 0}
+          className="w-full rounded-xl border border-yellow-700/40 bg-neutral-900 px-4 py-3 text-white outline-none disabled:opacity-50"
         >
-          {!slugs.length ? (
+          {loadingSlugs ? (
+            <option value="">Loading slugs...</option>
+          ) : slugs.length === 0 ? (
             <option value="">No slugs found</option>
-          ) : null}
-
-          {slugs.map((slug) => (
-            <option key={slug} value={slug}>
-              {slug}
-            </option>
-          ))}
+          ) : (
+            slugs.map((slug) => (
+              <option key={slug} value={slug}>
+                {slug}
+              </option>
+            ))
+          )}
         </select>
 
         <button
           type="button"
           onClick={handleGenerate}
-          disabled={loading || !selectedSlug}
+          disabled={loadingSlugs || generating || !selectedSlug}
           className="mt-4 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Generating..." : "Generate video"}
+          {generating ? "Generating..." : "Generate video"}
         </button>
 
         {status ? (
