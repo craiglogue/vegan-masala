@@ -21,13 +21,12 @@ type VideoApiResponse = {
   slug?: string;
   video?: string;
   logs?: string[];
+  rawResult?: unknown;
 };
 
 type NormalizedSlug = {
   slug: string;
   label: string;
-  type?: string;
-  title?: string;
 };
 
 async function safeJson(res: Response) {
@@ -48,10 +47,7 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
     const slug = item.trim();
     if (!slug) return null;
 
-    return {
-      slug,
-      label: slug,
-    };
+    return { slug, label: slug };
   }
 
   if (!item || typeof item !== "object") {
@@ -68,12 +64,7 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
       ? item.title.trim()
       : slug;
 
-  return {
-    slug,
-    label,
-    type: typeof item.type === "string" ? item.type : undefined,
-    title: typeof item.title === "string" ? item.title : undefined,
-  };
+  return { slug, label };
 }
 
 export default function AdminSocialVideoPage() {
@@ -82,6 +73,7 @@ export default function AdminSocialVideoPage() {
   const [status, setStatus] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
+  const [rawResult, setRawResult] = useState("");
   const [loadingSlugs, setLoadingSlugs] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -90,17 +82,12 @@ export default function AdminSocialVideoPage() {
 
     async function loadSlugs() {
       try {
-        setLoadingSlugs(true);
-        setStatus("");
-
         const res = await fetch("/api/admin/social/slugs", {
           method: "GET",
           cache: "no-store",
         });
 
-        const data = (await safeJson(res)) as SlugResponse & {
-          error?: string;
-        };
+        const data = (await safeJson(res)) as SlugResponse & { error?: string };
 
         if (!mounted) return;
 
@@ -108,8 +95,7 @@ export default function AdminSocialVideoPage() {
           throw new Error(data?.error || "Failed to load slugs");
         }
 
-        const rawItems = Array.isArray(data?.slugs) ? data.slugs : [];
-        const nextSlugs = rawItems
+        const nextSlugs = (Array.isArray(data?.slugs) ? data.slugs : [])
           .map(normalizeSlugItem)
           .filter((item): item is NormalizedSlug => item !== null);
 
@@ -117,19 +103,12 @@ export default function AdminSocialVideoPage() {
 
         if (nextSlugs.length > 0) {
           setSelectedSlug(nextSlugs[0].slug);
-        } else {
-          setSelectedSlug("");
-          setStatus("No slugs found");
         }
       } catch (err: any) {
         if (!mounted) return;
         setStatus(err?.message || "Failed to load slugs");
-        setSlugs([]);
-        setSelectedSlug("");
       } finally {
-        if (mounted) {
-          setLoadingSlugs(false);
-        }
+        if (mounted) setLoadingSlugs(false);
       }
     }
 
@@ -151,6 +130,7 @@ export default function AdminSocialVideoPage() {
       setStatus("Generating video...");
       setLogs([]);
       setVideoUrl("");
+      setRawResult("");
 
       const res = await fetch("/api/admin/social/video", {
         method: "POST",
@@ -165,12 +145,13 @@ export default function AdminSocialVideoPage() {
       const data = (await safeJson(res)) as VideoApiResponse;
 
       setLogs(Array.isArray(data?.logs) ? data.logs : []);
+      setVideoUrl(typeof data?.video === "string" ? data.video : "");
+      setRawResult(JSON.stringify(data, null, 2));
 
       if (!res.ok || !data?.ok) {
         throw new Error(data?.error || "Video generation failed");
       }
 
-      setVideoUrl(typeof data.video === "string" ? data.video : "");
       setStatus(`Video generated successfully for ${data.slug}`);
     } catch (err: any) {
       setStatus(err?.message || "Video generation failed");
@@ -180,7 +161,7 @@ export default function AdminSocialVideoPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-10 text-white">
+    <main className="mx-auto max-w-5xl px-6 py-10 text-white">
       <h1 className="mb-6 text-3xl font-bold">Video Generator</h1>
 
       <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
@@ -220,24 +201,28 @@ export default function AdminSocialVideoPage() {
           {generating ? "Generating..." : "Generate video"}
         </button>
 
-        {status ? (
-          <p className="mt-4 text-sm text-yellow-100">{status}</p>
-        ) : null}
+        {status ? <p className="mt-4 text-sm text-yellow-100">{status}</p> : null}
       </div>
 
       <div className="mt-6 rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
         <h2 className="mb-3 text-xl font-semibold text-yellow-200">Script log</h2>
-
         <pre className="min-h-[180px] whitespace-pre-wrap rounded-xl bg-black px-4 py-4 text-sm text-green-400">
           {logs.length ? logs.join("\n") : "No log output yet."}
         </pre>
       </div>
 
+      <div className="mt-6 rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+        <h2 className="mb-3 text-xl font-semibold text-yellow-200">Returned JSON</h2>
+        <pre className="min-h-[180px] whitespace-pre-wrap rounded-xl bg-black px-4 py-4 text-sm text-sky-300">
+          {rawResult || "No response yet."}
+        </pre>
+      </div>
+
       {videoUrl ? (
         <div className="mt-6 rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-          <h2 className="mb-3 text-xl font-semibold text-yellow-200">
-            Generated video
-          </h2>
+          <h2 className="mb-3 text-xl font-semibold text-yellow-200">Generated video</h2>
+
+          <p className="mb-3 break-all text-sm text-yellow-100">{videoUrl}</p>
 
           <video
             key={videoUrl}
@@ -255,14 +240,6 @@ export default function AdminSocialVideoPage() {
               className="rounded-xl bg-yellow-600 px-4 py-2 font-semibold text-black"
             >
               Open video
-            </a>
-
-            <a
-              href={videoUrl}
-              download
-              className="rounded-xl border border-yellow-700/40 px-4 py-2 font-semibold text-yellow-100"
-            >
-              Download video
             </a>
           </div>
         </div>
