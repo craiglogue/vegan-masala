@@ -7,6 +7,10 @@ import type { ContentType } from "./content";
 const ROOT = process.cwd();
 const PUBLIC_DIR = path.join(ROOT, "public");
 
+function imageExts() {
+  return [".png", ".jpg", ".jpeg", ".webp"];
+}
+
 function walk(dir: string, results: string[] = []) {
   if (!fs.existsSync(dir)) return results;
 
@@ -25,10 +29,6 @@ function walk(dir: string, results: string[] = []) {
   return results;
 }
 
-function imageExts() {
-  return [".png", ".jpg", ".jpeg", ".webp"];
-}
-
 function exactCandidates(slug: string, type: ContentType) {
   const folder = type === "recipe" ? "recipes" : "guides";
 
@@ -36,6 +36,7 @@ function exactCandidates(slug: string, type: ContentType) {
     path.join(PUBLIC_DIR, "images", folder, `${slug}${ext}`),
     path.join(PUBLIC_DIR, "images", `${slug}${ext}`),
     path.join(PUBLIC_DIR, `${slug}${ext}`),
+    path.join(PUBLIC_DIR, "generated", "instagram", `${slug}${ext}`),
   ]);
 }
 
@@ -47,10 +48,9 @@ export function findContentImage(
     if (fs.existsSync(candidate)) return candidate;
   }
 
-  const allFiles = walk(PUBLIC_DIR);
   const lowerSlug = slug.toLowerCase();
 
-  const fallback = allFiles.find((file) => {
+  const fallback = walk(PUBLIC_DIR).find((file) => {
     const ext = path.extname(file).toLowerCase();
     if (!imageExts().includes(ext)) return false;
 

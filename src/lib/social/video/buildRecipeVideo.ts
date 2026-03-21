@@ -269,9 +269,27 @@ export async function buildRecipeVideo(slug: string) {
   const logs: string[] = [];
   logs.push(`Build start: ${slug}`);
 
-    const type = detectContentTypeBySlug(slug) || "recipe";
+   const type = detectContentTypeBySlug(slug) || "recipe";
   logs.push(`Detected type: ${type}`);
   logs.push(`process.cwd(): ${process.cwd()}`);
+
+  const candidatePaths = [
+    path.join(process.cwd(), "public", "images", "recipes", `${slug}.png`),
+    path.join(process.cwd(), "public", "images", "recipes", `${slug}.jpg`),
+    path.join(process.cwd(), "public", "images", "recipes", `${slug}.jpeg`),
+    path.join(process.cwd(), "public", "images", "recipes", `${slug}.webp`),
+    path.join(process.cwd(), "public", "images", "guides", `${slug}.png`),
+    path.join(process.cwd(), "public", "images", "guides", `${slug}.jpg`),
+    path.join(process.cwd(), "public", "images", "guides", `${slug}.jpeg`),
+    path.join(process.cwd(), "public", "images", "guides", `${slug}.webp`),
+    path.join(process.cwd(), "public", "generated", "instagram", `${slug}.png`),
+  ];
+
+  for (const candidate of candidatePaths) {
+    logs.push(
+      `Check: ${candidate} => ${fs.existsSync(candidate) ? "FOUND" : "missing"}`
+    );
+  }
 
   const image = resolveVideoSourceImage(slug, type);
 
