@@ -30,6 +30,13 @@ type NormalizedSlug = {
   type: "recipe" | "guide";
 };
 
+type GeneratedVideoItem = {
+  slug: string;
+  type: "recipe" | "guide";
+  label: string;
+  video: string;
+};
+
 async function safeJson(res: Response) {
   const text = await res.text();
 
@@ -69,8 +76,8 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
     typeof item.label === "string" && item.label.trim()
       ? item.label.trim()
       : typeof item.title === "string" && item.title.trim()
-      ? item.title.trim()
-      : slug;
+        ? item.title.trim()
+        : slug;
 
   return {
     slug,
@@ -84,12 +91,13 @@ export default function AdminSocialVideoPage() {
   const [selectedSlug, setSelectedSlug] = useState("");
   const [status, setStatus] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
-  const [videoUrl, setVideoUrl] = useState("");
-  const [rawResult, setRawResult] = useState("");
   const [loadingSlugs, setLoadingSlugs] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generatingAll, setGeneratingAll] = useState(false);
   const [filter, setFilter] = useState<"all" | "recipe" | "guide">("all");
+  const [generatedVideos, setGeneratedVideos] = useState<GeneratedVideoItem[]>([]);
+  const [activeVideoUrl, setActiveVideoUrl] = useState("");
+  const [activeVideoLabel, setActiveVideoLabel] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -147,6 +155,16 @@ export default function AdminSocialVideoPage() {
 
   const selectedItem = filteredSlugs.find((item) => item.slug === selectedSlug) ?? null;
 
+  function addGeneratedVideo(item: GeneratedVideoItem) {
+    setGeneratedVideos((prev) => {
+      const withoutExisting = prev.filter((entry) => entry.slug !== item.slug);
+      return [item, ...withoutExisting];
+    });
+
+    setActiveVideoUrl(item.video);
+    setActiveVideoLabel(item.label);
+  }
+
   async function generateOne(slug: string) {
     const res = await fetch("/api/admin/social/video", {
       method: "POST",
@@ -162,7 +180,7 @@ export default function AdminSocialVideoPage() {
   }
 
   async function handleGenerate() {
-    if (!selectedSlug.trim()) {
+    if (!selectedSlug.trim() || !selectedItem) {
       setStatus("Please select a slug first");
       return;
     }
@@ -171,17 +189,22 @@ export default function AdminSocialVideoPage() {
       setGenerating(true);
       setStatus("Generating video...");
       setLogs([]);
-      setVideoUrl("");
-      setRawResult("");
 
       const { res, data } = await generateOne(selectedSlug);
 
       setLogs(Array.isArray(data?.logs) ? data.logs : []);
-      setVideoUrl(typeof data?.video === "string" ? data.video : "");
-      setRawResult(JSON.stringify(data, null, 2));
 
       if (!res.ok || !data?.ok) {
         throw new Error(data?.error || "Video generation failed");
+      }
+
+      if (typeof data.video === "string" && data.video) {
+        addGeneratedVideo({
+          slug: selectedItem.slug,
+          type: selectedItem.type,
+          label: selectedItem.label,
+          video: data.video,
+        });
       }
 
       setStatus(`Video generated successfully for ${data.slug}`);
@@ -201,20 +224,17 @@ export default function AdminSocialVideoPage() {
     try {
       setGeneratingAll(true);
       setGenerating(true);
-      setVideoUrl("");
-      setRawResult("");
       setLogs([]);
       setStatus(`Generating ${filteredSlugs.length} videos...`);
 
       const combinedLogs: string[] = [];
       let completed = 0;
-      let lastVideo = "";
 
       for (const item of filteredSlugs) {
         combinedLogs.push("");
-        combinedLogs.push(`==============================`);
+        combinedLogs.push("========================================");
         combinedLogs.push(`Generating: ${item.slug} (${item.type})`);
-        combinedLogs.push(`==============================`);
+        combinedLogs.push("========================================");
 
         setLogs([...combinedLogs]);
 
@@ -227,22 +247,24 @@ export default function AdminSocialVideoPage() {
         if (!res.ok || !data?.ok) {
           combinedLogs.push(`FAILED: ${item.slug}`);
           setLogs([...combinedLogs]);
-          setRawResult(JSON.stringify(data, null, 2));
           throw new Error(data?.error || `Failed on ${item.slug}`);
         }
 
-        if (typeof data?.video === "string" && data.video) {
-          lastVideo = data.video;
+        if (typeof data.video === "string" && data.video) {
+          addGeneratedVideo({
+            slug: item.slug,
+            type: item.type,
+            label: item.label,
+            video: data.video,
+          });
         }
 
         completed += 1;
         combinedLogs.push(`DONE: ${item.slug}`);
         combinedLogs.push(`Progress: ${completed}/${filteredSlugs.length}`);
         setLogs([...combinedLogs]);
-        setRawResult(JSON.stringify(data, null, 2));
       }
 
-      setVideoUrl(lastVideo);
       setStatus(`Successfully generated ${completed} videos`);
     } catch (err: any) {
       setStatus(err?.message || "Bulk video generation failed");
@@ -253,7 +275,7 @@ export default function AdminSocialVideoPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10 text-white">
+    <main className="mx-auto max-w-7xl px-6 py-10 text-white">
       <div className="mb-8">
         <p className="mb-2 text-sm uppercase tracking-[0.25em] text-yellow-300">
           Admin Social
@@ -261,11 +283,11 @@ export default function AdminSocialVideoPage() {
         <h1 className="text-3xl font-bold text-yellow-100">Video Generator</h1>
         <p className="mt-2 max-w-3xl text-sm text-neutral-300">
           Generate branded short videos for recipes and guides. Use the filter to narrow
-          the dropdown, or bulk-generate all items currently shown.
+          the list, generate one item, or bulk-generate everything currently shown.
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <section className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
           <h2 className="mb-4 text-lg font-semibold text-yellow-200">Controls</h2>
 
@@ -367,45 +389,89 @@ export default function AdminSocialVideoPage() {
 
         <section className="space-y-6">
           <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-            <h2 className="mb-3 text-xl font-semibold text-yellow-200">Script log</h2>
-            <pre className="min-h-[240px] whitespace-pre-wrap rounded-xl bg-black px-4 py-4 text-sm text-green-400">
-              {logs.length ? logs.join("\n") : "No log output yet."}
-            </pre>
-          </div>
-
-          <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-            <h2 className="mb-3 text-xl font-semibold text-yellow-200">Returned JSON</h2>
-            <pre className="min-h-[220px] whitespace-pre-wrap rounded-xl bg-black px-4 py-4 text-sm text-sky-300">
-              {rawResult || "No response yet."}
-            </pre>
-          </div>
-
-          {videoUrl ? (
-            <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-              <h2 className="mb-3 text-xl font-semibold text-yellow-200">Generated video</h2>
-
-              <p className="mb-3 break-all text-sm text-yellow-100">{videoUrl}</p>
-
-              <video
-                key={videoUrl}
-                controls
-                preload="metadata"
-                className="w-full rounded-xl bg-black"
-                src={videoUrl}
-              />
-
-              <div className="mt-4 flex gap-3">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h2 className="text-xl font-semibold text-yellow-200">Latest preview</h2>
+              {activeVideoUrl ? (
                 <a
-                  href={videoUrl}
+                  href={activeVideoUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-xl bg-yellow-600 px-4 py-2 font-semibold text-black"
+                  className="rounded-xl bg-yellow-600 px-4 py-2 text-sm font-semibold text-black"
                 >
                   Open video
                 </a>
-              </div>
+              ) : null}
             </div>
-          ) : null}
+
+            {activeVideoUrl ? (
+              <div>
+                <p className="mb-3 text-sm text-yellow-100">{activeVideoLabel}</p>
+                <video
+                  key={activeVideoUrl}
+                  controls
+                  preload="metadata"
+                  className="w-full rounded-xl bg-black"
+                  src={activeVideoUrl}
+                />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-yellow-700/20 bg-black px-4 py-10 text-center text-sm text-neutral-400">
+                No generated video yet.
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-yellow-200">Generated videos</h2>
+
+            {generatedVideos.length ? (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {generatedVideos.map((item) => (
+                  <a
+                    key={item.slug}
+                    href={item.video}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => {
+                      setActiveVideoUrl(item.video);
+                      setActiveVideoLabel(item.label);
+                    }}
+                    className="group overflow-hidden rounded-2xl border border-yellow-700/30 bg-neutral-950 transition hover:border-yellow-500/60"
+                  >
+                    <div className="aspect-[9/16] bg-black">
+                      <video
+                        preload="metadata"
+                        muted
+                        playsInline
+                        className="h-full w-full object-cover"
+                        src={item.video}
+                      />
+                    </div>
+
+                    <div className="p-4">
+                      <p className="truncate font-semibold text-yellow-100 group-hover:text-yellow-200">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400">
+                        Click to preview
+                      </p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-yellow-700/20 bg-black px-4 py-10 text-center text-sm text-neutral-400">
+                Generated videos will appear here as clickable thumbnails.
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+            <h2 className="mb-3 text-xl font-semibold text-yellow-200">Script log</h2>
+            <pre className="min-h-[260px] whitespace-pre-wrap rounded-xl bg-black px-4 py-4 text-sm text-green-400">
+              {logs.length ? logs.join("\n") : "No log output yet."}
+            </pre>
+          </div>
         </section>
       </div>
     </main>
