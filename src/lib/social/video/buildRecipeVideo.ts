@@ -367,6 +367,7 @@ async function mainClip(image: string, out: string, logs?: string[]) {
   const filter = [
     `[0:v]scale=1400:2488:force_original_aspect_ratio=increase,` +
       `crop=1080:1920,` +
+      `setsar=1,` +
       `boxblur=30:12,` +
       `zoompan=` +
       `z='min(zoom+0.0012,1.18)':` +
@@ -375,10 +376,12 @@ async function mainClip(image: string, out: string, logs?: string[]) {
       `y='ih/2-(ih/zoom/2)':` +
       `s=1080x1920:` +
       `fps=30[bg]`,
-    `[1:v]scale=960:960:force_original_aspect_ratio=decrease,format=rgba[fg]`,
+    `[1:v]scale=960:960:force_original_aspect_ratio=decrease,setsar=1,format=rgba[fg]`,
     `[bg][fg]overlay=(W-w)/2:(H-h)/2:format=auto,` +
+      `setsar=1,` +
       `fade=t=in:st=0:d=0.8,` +
-      `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8[outv]`,
+      `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8,` +
+      `format=yuv420p[outv]`,
   ].join(";");
 
   await run(
@@ -430,7 +433,7 @@ async function concat(
       "-i",
       outro,
       "-filter_complex",
-      "[0:v][1:v][2:v]concat=n=3:v=1:a=0[outv]",
+      "[0:v]setsar=1[v0];[1:v]setsar=1[v1];[2:v]setsar=1[v2];[v0][v1][v2]concat=n=3:v=1:a=0[outv]",
       "-map",
       "[outv]",
       "-r",
