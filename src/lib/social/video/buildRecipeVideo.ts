@@ -2,11 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { createRequire } from "node:module";
 
 import sharp from "sharp";
 import { put } from "@vercel/blob";
 import ffmpegPath from "ffmpeg-static";
+import opentype from "opentype.js";
 
 import {
   detectContentTypeBySlug,
@@ -16,7 +16,6 @@ import {
 import { findContentImage } from "@/lib/social/core/images";
 import { BRAND } from "@/lib/social/core/brand";
 
-const require = createRequire(import.meta.url);
 const execFileAsync = promisify(execFile);
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
@@ -204,6 +203,65 @@ async function resolveFont(baseUrl: string, logs: string[]) {
   return null;
 }
 
+function loadFontOrThrow(fontPath: string | null) {
+  if (!fontPath || !fs.existsSync(fontPath)) {
+    throw new Error("Font file not found for video card rendering");
+  }
+
+  return opentype.loadSync(fontPath);
+}
+
+function makeTextPathSvg(
+  text: string,
+  font: opentype.Font,
+  fontSize: number,
+  fill: string,
+  centerX: number,
+  baselineY: number,
+  letterSpacing = 0
+) {
+  if (!text.trim()) return "";
+
+  let cursorX = 0;
+  const glyphs = font.stringToGlyphs(text);
+  const unitsPerEm = font.unitsPerEm || 1000;
+  const scale = fontSize / unitsPerEm;
+
+  const parts: string[] = [];
+  let minX = Infinity;
+  let maxX = -Infinity;
+
+  for (let i = 0; i < glyphs.length; i++) {
+    const glyph = glyphs[i];
+    const pathObj = glyph.getPath(cursorX, baselineY, fontSize);
+    const bbox = pathObj.getBoundingBox();
+
+    if (Number.isFinite(bbox.x1) && Number.isFinite(bbox.x2)) {
+      minX = Math.min(minX, bbox.x1);
+      maxX = Math.max(maxX, bbox.x2);
+    }
+
+    parts.push(pathObj.toPathData(2));
+
+    const advance =
+      (glyph.advanceWidth || unitsPerEm * 0.5) * scale + letterSpacing;
+    cursorX += advance;
+  }
+
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
+    return "";
+  }
+
+  const width = maxX - minX;
+  const translateX = centerX - (minX + width / 2);
+
+  return `
+    <g transform="translate(${translateX},0)">
+      <path d="${parts.join(" ")}" fill="${fill}" />
+    </g>
+  `;
+}
+
 async function renderCard(
   title: string,
   subtitle: string,
@@ -211,25 +269,8 @@ async function renderCard(
   logoPath: string | null,
   fontPath: string | null
 ) {
-  const { Resvg } = require("@resvg/resvg-js") as {
-    Resvg: new (
-      svg: string,
-      options?: {
-        fitTo?: { mode: "width" | "height" | "zoom"; value: number };
-        font?: {
-          fontBuffers?: Buffer[];
-          loadSystemFonts?: boolean;
-          defaultFontFamily?: string;
-        };
-      }
-    ) => {
-      render: () => { asPng: () => Buffer };
-    };
-  };
-
   const lines = wrap(title);
-  const fontBuffer =
-    fontPath && fs.existsSync(fontPath) ? fs.readFileSync(fontPath) : null;
+  const font = loadFontOrThrow(fontPath);
 
   let logoHref = "";
   if (logoPath && fs.existsSync(logoPath)) {
@@ -237,22 +278,31 @@ async function renderCard(
     logoHref = `data:image/png;base64,${logoBuffer.toString("base64")}`;
   }
 
-  const titleSvg = lines
-    .map(
-      (line, i) => `
-      <text
-        x="540"
-        y="${860 + i * 96}"
-        text-anchor="middle"
-        fill="${BRAND.gold}"
-        font-family="RajdhaniEmbed"
-        font-size="86"
-        font-weight="700"
-        letter-spacing="1"
-      >${esc(line)}</text>
-    `
+  const titlePaths = lines
+    .map((line, i) =>
+      makeTextPathSvg(line, font, 86, BRAND.gold, 540, 860 + i * 96, 1)
     )
     .join("");
+
+  const subtitlePath = makeTextPathSvg(
+    subtitle,
+    font,
+    44,
+    BRAND.soft,
+    540,
+    1180,
+    1
+  );
+
+  const sitePath = makeTextPathSvg(
+    "vegan-masala.com",
+    font,
+    34,
+    "#ffffff",
+    540,
+    1830,
+    1
+  );
 
   const logoSvg = logoHref
     ? `<image href="${logoHref}" x="410" y="420" width="260" height="260" />`
@@ -272,54 +322,16 @@ async function renderCard(
       stroke="${BRAND.border}"
       stroke-width="3"
     />
-
     ${logoSvg}
-
-    ${titleSvg}
-
-    <text
-      x="540"
-      y="1180"
-      text-anchor="middle"
-      fill="${BRAND.soft}"
-      font-family="RajdhaniEmbed"
-      font-size="44"
-      font-weight="700"
-      letter-spacing="1"
-    >${esc(subtitle)}</text>
-
-    <text
-      x="540"
-      y="1830"
-      text-anchor="middle"
-      fill="#ffffff"
-      font-family="RajdhaniEmbed"
-      font-size="34"
-      font-weight="700"
-      letter-spacing="1"
-    >vegan-masala.com</text>
+    ${titlePaths}
+    ${subtitlePath}
+    ${sitePath}
   </svg>
   `;
 
-  const resvg = new Resvg(svg, {
-    fitTo: {
-      mode: "width",
-      value: WIDTH,
-    },
-    font: fontBuffer
-      ? {
-          fontBuffers: [fontBuffer],
-          loadSystemFonts: false,
-          defaultFontFamily: "RajdhaniEmbed",
-        }
-      : {
-          loadSystemFonts: true,
-          defaultFontFamily: "Arial",
-        },
-  });
-
-  const pngData = resvg.render();
-  fs.writeFileSync(out, pngData.asPng());
+  await sharp(Buffer.from(svg))
+    .png()
+    .toFile(out);
 }
 
 async function stillClip(
