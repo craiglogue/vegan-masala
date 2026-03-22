@@ -12,14 +12,12 @@ import {
   titleFromSlug,
   type ContentType,
 } from "@/lib/social/core/content";
-
 import { findContentImage } from "@/lib/social/core/images";
 import { BRAND } from "@/lib/social/core/brand";
 
 const execFileAsync = promisify(execFile);
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
-
 const GENERATED_IMAGE_DIR = path.join(ROOT, "generated", "instagram");
 const VIDEO_DIR = path.join(ROOT, "generated", "video");
 const TEMP_DIR = path.join(ROOT, "generated", "video-temp");
@@ -70,7 +68,6 @@ function wrap(text: string) {
 
   for (const w of words) {
     const next = current ? `${current} ${w}` : w;
-
     if (next.length <= 18) {
       current = next;
     } else {
@@ -80,7 +77,6 @@ function wrap(text: string) {
   }
 
   if (current) lines.push(current);
-
   return lines.slice(0, 3);
 }
 
@@ -98,7 +94,6 @@ async function run(args: string[], logs?: string[]) {
 
 async function fetchBuffer(url: string, logs: string[], label: string) {
   logs.push(`Fetch ${label}: ${url}`);
-
   const res = await fetch(url, { cache: "no-store" });
   logs.push(`Fetch ${label} status: ${res.status} ${res.statusText}`);
 
@@ -317,26 +312,26 @@ async function stillClip(
       out,
     ],
     logs
-  );async function mainClip(image: string, out: string, logs?: string[]) {
-  const filter =
-    [
-      `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,` +
-        `crop=1080:1920,` +
-        `boxblur=25:10,` +
-        `zoompan=` +
-        `z='min(zoom+0.0008,1.12)':` +
-        `d=300:` +
-        `x='iw/2-(iw/zoom/2)':` +
-        `y='ih/2-(ih/zoom/2)':` +
-        `s=1080x1920:` +
-        `fps=30[bg]`,
+  );
+}
 
-      `[1:v]scale=980:980:force_original_aspect_ratio=decrease[fg]`,
-
-      `[bg][fg]overlay=(W-w)/2:(H-h)/2:format=auto,` +
-        `fade=t=in:st=0:d=0.8,` +
-        `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8[outv]`,
-    ].join(";");
+async function mainClip(image: string, out: string, logs?: string[]) {
+  const filter = [
+    `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,` +
+      `crop=1080:1920,` +
+      `boxblur=25:10,` +
+      `zoompan=` +
+      `z='min(zoom+0.0008,1.12)':` +
+      `d=300:` +
+      `x='iw/2-(iw/zoom/2)':` +
+      `y='ih/2-(ih/zoom/2)':` +
+      `s=1080x1920:` +
+      `fps=30[bg]`,
+    `[1:v]scale=980:980:force_original_aspect_ratio=decrease[fg]`,
+    `[bg][fg]overlay=(W-w)/2:(H-h)/2:format=auto,` +
+      `fade=t=in:st=0:d=0.8,` +
+      `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8[outv]`,
+  ].join(";");
 
   await run(
     [
