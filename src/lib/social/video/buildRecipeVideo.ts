@@ -317,18 +317,26 @@ async function stillClip(
       out,
     ],
     logs
-  );
-}
-
-async function mainClip(image: string, out: string, logs?: string[]) {
-  const vf =
+  );async function mainClip(image: string, out: string, logs?: string[]) {
+  const filter =
     [
-      "scale=1200:2133:force_original_aspect_ratio=increase",
-      "crop=1080:1920",
-      "boxblur=25:10",
-      "zoompan=z='min(zoom+0.0008,1.12)':d=300:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30",
-      "format=yuv420p",
-    ].join(",");
+      `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,` +
+        `crop=1080:1920,` +
+        `boxblur=25:10,` +
+        `zoompan=` +
+        `z='min(zoom+0.0008,1.12)':` +
+        `d=300:` +
+        `x='iw/2-(iw/zoom/2)':` +
+        `y='ih/2-(ih/zoom/2)':` +
+        `s=1080x1920:` +
+        `fps=30[bg]`,
+
+      `[1:v]scale=980:980:force_original_aspect_ratio=decrease[fg]`,
+
+      `[bg][fg]overlay=(W-w)/2:(H-h)/2:format=auto,` +
+        `fade=t=in:st=0:d=0.8,` +
+        `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8[outv]`,
+    ].join(";");
 
   await run(
     [
@@ -337,12 +345,14 @@ async function mainClip(image: string, out: string, logs?: string[]) {
       "1",
       "-i",
       image,
+      "-loop",
+      "1",
       "-i",
       image,
       "-filter_complex",
-      `[0:v]${vf}[bg];` +
-        `[1:v]scale=980:980:force_original_aspect_ratio=decrease[fg];` +
-        `[bg][fg]overlay=(W-w)/2:(H-h)/2:format=auto,fade=t=in:st=0:d=0.8,fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8`,
+      filter,
+      "-map",
+      "[outv]",
       "-t",
       String(MAIN_DURATION),
       "-r",
