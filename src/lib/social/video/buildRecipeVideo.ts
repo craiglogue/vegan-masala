@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { createRequire } from "node:module";
 
 import sharp from "sharp";
 import { put } from "@vercel/blob";
+import ffmpegPath from "ffmpeg-static";
 
 import {
   detectContentTypeBySlug,
@@ -16,7 +16,6 @@ import {
 import { findContentImage } from "@/lib/social/core/images";
 import { BRAND } from "@/lib/social/core/brand";
 
-const require = createRequire(import.meta.url);
 const execFileAsync = promisify(execFile);
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
@@ -44,18 +43,13 @@ function ensureDir(dir: string) {
 }
 
 function getFfmpegBinary(logs?: string[]) {
-  const ffmpegStatic = require("ffmpeg-static") as string | null;
-  const ffmpegEntry = require.resolve("ffmpeg-static");
-  const pkgDir = path.dirname(ffmpegEntry);
-
   const candidates = [
-    ffmpegStatic,
-    path.join(pkgDir, "ffmpeg"),
-    path.join(pkgDir, "ffmpeg.exe"),
-  ].filter(Boolean) as string[];
+    typeof ffmpegPath === "string" ? ffmpegPath : null,
+    "/var/task/node_modules/ffmpeg-static/ffmpeg",
+    path.join(process.cwd(), "node_modules", "ffmpeg-static", "ffmpeg"),
+  ].filter((v): v is string => typeof v === "string" && v.length > 0);
 
   if (logs) {
-    logs.push(`ffmpeg entry: ${ffmpegEntry}`);
     logs.push(`ffmpeg candidates: ${candidates.join(" | ")}`);
   }
 
