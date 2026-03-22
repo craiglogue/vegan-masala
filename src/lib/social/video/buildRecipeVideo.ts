@@ -363,7 +363,86 @@ async function stillClip(
   );
 }
 
-async function mainClip(image: string, out: string, logs?: string[]) {
+async function mainClip(
+  image: string,
+  out: string,
+  slug: string,
+  type: ContentType,
+  fontPath: string | null,
+  logs?: string[]
+) {
+  const font = loadFontOrThrow(fontPath);
+  const title = titleFromSlug(slug);
+  const subtitle =
+    type === "guide" ? "Indian Cooking Guide" : "Vegan Indian Recipe";
+
+  const framePath = path.join(TEMP_DIR, `${slug}-main-frame.png`);
+
+  const titleLines = wrap(title);
+
+  const titlePaths = titleLines
+    .map((line, i) =>
+      makeTextPathSvg(line, font, 56, BRAND.gold, 540, 180 + i * 68, 0.5)
+    )
+    .join("");
+
+  const subtitlePath = makeTextPathSvg(
+    subtitle,
+    font,
+    28,
+    BRAND.soft,
+    540,
+    330,
+    0.5
+  );
+
+  const sitePath = makeTextPathSvg(
+    "vegan-masala.com",
+    font,
+    24,
+    "#ffffff",
+    540,
+    1760,
+    0.5
+  );
+
+  const frameSvg = `
+  <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${WIDTH}" height="${HEIGHT}" fill="none"/>
+
+    <rect
+      x="110"
+      y="110"
+      width="860"
+      height="1700"
+      rx="42"
+      ry="42"
+      fill="#000000"
+      fill-opacity="0.18"
+      stroke="${BRAND.border}"
+      stroke-width="4"
+    />
+
+    <rect
+      x="170"
+      y="420"
+      width="740"
+      height="740"
+      rx="34"
+      ry="34"
+      fill="none"
+      stroke="${BRAND.border}"
+      stroke-width="3"
+    />
+
+    ${titlePaths}
+    ${subtitlePath}
+    ${sitePath}
+  </svg>
+  `;
+
+  await sharp(Buffer.from(frameSvg)).png().toFile(framePath);
+
   const filter = [
     `[0:v]scale=1400:2488:force_original_aspect_ratio=increase,` +
       `crop=1080:1920,` +
@@ -376,8 +455,15 @@ async function mainClip(image: string, out: string, logs?: string[]) {
       `y='ih/2-(ih/zoom/2)':` +
       `s=1080x1920:` +
       `fps=30[bg]`,
-    `[1:v]scale=960:960:force_original_aspect_ratio=decrease,setsar=1,format=rgba[fg]`,
-    `[bg][fg]overlay=(W-w)/2:(H-h)/2:format=auto,` +
+
+    `[1:v]scale=740:740:force_original_aspect_ratio=cover,` +
+      `crop=740:740,` +
+      `setsar=1,format=rgba[fg]`,
+
+    `[2:v]setsar=1,format=rgba[frame]`,
+
+    `[bg][fg]overlay=170:420:format=auto[tmp1]`,
+    `[tmp1][frame]overlay=0:0:format=auto,` +
       `setsar=1,` +
       `fade=t=in:st=0:d=0.8,` +
       `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8,` +
@@ -395,6 +481,8 @@ async function mainClip(image: string, out: string, logs?: string[]) {
       "1",
       "-i",
       image,
+      "-i",
+      framePath,
       "-filter_complex",
       filter,
       "-map",
@@ -584,7 +672,7 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
     await stillClip(introPng, introMp4, INTRO_DURATION, logs);
 
     logs.push("Creating main clip");
-    await mainClip(image, mainMp4, logs);
+await mainClip(image, mainMp4, slug, type, fontPath, logs);
 
     logs.push("Creating outro clip");
     await stillClip(outroPng, outroMp4, OUTRO_DURATION, logs);
