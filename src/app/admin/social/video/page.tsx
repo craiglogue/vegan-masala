@@ -398,22 +398,38 @@ export default function AdminSocialVideoPage() {
                   rel="noreferrer"
                   className="rounded-xl bg-yellow-600 px-4 py-2 text-sm font-semibold text-black"
                 >
-                  Open video
+                  Open full video
                 </a>
               ) : null}
             </div>
 
             {activeVideoUrl ? (
-              <div>
-                <p className="mb-3 text-sm text-yellow-100">{activeVideoLabel}</p>
-                <video
-                  key={activeVideoUrl}
-                  controls
-                  preload="metadata"
-                  className="w-full rounded-xl bg-black"
-                  src={activeVideoUrl}
-                />
-              </div>
+              <a
+                href={activeVideoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="block max-w-[220px] overflow-hidden rounded-2xl border border-yellow-700/30 bg-black transition hover:border-yellow-500/60"
+              >
+                <div className="aspect-[9/16] bg-black">
+                  <video
+                    key={activeVideoUrl}
+                    preload="metadata"
+                    muted
+                    playsInline
+                    className="h-full w-full object-cover"
+                    src={activeVideoUrl}
+                  />
+                </div>
+
+                <div className="p-3">
+                  <p className="truncate text-sm font-semibold text-yellow-100">
+                    {activeVideoLabel}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400">
+                    Click to open full size
+                  </p>
+                </div>
+              </a>
             ) : (
               <div className="rounded-xl border border-yellow-700/20 bg-black px-4 py-10 text-center text-sm text-neutral-400">
                 No generated video yet.
@@ -425,7 +441,7 @@ export default function AdminSocialVideoPage() {
             <h2 className="mb-4 text-xl font-semibold text-yellow-200">Generated videos</h2>
 
             {generatedVideos.length ? (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {generatedVideos.map((item) => (
                   <a
                     key={item.slug}
@@ -448,8 +464,8 @@ export default function AdminSocialVideoPage() {
                       />
                     </div>
 
-                    <div className="p-4">
-                      <p className="truncate font-semibold text-yellow-100 group-hover:text-yellow-200">
+                    <div className="p-3">
+                      <p className="truncate text-sm font-semibold text-yellow-100 group-hover:text-yellow-200">
                         {item.label}
                       </p>
                       <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400">
