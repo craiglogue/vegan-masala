@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type SlugItem =
   | string
@@ -27,6 +27,7 @@ type VideoApiResponse = {
 type NormalizedSlug = {
   slug: string;
   label: string;
+  type: "recipe" | "guide";
 };
 
 async function safeJson(res: Response) {
@@ -47,7 +48,11 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
     const slug = item.trim();
     if (!slug) return null;
 
-    return { slug, label: slug };
+    return {
+      slug,
+      label: slug,
+      type: "recipe",
+    };
   }
 
   if (!item || typeof item !== "object") {
@@ -57,14 +62,21 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
   const slug = typeof item.slug === "string" ? item.slug.trim() : "";
   if (!slug) return null;
 
-  const label =
+  const rawType = typeof item.type === "string" ? item.type.trim().toLowerCase() : "";
+  const type: "recipe" | "guide" = rawType === "guide" ? "guide" : "recipe";
+
+  const baseLabel =
     typeof item.label === "string" && item.label.trim()
       ? item.label.trim()
       : typeof item.title === "string" && item.title.trim()
       ? item.title.trim()
       : slug;
 
-  return { slug, label };
+  return {
+    slug,
+    label: `${baseLabel} (${type})`,
+    type,
+  };
 }
 
 export default function AdminSocialVideoPage() {
@@ -76,6 +88,8 @@ export default function AdminSocialVideoPage() {
   const [rawResult, setRawResult] = useState("");
   const [loadingSlugs, setLoadingSlugs] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [generatingAll, setGeneratingAll] = useState(false);
+  const [filter, setFilter] = useState<"all" | "recipe" | "guide">("all");
 
   useEffect(() => {
     let mounted = true;
@@ -97,7 +111,8 @@ export default function AdminSocialVideoPage() {
 
         const nextSlugs = (Array.isArray(data?.slugs) ? data.slugs : [])
           .map(normalizeSlugItem)
-          .filter((item): item is NormalizedSlug => item !== null);
+          .filter((item): item is NormalizedSlug => item !== null)
+          .sort((a, b) => a.label.localeCompare(b.label));
 
         setSlugs(nextSlugs);
 
@@ -119,6 +134,33 @@ export default function AdminSocialVideoPage() {
     };
   }, []);
 
+  const filteredSlugs = useMemo(() => {
+    if (filter === "all") return slugs;
+    return slugs.filter((item) => item.type === filter);
+  }, [slugs, filter]);
+
+  useEffect(() => {
+    if (!filteredSlugs.some((item) => item.slug === selectedSlug)) {
+      setSelectedSlug(filteredSlugs[0]?.slug || "");
+    }
+  }, [filteredSlugs, selectedSlug]);
+
+  const selectedItem = filteredSlugs.find((item) => item.slug === selectedSlug) ?? null;
+
+  async function generateOne(slug: string) {
+    const res = await fetch("/api/admin/social/video", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ slug }),
+    });
+
+    const data = (await safeJson(res)) as VideoApiResponse;
+
+    return { res, data };
+  }
+
   async function handleGenerate() {
     if (!selectedSlug.trim()) {
       setStatus("Please select a slug first");
@@ -132,17 +174,7 @@ export default function AdminSocialVideoPage() {
       setVideoUrl("");
       setRawResult("");
 
-      const res = await fetch("/api/admin/social/video", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          slug: selectedSlug,
-        }),
-      });
-
-      const data = (await safeJson(res)) as VideoApiResponse;
+      const { res, data } = await generateOne(selectedSlug);
 
       setLogs(Array.isArray(data?.logs) ? data.logs : []);
       setVideoUrl(typeof data?.video === "string" ? data.video : "");
@@ -160,92 +192,222 @@ export default function AdminSocialVideoPage() {
     }
   }
 
+  async function handleGenerateAll() {
+    if (!filteredSlugs.length) {
+      setStatus("No slugs available to generate");
+      return;
+    }
+
+    try {
+      setGeneratingAll(true);
+      setGenerating(true);
+      setVideoUrl("");
+      setRawResult("");
+      setLogs([]);
+      setStatus(`Generating ${filteredSlugs.length} videos...`);
+
+      const combinedLogs: string[] = [];
+      let completed = 0;
+      let lastVideo = "";
+
+      for (const item of filteredSlugs) {
+        combinedLogs.push("");
+        combinedLogs.push(`==============================`);
+        combinedLogs.push(`Generating: ${item.slug} (${item.type})`);
+        combinedLogs.push(`==============================`);
+
+        setLogs([...combinedLogs]);
+
+        const { res, data } = await generateOne(item.slug);
+
+        if (Array.isArray(data?.logs)) {
+          combinedLogs.push(...data.logs);
+        }
+
+        if (!res.ok || !data?.ok) {
+          combinedLogs.push(`FAILED: ${item.slug}`);
+          setLogs([...combinedLogs]);
+          setRawResult(JSON.stringify(data, null, 2));
+          throw new Error(data?.error || `Failed on ${item.slug}`);
+        }
+
+        if (typeof data?.video === "string" && data.video) {
+          lastVideo = data.video;
+        }
+
+        completed += 1;
+        combinedLogs.push(`DONE: ${item.slug}`);
+        combinedLogs.push(`Progress: ${completed}/${filteredSlugs.length}`);
+        setLogs([...combinedLogs]);
+        setRawResult(JSON.stringify(data, null, 2));
+      }
+
+      setVideoUrl(lastVideo);
+      setStatus(`Successfully generated ${completed} videos`);
+    } catch (err: any) {
+      setStatus(err?.message || "Bulk video generation failed");
+    } finally {
+      setGenerating(false);
+      setGeneratingAll(false);
+    }
+  }
+
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10 text-white">
-      <h1 className="mb-6 text-3xl font-bold">
-  Video Generator — BRANCH MARKER 61c69c4
-</h1>
-
-      <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-        <label
-          htmlFor="video-slug"
-          className="mb-2 block text-sm font-medium text-yellow-200"
-        >
-          Select slug
-        </label>
-
-        <select
-          id="video-slug"
-          value={selectedSlug}
-          onChange={(e) => setSelectedSlug(e.target.value)}
-          disabled={loadingSlugs || generating || slugs.length === 0}
-          className="w-full rounded-xl border border-yellow-700/40 bg-neutral-900 px-4 py-3 text-white outline-none disabled:opacity-50"
-        >
-          {loadingSlugs ? (
-            <option value="">Loading slugs...</option>
-          ) : slugs.length === 0 ? (
-            <option value="">No slugs found</option>
-          ) : (
-            slugs.map((item) => (
-              <option key={item.slug} value={item.slug}>
-                {item.label}
-              </option>
-            ))
-          )}
-        </select>
-
-        <button
-          type="button"
-          onClick={handleGenerate}
-          disabled={loadingSlugs || generating || !selectedSlug}
-          className="mt-4 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {generating ? "Generating..." : "Generate video"}
-        </button>
-
-        {status ? <p className="mt-4 text-sm text-yellow-100">{status}</p> : null}
+    <main className="mx-auto max-w-6xl px-6 py-10 text-white">
+      <div className="mb-8">
+        <p className="mb-2 text-sm uppercase tracking-[0.25em] text-yellow-300">
+          Admin Social
+        </p>
+        <h1 className="text-3xl font-bold text-yellow-100">Video Generator</h1>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-300">
+          Generate branded short videos for recipes and guides. Use the filter to narrow
+          the dropdown, or bulk-generate all items currently shown.
+        </p>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-        <h2 className="mb-3 text-xl font-semibold text-yellow-200">Script log</h2>
-        <pre className="min-h-[180px] whitespace-pre-wrap rounded-xl bg-black px-4 py-4 text-sm text-green-400">
-          {logs.length ? logs.join("\n") : "No log output yet."}
-        </pre>
-      </div>
+      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <section className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+          <h2 className="mb-4 text-lg font-semibold text-yellow-200">Controls</h2>
 
-      <div className="mt-6 rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-        <h2 className="mb-3 text-xl font-semibold text-yellow-200">Returned JSON</h2>
-        <pre className="min-h-[180px] whitespace-pre-wrap rounded-xl bg-black px-4 py-4 text-sm text-sky-300">
-          {rawResult || "No response yet."}
-        </pre>
-      </div>
-
-      {videoUrl ? (
-        <div className="mt-6 rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-          <h2 className="mb-3 text-xl font-semibold text-yellow-200">Generated video</h2>
-
-          <p className="mb-3 break-all text-sm text-yellow-100">{videoUrl}</p>
-
-          <video
-            key={videoUrl}
-            controls
-            preload="metadata"
-            className="w-full rounded-xl bg-black"
-            src={videoUrl}
-          />
-
-          <div className="mt-4 flex gap-3">
-            <a
-              href={videoUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-xl bg-yellow-600 px-4 py-2 font-semibold text-black"
-            >
-              Open video
-            </a>
+          <label className="mb-2 block text-sm font-medium text-yellow-200">
+            Content type
+          </label>
+          <div className="mb-5 flex gap-2">
+            {(["all", "recipe", "guide"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                disabled={loadingSlugs || generating}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  filter === value
+                    ? "bg-yellow-600 text-black"
+                    : "border border-yellow-700/40 bg-neutral-900 text-yellow-100"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                {value === "all" ? "All" : value === "recipe" ? "Recipes" : "Guides"}
+              </button>
+            ))}
           </div>
-        </div>
-      ) : null}
+
+          <label
+            htmlFor="video-slug"
+            className="mb-2 block text-sm font-medium text-yellow-200"
+          >
+            Select item
+          </label>
+
+          <select
+            id="video-slug"
+            value={selectedSlug}
+            onChange={(e) => setSelectedSlug(e.target.value)}
+            disabled={loadingSlugs || generating || filteredSlugs.length === 0}
+            className="w-full rounded-xl border border-yellow-700/40 bg-neutral-900 px-4 py-3 text-white outline-none disabled:opacity-50"
+          >
+            {loadingSlugs ? (
+              <option value="">Loading content...</option>
+            ) : filteredSlugs.length === 0 ? (
+              <option value="">No matching items found</option>
+            ) : (
+              filteredSlugs.map((item) => (
+                <option key={item.slug} value={item.slug}>
+                  {item.label}
+                </option>
+              ))
+            )}
+          </select>
+
+          <div className="mt-4 rounded-xl border border-yellow-700/20 bg-neutral-950/70 p-4 text-sm">
+            <div className="flex justify-between gap-3">
+              <span className="text-neutral-400">Visible items</span>
+              <span className="font-semibold text-white">{filteredSlugs.length}</span>
+            </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Selected type</span>
+              <span className="font-semibold capitalize text-white">
+                {selectedItem?.type || "—"}
+              </span>
+            </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Selected slug</span>
+              <span className="truncate font-semibold text-white">
+                {selectedItem?.slug || "—"}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3">
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={loadingSlugs || generating || !selectedSlug}
+              className="rounded-xl bg-red-700 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {generating && !generatingAll ? "Generating video..." : "Generate selected video"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleGenerateAll}
+              disabled={loadingSlugs || generating || filteredSlugs.length === 0}
+              className="rounded-xl border border-yellow-700/40 bg-yellow-600 px-5 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {generatingAll
+                ? `Generating ${filteredSlugs.length} videos...`
+                : `Generate all shown (${filteredSlugs.length})`}
+            </button>
+          </div>
+
+          {status ? (
+            <div className="mt-5 rounded-xl border border-yellow-700/30 bg-black/60 p-4 text-sm text-yellow-100">
+              {status}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="space-y-6">
+          <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+            <h2 className="mb-3 text-xl font-semibold text-yellow-200">Script log</h2>
+            <pre className="min-h-[240px] whitespace-pre-wrap rounded-xl bg-black px-4 py-4 text-sm text-green-400">
+              {logs.length ? logs.join("\n") : "No log output yet."}
+            </pre>
+          </div>
+
+          <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+            <h2 className="mb-3 text-xl font-semibold text-yellow-200">Returned JSON</h2>
+            <pre className="min-h-[220px] whitespace-pre-wrap rounded-xl bg-black px-4 py-4 text-sm text-sky-300">
+              {rawResult || "No response yet."}
+            </pre>
+          </div>
+
+          {videoUrl ? (
+            <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+              <h2 className="mb-3 text-xl font-semibold text-yellow-200">Generated video</h2>
+
+              <p className="mb-3 break-all text-sm text-yellow-100">{videoUrl}</p>
+
+              <video
+                key={videoUrl}
+                controls
+                preload="metadata"
+                className="w-full rounded-xl bg-black"
+                src={videoUrl}
+              />
+
+              <div className="mt-4 flex gap-3">
+                <a
+                  href={videoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl bg-yellow-600 px-4 py-2 font-semibold text-black"
+                >
+                  Open video
+                </a>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      </div>
     </main>
   );
 }
