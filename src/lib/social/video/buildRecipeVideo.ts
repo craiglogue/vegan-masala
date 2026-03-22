@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 
 import sharp from "sharp";
 import { put } from "@vercel/blob";
+import ffmpegPath from "ffmpeg-static";
 
 import {
   detectContentTypeBySlug,
@@ -41,6 +42,13 @@ function ensureDir(dir: string) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+function getFfmpegBinary(): string {
+  if (!ffmpegPath) {
+    throw new Error("ffmpeg-static did not provide a binary path");
+  }
+  return ffmpegPath;
+}
+
 function wrap(text: string) {
   const words = text.split(" ").filter(Boolean);
   const lines: string[] = [];
@@ -69,8 +77,10 @@ function esc(text: string) {
     .replaceAll(">", "&gt;");
 }
 
-async function run(args: string[]) {
-  await execFileAsync("ffmpeg", args);
+async function run(args: string[], logs?: string[]) {
+  const bin = getFfmpegBinary();
+  if (logs) logs.push(`ffmpeg binary: ${bin}`);
+  await execFileAsync(bin, args);
 }
 
 async function renderCard(title: string, subtitle: string, out: string) {
@@ -156,49 +166,66 @@ async function renderCard(title: string, subtitle: string, out: string) {
     .toFile(out);
 }
 
-async function stillClip(image: string, out: string, duration: number) {
-  await run([
-    "-y",
-    "-loop",
-    "1",
-    "-i",
-    image,
-    "-t",
-    String(duration),
-    "-vf",
-    `scale=${WIDTH}:${HEIGHT},fade=t=in:st=0:d=1,fade=t=out:st=${duration - 1}:d=1,format=yuv420p`,
-    "-r",
-    String(FPS),
-    "-c:v",
-    "libx264",
-    "-pix_fmt",
-    "yuv420p",
-    out,
-  ]);
+async function stillClip(
+  image: string,
+  out: string,
+  duration: number,
+  logs?: string[]
+) {
+  await run(
+    [
+      "-y",
+      "-loop",
+      "1",
+      "-i",
+      image,
+      "-t",
+      String(duration),
+      "-vf",
+      `scale=${WIDTH}:${HEIGHT},fade=t=in:st=0:d=1,fade=t=out:st=${duration - 1}:d=1,format=yuv420p`,
+      "-r",
+      String(FPS),
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      out,
+    ],
+    logs
+  );
 }
 
-async function mainClip(image: string, out: string) {
-  await run([
-    "-y",
-    "-loop",
-    "1",
-    "-i",
-    image,
-    "-t",
-    String(MAIN_DURATION),
-    "-vf",
-    "scale=1080:1080:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
-    "-r",
-    String(FPS),
-    "-c:v",
-    "libx264",
-    "-pix_fmt",
-    "yuv420p",
-    out,
-  ]);
+async function mainClip(image: string, out: string, logs?: string[]) {
+  await run(
+    [
+      "-y",
+      "-loop",
+      "1",
+      "-i",
+      image,
+      "-t",
+      String(MAIN_DURATION),
+      "-vf",
+      "scale=1080:1080:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",
+      "-r",
+      String(FPS),
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      out,
+    ],
+    logs
+  );
 }
 
-async function concat(intro: string, main: string, outro: string, final: string) {
+async function concat(
+  intro: string,
+  main: string,
+  outro: string,
+  final: string,
+  logs?: string[]
+) {
   const temp = path.join(TEMP_DIR, "video.mp4");
   const music = path.join(
     process.cwd(),
@@ -207,53 +234,59 @@ async function concat(intro: string, main: string, outro: string, final: string)
     "vegan-masala-bed.mp3"
   );
 
-  await run([
-    "-y",
-    "-i",
-    intro,
-    "-i",
-    main,
-    "-i",
-    outro,
-    "-filter_complex",
-    "[0:v][1:v][2:v]concat=n=3:v=1:a=0[outv]",
-    "-map",
-    "[outv]",
-    "-r",
-    String(FPS),
-    "-c:v",
-    "libx264",
-    "-pix_fmt",
-    "yuv420p",
-    temp,
-  ]);
+  await run(
+    [
+      "-y",
+      "-i",
+      intro,
+      "-i",
+      main,
+      "-i",
+      outro,
+      "-filter_complex",
+      "[0:v][1:v][2:v]concat=n=3:v=1:a=0[outv]",
+      "-map",
+      "[outv]",
+      "-r",
+      String(FPS),
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      temp,
+    ],
+    logs
+  );
 
   if (!fs.existsSync(music)) {
     fs.copyFileSync(temp, final);
     return;
   }
 
-  await run([
-    "-y",
-    "-i",
-    temp,
-    "-stream_loop",
-    "-1",
-    "-i",
-    music,
-    "-shortest",
-    "-filter:a",
-    "volume=0.15",
-    "-map",
-    "0:v",
-    "-map",
-    "1:a",
-    "-c:v",
-    "copy",
-    "-c:a",
-    "aac",
-    final,
-  ]);
+  await run(
+    [
+      "-y",
+      "-i",
+      temp,
+      "-stream_loop",
+      "-1",
+      "-i",
+      music,
+      "-shortest",
+      "-filter:a",
+      "volume=0.15",
+      "-map",
+      "0:v",
+      "-map",
+      "1:a",
+      "-c:v",
+      "copy",
+      "-c:a",
+      "aac",
+      final,
+    ],
+    logs
+  );
 }
 
 async function fetchImageBuffer(url: string, logs: string[]) {
@@ -367,16 +400,16 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
     await renderCard("Follow For More", outroText, outroPng);
 
     logs.push("Creating intro clip");
-    await stillClip(introPng, introMp4, INTRO_DURATION);
+    await stillClip(introPng, introMp4, INTRO_DURATION, logs);
 
     logs.push("Creating main clip");
-    await mainClip(image, mainMp4);
+    await mainClip(image, mainMp4, logs);
 
     logs.push("Creating outro clip");
-    await stillClip(outroPng, outroMp4, OUTRO_DURATION);
+    await stillClip(outroPng, outroMp4, OUTRO_DURATION, logs);
 
     logs.push("Concatenating clips");
-    await concat(introMp4, mainMp4, outroMp4, final);
+    await concat(introMp4, mainMp4, outroMp4, final, logs);
 
     if (process.env.VERCEL) {
       logs.push("Uploading video to Vercel Blob");
