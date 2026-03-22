@@ -36,18 +36,6 @@ function ensureDir(dir: string) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function findGeneratedInstagramImage(slug: string) {
-  const p = path.join(GENERATED_IMAGE_DIR, `${slug}.png`);
-  return fs.existsSync(p) ? p : null;
-}
-
-function resolveVideoSourceImage(slug: string, type: ContentType) {
-  const generated = findGeneratedInstagramImage(slug);
-  if (generated) return generated;
-
-  return findContentImage(slug, type);
-}
-
 function wrap(text: string) {
   const words = text.split(" ").filter(Boolean);
   const lines: string[] = [];
@@ -258,7 +246,61 @@ async function concat(intro: string, main: string, outro: string, final: string)
   ]);
 }
 
-export async function buildRecipeVideo(slug: string) {
+async function fetchImageBuffer(url: string, logs: string[]) {
+  logs.push(`Fetch: ${url}`);
+
+  const res = await fetch(url, { cache: "no-store" });
+
+  logs.push(`Fetch status: ${res.status} ${res.statusText}`);
+
+  if (!res.ok) {
+    return null;
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
+async function resolveSourceImage(
+  slug: string,
+  type: ContentType,
+  baseUrl: string,
+  logs: string[]
+) {
+  if (!process.env.VERCEL) {
+    const generated = path.join(GENERATED_IMAGE_DIR, `${slug}.png`);
+    if (fs.existsSync(generated)) {
+      logs.push(`Local generated image: ${generated}`);
+      return generated;
+    }
+
+    const local = findContentImage(slug, type);
+    logs.push(`Local findContentImage(): ${local ?? "none"}`);
+    return local;
+  }
+
+  const remoteCandidates = [
+    `${baseUrl}/generated/instagram/${slug}.png`,
+    `${baseUrl}/images/${type === "recipe" ? "recipes" : "guides"}/${slug}.png`,
+    `${baseUrl}/images/${type === "recipe" ? "recipes" : "guides"}/${slug}.jpg`,
+    `${baseUrl}/images/${type === "recipe" ? "recipes" : "guides"}/${slug}.jpeg`,
+    `${baseUrl}/images/${type === "recipe" ? "recipes" : "guides"}/${slug}.webp`,
+  ];
+
+  for (const url of remoteCandidates) {
+    const buffer = await fetchImageBuffer(url, logs);
+    if (buffer) {
+      const tempFile = path.join(TEMP_DIR, `${slug}-source.png`);
+      await sharp(buffer).png().toFile(tempFile);
+      logs.push(`Using remote image via temp file: ${tempFile}`);
+      return tempFile;
+    }
+  }
+
+  return null;
+}
+
+export async function buildRecipeVideo(slug: string, baseUrl: string) {
   const logs: string[] = [];
 
   try {
@@ -270,38 +312,14 @@ export async function buildRecipeVideo(slug: string) {
     }
 
     logs.push(`Build start: ${slug}`);
+    logs.push(`Base URL: ${baseUrl}`);
 
     const type = detectContentTypeBySlug(slug) || "recipe";
     logs.push(`Detected type: ${type}`);
     logs.push(`process.cwd(): ${process.cwd()}`);
     logs.push(`ROOT: ${ROOT}`);
 
-    const candidatePaths = [
-      path.join(process.cwd(), "public", "images", "recipes", `${slug}.png`),
-      path.join(process.cwd(), "public", "images", "recipes", `${slug}.jpg`),
-      path.join(process.cwd(), "public", "images", "recipes", `${slug}.jpeg`),
-      path.join(process.cwd(), "public", "images", "recipes", `${slug}.webp`),
-      path.join(process.cwd(), "public", "images", "guides", `${slug}.png`),
-      path.join(process.cwd(), "public", "images", "guides", `${slug}.jpg`),
-      path.join(process.cwd(), "public", "images", "guides", `${slug}.jpeg`),
-      path.join(process.cwd(), "public", "images", "guides", `${slug}.webp`),
-      path.join(process.cwd(), "public", "generated", "instagram", `${slug}.png`),
-      path.join(ROOT, "generated", "instagram", `${slug}.png`),
-    ];
-
-    for (const candidate of candidatePaths) {
-      logs.push(
-        `Check: ${candidate} => ${fs.existsSync(candidate) ? "FOUND" : "missing"}`
-      );
-    }
-
-    const generated = findGeneratedInstagramImage(slug);
-    logs.push(`Generated instagram image: ${generated ?? "none"}`);
-
-    const resolvedByHelper = findContentImage(slug, type);
-    logs.push(`findContentImage(): ${resolvedByHelper ?? "none"}`);
-
-    const image = resolveVideoSourceImage(slug, type);
+    const image = await resolveSourceImage(slug, type, baseUrl, logs);
 
     if (!image) {
       throw new Error(`No source image found for slug: ${slug}`);

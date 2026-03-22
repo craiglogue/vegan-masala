@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { buildRecipeVideo } from "@/lib/social/video/buildRecipeVideo";
 
+type VideoBuildResult = {
+  success?: boolean;
+  video?: string;
+  logs?: string[];
+};
+
 export async function POST(req: Request) {
   const logs: string[] = [];
 
@@ -14,8 +20,10 @@ export async function POST(req: Request) {
         ? body.selectedSlug.trim()
         : "";
 
-   logs.push("Video route called");
-logs.push("ROUTE MARKER 61c69c4");
+    const baseUrl = new URL(req.url).origin;
+
+    logs.push("Video route called");
+    logs.push(`Base URL: ${baseUrl}`);
 
     if (!slug) {
       logs.push("No slug received");
@@ -33,13 +41,14 @@ logs.push("ROUTE MARKER 61c69c4");
 
     logs.push(`Slug: ${slug}`);
 
-    await buildRecipeVideo(slug);
+    const result = (await buildRecipeVideo(slug, baseUrl)) as VideoBuildResult;
 
     return NextResponse.json({
       ok: true,
       slug,
-      video: "",
-      logs,
+      video: result.video ?? "",
+      logs: [...logs, ...(result.logs ?? [])],
+      rawResult: result,
     });
   } catch (err: any) {
     logs.push("Video generation failed");
