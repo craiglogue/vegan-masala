@@ -80,13 +80,6 @@ function wrap(text: string) {
   return lines.slice(0, 3);
 }
 
-function esc(text: string) {
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
 async function run(args: string[], logs?: string[]) {
   const bin = getFfmpegBinary(logs);
   await execFileAsync(bin, args);
@@ -171,6 +164,8 @@ async function resolveFont(baseUrl: string, logs: string[]) {
     const localCandidates = [
       path.join(process.cwd(), "public", "fonts", "Rajdhani-Bold.ttf"),
       path.join(process.cwd(), "public", "fonts", "Rajdhani-Regular.ttf"),
+      path.join(process.cwd(), "Rajdhani", "Rajdhani-Bold.ttf"),
+      path.join(process.cwd(), "Rajdhani", "Rajdhani-Regular.ttf"),
     ];
 
     for (const candidate of localCandidates) {
@@ -202,21 +197,6 @@ async function resolveFont(baseUrl: string, logs: string[]) {
   return null;
 }
 
-function fontFaceCss(fontPath: string | null) {
-  if (!fontPath || !fs.existsSync(fontPath)) return "";
-
-  const fontData = fs.readFileSync(fontPath).toString("base64");
-
-  return `
-    @font-face {
-      font-family: 'RajdhaniEmbed';
-      src: url("data:font/ttf;base64,${fontData}") format("truetype");
-      font-weight: 700;
-      font-style: normal;
-    }
-  `;
-}
-
 async function renderCard(
   title: string,
   subtitle: string,
@@ -225,83 +205,10 @@ async function renderCard(
   fontPath: string | null
 ) {
   const lines = wrap(title);
-  const embeddedFont = fontFaceCss(fontPath);
+  const usableFont =
+    fontPath && fs.existsSync(fontPath) ? fontPath : undefined;
 
-  const titleSvg = lines
-    .map(
-      (line, i) => `
-<text
-  x="540"
-  y="${860 + i * 92}"
-  text-anchor="middle"
-  font-size="86"
-  font-weight="700"
-  fill="${BRAND.gold}"
-  font-family="RajdhaniEmbed, Arial, sans-serif"
-  letter-spacing="1"
->
-  ${esc(line)}
-</text>
-`
-    )
-    .join("");
-
-  const svg = `
-<svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    ${embeddedFont}
-  </style>
-
-  <rect width="${WIDTH}" height="${HEIGHT}" fill="#000000"/>
-
-  <rect
-    x="40"
-    y="40"
-    width="${WIDTH - 80}"
-    height="${HEIGHT - 80}"
-    rx="40"
-    ry="40"
-    fill="none"
-    stroke="${BRAND.border}"
-    stroke-width="3"
-  />
-
-  ${titleSvg}
-
-  <text
-    x="540"
-    y="1180"
-    text-anchor="middle"
-    font-size="44"
-    font-weight="600"
-    fill="${BRAND.soft}"
-    font-family="RajdhaniEmbed, Arial, sans-serif"
-    letter-spacing="1"
-  >
-    ${esc(subtitle)}
-  </text>
-
-  <text
-    x="540"
-    y="1830"
-    text-anchor="middle"
-    font-size="34"
-    fill="#ffffff"
-    font-family="RajdhaniEmbed, Arial, sans-serif"
-    letter-spacing="1"
-  >
-    vegan-masala.com
-  </text>
-</svg>
-`;
-
-  const composites: sharp.OverlayOptions[] = [
-    {
-      input: Buffer.from(svg),
-      top: 0,
-      left: 0,
-    },
-  ];
+  const baseComposites: sharp.OverlayOptions[] = [];
 
   if (logoPath && fs.existsSync(logoPath)) {
     const logoBuffer = await sharp(logoPath)
@@ -313,22 +220,116 @@ async function renderCard(
       .png()
       .toBuffer();
 
-    composites.push({
+    baseComposites.push({
       input: logoBuffer,
       top: 420,
       left: 410,
     });
   }
 
+  const titleText = lines.join("\n");
+
+  const titleBuffer = await sharp({
+    text: {
+      text: titleText,
+      width: 820,
+      align: "center",
+      justify: false,
+      rgba: true,
+      dpi: 144,
+      font: "Rajdhani",
+      fontfile: usableFont,
+      fontsize: 82,
+    },
+  })
+    .png()
+    .toBuffer();
+
+  const subtitleBuffer = await sharp({
+    text: {
+      text: subtitle,
+      width: 820,
+      align: "center",
+      justify: false,
+      rgba: true,
+      dpi: 144,
+      font: "Rajdhani",
+      fontfile: usableFont,
+      fontsize: 42,
+    },
+  })
+    .png()
+    .toBuffer();
+
+  const siteBuffer = await sharp({
+    text: {
+      text: "vegan-masala.com",
+      width: 820,
+      align: "center",
+      justify: false,
+      rgba: true,
+      dpi: 144,
+      font: "Rajdhani",
+      fontfile: usableFont,
+      fontsize: 32,
+    },
+  })
+    .png()
+    .toBuffer();
+
+  const titleMeta = await sharp(titleBuffer).metadata();
+  const subtitleMeta = await sharp(subtitleBuffer).metadata();
+  const siteMeta = await sharp(siteBuffer).metadata();
+
+  const frameSvg = `
+  <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${WIDTH}" height="${HEIGHT}" fill="#000000"/>
+
+    <rect
+      x="40"
+      y="40"
+      width="${WIDTH - 80}"
+      height="${HEIGHT - 80}"
+      rx="40"
+      ry="40"
+      fill="none"
+      stroke="${BRAND.border}"
+      stroke-width="3"
+    />
+  </svg>
+  `;
+
   await sharp({
     create: {
       width: WIDTH,
       height: HEIGHT,
       channels: 4,
-      background: "#000",
+      background: "#000000",
     },
   })
-    .composite(composites)
+    .composite([
+      {
+        input: Buffer.from(frameSvg),
+        top: 0,
+        left: 0,
+      },
+      ...baseComposites,
+      {
+        input: titleBuffer,
+        top: 820,
+        left: Math.round((WIDTH - (titleMeta.width ?? 0)) / 2),
+      },
+      {
+        input: subtitleBuffer,
+        top: 1160,
+        left: Math.round((WIDTH - (subtitleMeta.width ?? 0)) / 2),
+      },
+      {
+        input: siteBuffer,
+        top: 1810,
+        left: Math.round((WIDTH - (siteMeta.width ?? 0)) / 2),
+      },
+    ])
     .png()
     .toFile(out);
 }
