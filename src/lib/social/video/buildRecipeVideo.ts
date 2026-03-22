@@ -237,9 +237,8 @@ async function renderCard(
       justify: false,
       rgba: true,
       dpi: 144,
-      font: "Rajdhani",
+      font: "Rajdhani Bold 82",
       fontfile: usableFont,
-      fontsize: 82,
     },
   })
     .png()
@@ -253,9 +252,8 @@ async function renderCard(
       justify: false,
       rgba: true,
       dpi: 144,
-      font: "Rajdhani",
+      font: "Rajdhani Bold 42",
       fontfile: usableFont,
-      fontsize: 42,
     },
   })
     .png()
@@ -269,9 +267,8 @@ async function renderCard(
       justify: false,
       rgba: true,
       dpi: 144,
-      font: "Rajdhani",
+      font: "Rajdhani Bold 32",
       fontfile: usableFont,
-      fontsize: 32,
     },
   })
     .png()
