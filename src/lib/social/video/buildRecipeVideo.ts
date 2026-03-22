@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { createRequire } from "node:module";
 
 import sharp from "sharp";
 import { put } from "@vercel/blob";
-import ffmpegPath from "ffmpeg-static";
 
 import {
   detectContentTypeBySlug,
@@ -16,6 +16,7 @@ import {
 import { findContentImage } from "@/lib/social/core/images";
 import { BRAND } from "@/lib/social/core/brand";
 
+const require = createRequire(import.meta.url);
 const execFileAsync = promisify(execFile);
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
@@ -42,11 +43,30 @@ function ensureDir(dir: string) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function getFfmpegBinary(): string {
-  if (!ffmpegPath) {
-    throw new Error("ffmpeg-static did not provide a binary path");
+function getFfmpegBinary(logs?: string[]) {
+  const ffmpegStatic = require("ffmpeg-static") as string | null;
+  const ffmpegEntry = require.resolve("ffmpeg-static");
+  const pkgDir = path.dirname(ffmpegEntry);
+
+  const candidates = [
+    ffmpegStatic,
+    path.join(pkgDir, "ffmpeg"),
+    path.join(pkgDir, "ffmpeg.exe"),
+  ].filter(Boolean) as string[];
+
+  if (logs) {
+    logs.push(`ffmpeg entry: ${ffmpegEntry}`);
+    logs.push(`ffmpeg candidates: ${candidates.join(" | ")}`);
   }
-  return ffmpegPath;
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      if (logs) logs.push(`ffmpeg binary: ${candidate}`);
+      return candidate;
+    }
+  }
+
+  throw new Error(`ffmpeg binary not found. Candidates: ${candidates.join(", ")}`);
 }
 
 function wrap(text: string) {
@@ -78,8 +98,7 @@ function esc(text: string) {
 }
 
 async function run(args: string[], logs?: string[]) {
-  const bin = getFfmpegBinary();
-  if (logs) logs.push(`ffmpeg binary: ${bin}`);
+  const bin = getFfmpegBinary(logs);
   await execFileAsync(bin, args);
 }
 
@@ -421,6 +440,7 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
         contentType: "video/mp4",
         addRandomSuffix: false,
         allowOverwrite: true,
+        token: process.env.PUBLIC_VIDEO_BLOB_READ_WRITE_TOKEN,
       });
 
       logs.push(`Blob URL: ${blob.url}`);
