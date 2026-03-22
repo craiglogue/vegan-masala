@@ -21,8 +21,6 @@ export async function POST(req: Request) {
         : "";
 
     logs.push("Video route called");
-
-    // marker so we know correct route deployed
     logs.push("ROUTE MARKER social-video-fix");
 
     if (!slug) {
@@ -41,10 +39,11 @@ export async function POST(req: Request) {
 
     logs.push(`Slug: ${slug}`);
 
-    // Build base URL automatically
     const baseUrl =
-      process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
+      process.env.WEBSITE_URL
+        ? process.env.WEBSITE_URL
+        : process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
         : req.headers.get("origin") || "";
 
     logs.push(`Base URL: ${baseUrl || "none"}`);
@@ -58,7 +57,6 @@ export async function POST(req: Request) {
       logs: [...logs, ...(result?.logs ?? [])],
       rawResult: result,
     });
-
   } catch (err: any) {
     logs.push("Video generation failed");
     logs.push(err?.message || "Unknown error");
