@@ -259,93 +259,126 @@ async function concat(intro: string, main: string, outro: string, final: string)
 }
 
 export async function buildRecipeVideo(slug: string) {
-  ensureDir(VIDEO_DIR);
-  ensureDir(TEMP_DIR);
-
-  if (!process.env.VERCEL) {
-    ensureDir(LOCAL_PUBLIC_VIDEO_DIR);
-  }
-
   const logs: string[] = [];
-  logs.push(`Build start: ${slug}`);
 
-  const type = detectContentTypeBySlug(slug) || "recipe";
-  logs.push(`Detected type: ${type}`);
+  try {
+    ensureDir(VIDEO_DIR);
+    ensureDir(TEMP_DIR);
 
-  const image = resolveVideoSourceImage(slug, type);
+    if (!process.env.VERCEL) {
+      ensureDir(LOCAL_PUBLIC_VIDEO_DIR);
+    }
 
-  if (!image) {
-    throw new Error(`No source image found for slug: ${slug}`);
-  }
+    logs.push(`Build start: ${slug}`);
 
-  logs.push(`Source image: ${image}`);
+    const type = detectContentTypeBySlug(slug) || "recipe";
+    logs.push(`Detected type: ${type}`);
+    logs.push(`process.cwd(): ${process.cwd()}`);
+    logs.push(`ROOT: ${ROOT}`);
 
-  const introPng = path.join(TEMP_DIR, `${slug}-intro.png`);
-  const outroPng = path.join(TEMP_DIR, `${slug}-outro.png`);
+    const candidatePaths = [
+      path.join(process.cwd(), "public", "images", "recipes", `${slug}.png`),
+      path.join(process.cwd(), "public", "images", "recipes", `${slug}.jpg`),
+      path.join(process.cwd(), "public", "images", "recipes", `${slug}.jpeg`),
+      path.join(process.cwd(), "public", "images", "recipes", `${slug}.webp`),
+      path.join(process.cwd(), "public", "images", "guides", `${slug}.png`),
+      path.join(process.cwd(), "public", "images", "guides", `${slug}.jpg`),
+      path.join(process.cwd(), "public", "images", "guides", `${slug}.jpeg`),
+      path.join(process.cwd(), "public", "images", "guides", `${slug}.webp`),
+      path.join(process.cwd(), "public", "generated", "instagram", `${slug}.png`),
+      path.join(ROOT, "generated", "instagram", `${slug}.png`),
+    ];
 
-  const introMp4 = path.join(TEMP_DIR, `${slug}-intro.mp4`);
-  const mainMp4 = path.join(TEMP_DIR, `${slug}-main.mp4`);
-  const outroMp4 = path.join(TEMP_DIR, `${slug}-outro.mp4`);
+    for (const candidate of candidatePaths) {
+      logs.push(
+        `Check: ${candidate} => ${fs.existsSync(candidate) ? "FOUND" : "missing"}`
+      );
+    }
 
-  const final = path.join(VIDEO_DIR, `${slug}.mp4`);
+    const generated = findGeneratedInstagramImage(slug);
+    logs.push(`Generated instagram image: ${generated ?? "none"}`);
 
-  const introText =
-    type === "guide" ? "Indian Cooking Guide" : "Vegan Indian Recipe";
+    const resolvedByHelper = findContentImage(slug, type);
+    logs.push(`findContentImage(): ${resolvedByHelper ?? "none"}`);
 
-  const outroText =
-    type === "guide" ? "Guides To Indian Cooking" : "Vegan Indian Recipes";
+    const image = resolveVideoSourceImage(slug, type);
 
-  logs.push("Rendering intro card");
-  await renderCard(titleFromSlug(slug), introText, introPng);
+    if (!image) {
+      throw new Error(`No source image found for slug: ${slug}`);
+    }
 
-  logs.push("Rendering outro card");
-  await renderCard("Follow For More", outroText, outroPng);
+    logs.push(`Source image: ${image}`);
 
-  logs.push("Creating intro clip");
-  await stillClip(introPng, introMp4, INTRO_DURATION);
+    const introPng = path.join(TEMP_DIR, `${slug}-intro.png`);
+    const outroPng = path.join(TEMP_DIR, `${slug}-outro.png`);
 
-  logs.push("Creating main clip");
-  await mainClip(image, mainMp4);
+    const introMp4 = path.join(TEMP_DIR, `${slug}-intro.mp4`);
+    const mainMp4 = path.join(TEMP_DIR, `${slug}-main.mp4`);
+    const outroMp4 = path.join(TEMP_DIR, `${slug}-outro.mp4`);
 
-  logs.push("Creating outro clip");
-  await stillClip(outroPng, outroMp4, OUTRO_DURATION);
+    const final = path.join(VIDEO_DIR, `${slug}.mp4`);
 
-  logs.push("Concatenating clips");
-  await concat(introMp4, mainMp4, outroMp4, final);
+    const introText =
+      type === "guide" ? "Indian Cooking Guide" : "Vegan Indian Recipe";
 
-  if (process.env.VERCEL) {
-    logs.push("Uploading video to Vercel Blob");
+    const outroText =
+      type === "guide" ? "Guides To Indian Cooking" : "Vegan Indian Recipes";
 
-    const fileBuffer = fs.readFileSync(final);
+    logs.push("Rendering intro card");
+    await renderCard(titleFromSlug(slug), introText, introPng);
 
-    const blob = await put(`videos/${slug}.mp4`, fileBuffer, {
-      access: "public",
-      contentType: "video/mp4",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-    });
+    logs.push("Rendering outro card");
+    await renderCard("Follow For More", outroText, outroPng);
 
-    logs.push(`Blob URL: ${blob.url}`);
+    logs.push("Creating intro clip");
+    await stillClip(introPng, introMp4, INTRO_DURATION);
+
+    logs.push("Creating main clip");
+    await mainClip(image, mainMp4);
+
+    logs.push("Creating outro clip");
+    await stillClip(outroPng, outroMp4, OUTRO_DURATION);
+
+    logs.push("Concatenating clips");
+    await concat(introMp4, mainMp4, outroMp4, final);
+
+    if (process.env.VERCEL) {
+      logs.push("Uploading video to Vercel Blob");
+
+      const fileBuffer = fs.readFileSync(final);
+
+      const blob = await put(`videos/${slug}.mp4`, fileBuffer, {
+        access: "public",
+        contentType: "video/mp4",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+      });
+
+      logs.push(`Blob URL: ${blob.url}`);
+      logs.push("Build complete");
+
+      return {
+        success: true,
+        video: blob.url,
+        logs,
+      };
+    }
+
+    const localPublicFile = path.join(LOCAL_PUBLIC_VIDEO_DIR, `${slug}.mp4`);
+    fs.copyFileSync(final, localPublicFile);
+
+    const localUrl = `/generated/video/${slug}.mp4?v=${Date.now()}`;
+
+    logs.push(`Local URL: ${localUrl}`);
     logs.push("Build complete");
 
     return {
       success: true,
-      video: blob.url,
+      video: localUrl,
       logs,
     };
+  } catch (err: any) {
+    logs.push(`ERROR: ${err?.message || "Unknown error"}`);
+    throw new Error(logs.join("\n"));
   }
-
-  const localPublicFile = path.join(LOCAL_PUBLIC_VIDEO_DIR, `${slug}.mp4`);
-  fs.copyFileSync(final, localPublicFile);
-
-  const localUrl = `/generated/video/${slug}.mp4?v=${Date.now()}`;
-
-  logs.push(`Local URL: ${localUrl}`);
-  logs.push("Build complete");
-
-  return {
-    success: true,
-    video: localUrl,
-    logs,
-  };
 }
