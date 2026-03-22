@@ -1,53 +1,48 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getAllRecipes } from "@/lib/recipes";
 
-export default function RecipeHubPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const recipes = getAllRecipes() || [];
+type PageProps = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
 
-  const tag = (params?.slug || "").replace(/-/g," ");
+export default async function RecipeHubPage({ params }: PageProps) {
+  const { slug } = await params;
 
-  const filtered = recipes.filter((r: any) =>
-    r.tags?.some((t: string) =>
-      t.toLowerCase().includes(tag.toLowerCase())
-    )
-  );
-
-  if (!filtered.length) {
-    return (
-      <main className="mx-auto max-w-5xl px-6 py-12">
-        <h1 className="text-3xl font-bold">No recipes found</h1>
-      </main>
-    );
+  if (!slug) {
+    notFound();
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="mb-8 text-4xl font-extrabold text-[var(--brand-gold)]">
-        {tag.replace(/\b\w/g, (c) => c.toUpperCase())} Recipes
-      </h1>
+    <main className="mx-auto max-w-5xl px-6 py-12 text-white">
+      <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-8">
+        <p className="mb-3 text-sm uppercase tracking-[0.2em] text-yellow-300">
+          Recipe Hub
+        </p>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((recipe: any) => (
+        <h1 className="mb-4 text-4xl font-bold text-yellow-100">{slug}</h1>
+
+        <p className="mb-6 text-neutral-300">
+          This recipe hub page is loading correctly for the slug:
+          <span className="ml-2 font-semibold text-white">{slug}</span>
+        </p>
+
+        <div className="flex flex-wrap gap-3">
           <Link
-            key={recipe.slug}
-            href={`/recipes/${recipe.slug}`}
-            className="block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:shadow-lg"
+            href={`/recipes/${slug}`}
+            className="rounded-xl bg-red-700 px-5 py-3 font-semibold text-white"
           >
-            <h2 className="text-lg font-bold text-[var(--brand-gold)]">
-              {recipe.title}
-            </h2>
-
-            {recipe.description && (
-              <p className="mt-2 line-clamp-3 text-sm text-[var(--text-soft)]">
-                {recipe.description}
-              </p>
-            )}
+            View recipe
           </Link>
-        ))}
+
+          <Link
+            href="/recipes"
+            className="rounded-xl border border-yellow-700/40 px-5 py-3 font-semibold text-yellow-100"
+          >
+            Back to recipes
+          </Link>
+        </div>
       </div>
     </main>
   );
