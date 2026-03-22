@@ -80,6 +80,60 @@ function wrap(text: string) {
   return lines.slice(0, 3);
 }
 
+function escapeDrawtext(text: string) {
+  return text
+    .replaceAll("\\", "\\\\")
+    .replaceAll(":", "\\:")
+    .replaceAll("'", "\\'")
+    .replaceAll(",", "\\,")
+    .replaceAll("[", "\\[")
+    .replaceAll("]", "\\]")
+    .replaceAll("%", "\\%");
+}
+
+function buildTitleDrawtext(
+  lines: string[],
+  fontPath: string | null,
+  subtitle: string
+) {
+  const safeFont = fontPath && fs.existsSync(fontPath) ? fontPath : "";
+  const filters: string[] = [];
+
+  lines.forEach((line, i) => {
+    filters.push(
+      `drawtext=` +
+        `fontfile='${escapeDrawtext(safeFont)}':` +
+        `text='${escapeDrawtext(line)}':` +
+        `fontcolor=${BRAND.gold}:` +
+        `fontsize=86:` +
+        `x=(w-text_w)/2:` +
+        `y=${820 + i * 92}`
+    );
+  });
+
+  filters.push(
+    `drawtext=` +
+      `fontfile='${escapeDrawtext(safeFont)}':` +
+      `text='${escapeDrawtext(subtitle)}':` +
+      `fontcolor=${BRAND.soft}:` +
+      `fontsize=44:` +
+      `x=(w-text_w)/2:` +
+      `y=1160`
+  );
+
+  filters.push(
+    `drawtext=` +
+      `fontfile='${escapeDrawtext(safeFont)}':` +
+      `text='vegan-masala.com':` +
+      `fontcolor=white:` +
+      `fontsize=34:` +
+      `x=(w-text_w)/2:` +
+      `y=1810`
+  );
+
+  return filters.join(",");
+}
+
 async function run(args: string[], logs?: string[]) {
   const bin = getFfmpegBinary(logs);
   await execFileAsync(bin, args);
@@ -198,86 +252,9 @@ async function resolveFont(baseUrl: string, logs: string[]) {
 }
 
 async function renderCard(
-  title: string,
-  subtitle: string,
   out: string,
-  logoPath: string | null,
-  fontPath: string | null
+  logoPath: string | null
 ) {
-  const lines = wrap(title);
-  const usableFont =
-    fontPath && fs.existsSync(fontPath) ? fontPath : undefined;
-
-  const baseComposites: sharp.OverlayOptions[] = [];
-
-  if (logoPath && fs.existsSync(logoPath)) {
-    const logoBuffer = await sharp(logoPath)
-      .trim({ threshold: 10 })
-      .resize(260, 260, {
-        fit: "contain",
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      })
-      .png()
-      .toBuffer();
-
-    baseComposites.push({
-      input: logoBuffer,
-      top: 420,
-      left: 410,
-    });
-  }
-
-  const titleText = lines.join("\n");
-
-  const titleBuffer = await sharp({
-    text: {
-      text: titleText,
-      width: 820,
-      align: "center",
-      justify: false,
-      rgba: true,
-      dpi: 144,
-      font: "Rajdhani Bold 82",
-      fontfile: usableFont,
-    },
-  })
-    .png()
-    .toBuffer();
-
-  const subtitleBuffer = await sharp({
-    text: {
-      text: subtitle,
-      width: 820,
-      align: "center",
-      justify: false,
-      rgba: true,
-      dpi: 144,
-      font: "Rajdhani Bold 42",
-      fontfile: usableFont,
-    },
-  })
-    .png()
-    .toBuffer();
-
-  const siteBuffer = await sharp({
-    text: {
-      text: "vegan-masala.com",
-      width: 820,
-      align: "center",
-      justify: false,
-      rgba: true,
-      dpi: 144,
-      font: "Rajdhani Bold 32",
-      fontfile: usableFont,
-    },
-  })
-    .png()
-    .toBuffer();
-
-  const titleMeta = await sharp(titleBuffer).metadata();
-  const subtitleMeta = await sharp(subtitleBuffer).metadata();
-  const siteMeta = await sharp(siteBuffer).metadata();
-
   const frameSvg = `
   <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
     <rect width="${WIDTH}" height="${HEIGHT}" fill="#000000"/>
@@ -296,6 +273,31 @@ async function renderCard(
   </svg>
   `;
 
+  const composites: sharp.OverlayOptions[] = [
+    {
+      input: Buffer.from(frameSvg),
+      top: 0,
+      left: 0,
+    },
+  ];
+
+  if (logoPath && fs.existsSync(logoPath)) {
+    const logoBuffer = await sharp(logoPath)
+      .trim({ threshold: 10 })
+      .resize(260, 260, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .png()
+      .toBuffer();
+
+    composites.push({
+      input: logoBuffer,
+      top: 420,
+      left: 410,
+    });
+  }
+
   await sharp({
     create: {
       width: WIDTH,
@@ -304,29 +306,7 @@ async function renderCard(
       background: "#000000",
     },
   })
-    .composite([
-      {
-        input: Buffer.from(frameSvg),
-        top: 0,
-        left: 0,
-      },
-      ...baseComposites,
-      {
-        input: titleBuffer,
-        top: 820,
-        left: Math.round((WIDTH - (titleMeta.width ?? 0)) / 2),
-      },
-      {
-        input: subtitleBuffer,
-        top: 1160,
-        left: Math.round((WIDTH - (subtitleMeta.width ?? 0)) / 2),
-      },
-      {
-        input: siteBuffer,
-        top: 1810,
-        left: Math.round((WIDTH - (siteMeta.width ?? 0)) / 2),
-      },
-    ])
+    .composite(composites)
     .png()
     .toFile(out);
 }
@@ -335,8 +315,14 @@ async function stillClip(
   image: string,
   out: string,
   duration: number,
+  title: string,
+  subtitle: string,
+  fontPath: string | null,
   logs?: string[]
 ) {
+  const titleLines = wrap(title);
+  const textFilters = buildTitleDrawtext(titleLines, fontPath, subtitle);
+
   await run(
     [
       "-y",
@@ -347,7 +333,7 @@ async function stillClip(
       "-t",
       String(duration),
       "-vf",
-      `scale=${WIDTH}:${HEIGHT},fade=t=in:st=0:d=1,fade=t=out:st=${duration - 1}:d=1,format=yuv420p`,
+      `scale=${WIDTH}:${HEIGHT},${textFilters},fade=t=in:st=0:d=1,fade=t=out:st=${duration - 1}:d=1,format=yuv420p`,
       "-r",
       String(FPS),
       "-c:v",
@@ -568,20 +554,35 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
     const outroText =
       type === "guide" ? "Guides To Indian Cooking" : "Vegan Indian Recipes";
 
-    logs.push("Rendering intro card");
-    await renderCard(titleFromSlug(slug), introText, introPng, logoPath, fontPath);
+  await renderCard(introPng, logoPath);
 
-    logs.push("Rendering outro card");
-    await renderCard("Follow For More", outroText, outroPng, logoPath, fontPath);
+logs.push("Rendering outro card");
+await renderCard(outroPng, logoPath);
 
-    logs.push("Creating intro clip");
-    await stillClip(introPng, introMp4, INTRO_DURATION, logs);
+logs.push("Creating intro clip");
+await stillClip(
+  introPng,
+  introMp4,
+  INTRO_DURATION,
+  titleFromSlug(slug),
+  introText,
+  fontPath,
+  logs
+);
 
-    logs.push("Creating main clip");
-    await mainClip(image, mainMp4, logs);
+logs.push("Creating main clip");
+await mainClip(image, mainMp4, logs);
 
-    logs.push("Creating outro clip");
-    await stillClip(outroPng, outroMp4, OUTRO_DURATION, logs);
+logs.push("Creating outro clip");
+await stillClip(
+  outroPng,
+  outroMp4,
+  OUTRO_DURATION,
+  "Follow For More",
+  outroText,
+  fontPath,
+  logs
+);
 
     logs.push("Concatenating clips");
     await concat(introMp4, mainMp4, outroMp4, final, musicFile, logs);
