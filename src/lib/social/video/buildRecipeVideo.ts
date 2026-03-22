@@ -2,11 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { createRequire } from "node:module";
 
 import sharp from "sharp";
 import { put } from "@vercel/blob";
 import ffmpegPath from "ffmpeg-static";
-import { Resvg } from "@resvg/resvg-js";
 
 import {
   detectContentTypeBySlug,
@@ -16,6 +16,7 @@ import {
 import { findContentImage } from "@/lib/social/core/images";
 import { BRAND } from "@/lib/social/core/brand";
 
+const require = createRequire(import.meta.url);
 const execFileAsync = promisify(execFile);
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
@@ -210,6 +211,22 @@ async function renderCard(
   logoPath: string | null,
   fontPath: string | null
 ) {
+  const { Resvg } = require("@resvg/resvg-js") as {
+    Resvg: new (
+      svg: string,
+      options?: {
+        fitTo?: { mode: "width" | "height" | "zoom"; value: number };
+        font?: {
+          fontBuffers?: Buffer[];
+          loadSystemFonts?: boolean;
+          defaultFontFamily?: string;
+        };
+      }
+    ) => {
+      render: () => { asPng: () => Buffer };
+    };
+  };
+
   const lines = wrap(title);
   const fontBuffer =
     fontPath && fs.existsSync(fontPath) ? fs.readFileSync(fontPath) : null;
