@@ -14,7 +14,8 @@ export async function POST(req: Request) {
         ? body.selectedSlug.trim()
         : "";
 
-    logs.push("Video route called");
+   logs.push("Video route called");
+logs.push("ROUTE MARKER 61c69c4");
 
     if (!slug) {
       logs.push("No slug received");

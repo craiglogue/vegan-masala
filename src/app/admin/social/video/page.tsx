@@ -162,7 +162,9 @@ export default function AdminSocialVideoPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10 text-white">
-      <h1 className="mb-6 text-3xl font-bold">Video Generator</h1>
+      <h1 className="mb-6 text-3xl font-bold">
+  Video Generator — BRANCH MARKER 61c69c4
+</h1>
 
       <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
         <label
