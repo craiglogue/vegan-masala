@@ -456,9 +456,10 @@ async function mainClip(
       `s=1080x1920:` +
       `fps=30[bg]`,
 
-    `[1:v]scale=740:740:force_original_aspect_ratio=cover,` +
+    `[1:v]scale=740:740:force_original_aspect_ratio=increase,` +
       `crop=740:740,` +
-      `setsar=1,format=rgba[fg]`,
+      `setsar=1,` +
+      `format=rgba[fg]`,
 
     `[2:v]setsar=1,format=rgba[frame]`,
 
