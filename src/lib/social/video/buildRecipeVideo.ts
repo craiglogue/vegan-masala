@@ -91,49 +91,6 @@ function escapeDrawtext(text: string) {
     .replaceAll("%", "\\%");
 }
 
-function buildTitleDrawtext(
-  lines: string[],
-  fontPath: string | null,
-  subtitle: string
-) {
-  const safeFont = fontPath && fs.existsSync(fontPath) ? fontPath : "";
-  const filters: string[] = [];
-
-  lines.forEach((line, i) => {
-    filters.push(
-      `drawtext=` +
-        `fontfile='${escapeDrawtext(safeFont)}':` +
-        `text='${escapeDrawtext(line)}':` +
-        `fontcolor=${BRAND.gold}:` +
-        `fontsize=86:` +
-        `x=(w-text_w)/2:` +
-        `y=${820 + i * 92}`
-    );
-  });
-
-  filters.push(
-    `drawtext=` +
-      `fontfile='${escapeDrawtext(safeFont)}':` +
-      `text='${escapeDrawtext(subtitle)}':` +
-      `fontcolor=${BRAND.soft}:` +
-      `fontsize=44:` +
-      `x=(w-text_w)/2:` +
-      `y=1160`
-  );
-
-  filters.push(
-    `drawtext=` +
-      `fontfile='${escapeDrawtext(safeFont)}':` +
-      `text='vegan-masala.com':` +
-      `fontcolor=white:` +
-      `fontsize=34:` +
-      `x=(w-text_w)/2:` +
-      `y=1810`
-  );
-
-  return filters.join(",");
-}
-
 async function run(args: string[], logs?: string[]) {
   const bin = getFfmpegBinary(logs);
   await execFileAsync(bin, args);
@@ -251,10 +208,7 @@ async function resolveFont(baseUrl: string, logs: string[]) {
   return null;
 }
 
-async function renderCard(
-  out: string,
-  logoPath: string | null
-) {
+async function renderCard(out: string, logoPath: string | null) {
   const frameSvg = `
   <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
     <rect width="${WIDTH}" height="${HEIGHT}" fill="#000000"/>
@@ -311,6 +265,49 @@ async function renderCard(
     .toFile(out);
 }
 
+function buildTitleDrawtext(
+  lines: string[],
+  fontPath: string | null,
+  subtitle: string
+) {
+  const safeFont = fontPath && fs.existsSync(fontPath) ? fontPath : "";
+  const filters: string[] = [];
+
+  lines.forEach((line, i) => {
+    filters.push(
+      `drawtext=` +
+        `fontfile='${escapeDrawtext(safeFont)}':` +
+        `text='${escapeDrawtext(line)}':` +
+        `fontcolor=0xD4AF37:` +
+        `fontsize=86:` +
+        `x=(w-text_w)/2:` +
+        `y=${820 + i * 92}`
+    );
+  });
+
+  filters.push(
+    `drawtext=` +
+      `fontfile='${escapeDrawtext(safeFont)}':` +
+      `text='${escapeDrawtext(subtitle)}':` +
+      `fontcolor=0xD8B45A:` +
+      `fontsize=44:` +
+      `x=(w-text_w)/2:` +
+      `y=1160`
+  );
+
+  filters.push(
+    `drawtext=` +
+      `fontfile='${escapeDrawtext(safeFont)}':` +
+      `text='vegan-masala.com':` +
+      `fontcolor=white:` +
+      `fontsize=34:` +
+      `x=(w-text_w)/2:` +
+      `y=1810`
+  );
+
+  return filters.join(",");
+}
+
 async function stillClip(
   image: string,
   out: string,
@@ -323,6 +320,13 @@ async function stillClip(
   const titleLines = wrap(title);
   const textFilters = buildTitleDrawtext(titleLines, fontPath, subtitle);
 
+  const filter = [
+    `[0:v]scale=${WIDTH}:${HEIGHT},${textFilters},` +
+      `fade=t=in:st=0:d=1,` +
+      `fade=t=out:st=${duration - 1}:d=1,` +
+      `format=yuv420p[outv]`,
+  ].join(";");
+
   await run(
     [
       "-y",
@@ -332,8 +336,10 @@ async function stillClip(
       image,
       "-t",
       String(duration),
-      "-vf",
-      `scale=${WIDTH}:${HEIGHT},${textFilters},fade=t=in:st=0:d=1,fade=t=out:st=${duration - 1}:d=1,format=yuv420p`,
+      "-filter_complex",
+      filter,
+      "-map",
+      "[outv]",
       "-r",
       String(FPS),
       "-c:v",
@@ -554,35 +560,36 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
     const outroText =
       type === "guide" ? "Guides To Indian Cooking" : "Vegan Indian Recipes";
 
-  await renderCard(introPng, logoPath);
+    logs.push("Rendering intro card");
+    await renderCard(introPng, logoPath);
 
-logs.push("Rendering outro card");
-await renderCard(outroPng, logoPath);
+    logs.push("Rendering outro card");
+    await renderCard(outroPng, logoPath);
 
-logs.push("Creating intro clip");
-await stillClip(
-  introPng,
-  introMp4,
-  INTRO_DURATION,
-  titleFromSlug(slug),
-  introText,
-  fontPath,
-  logs
-);
+    logs.push("Creating intro clip");
+    await stillClip(
+      introPng,
+      introMp4,
+      INTRO_DURATION,
+      titleFromSlug(slug),
+      introText,
+      fontPath,
+      logs
+    );
 
-logs.push("Creating main clip");
-await mainClip(image, mainMp4, logs);
+    logs.push("Creating main clip");
+    await mainClip(image, mainMp4, logs);
 
-logs.push("Creating outro clip");
-await stillClip(
-  outroPng,
-  outroMp4,
-  OUTRO_DURATION,
-  "Follow For More",
-  outroText,
-  fontPath,
-  logs
-);
+    logs.push("Creating outro clip");
+    await stillClip(
+      outroPng,
+      outroMp4,
+      OUTRO_DURATION,
+      "Follow For More",
+      outroText,
+      fontPath,
+      logs
+    );
 
     logs.push("Concatenating clips");
     await concat(introMp4, mainMp4, outroMp4, final, musicFile, logs);
