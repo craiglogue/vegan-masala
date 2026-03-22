@@ -166,25 +166,79 @@ async function resolveMusic(baseUrl: string, logs: string[]) {
   return out;
 }
 
+async function resolveFont(baseUrl: string, logs: string[]) {
+  if (!process.env.VERCEL) {
+    const localCandidates = [
+      path.join(process.cwd(), "public", "fonts", "Rajdhani-Bold.ttf"),
+      path.join(process.cwd(), "public", "fonts", "Rajdhani-Regular.ttf"),
+    ];
+
+    for (const candidate of localCandidates) {
+      if (fs.existsSync(candidate)) {
+        logs.push(`Using local font: ${candidate}`);
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  const remoteCandidates = [
+    `${baseUrl}/fonts/Rajdhani-Bold.ttf`,
+    `${baseUrl}/fonts/Rajdhani-Regular.ttf`,
+  ];
+
+  for (const url of remoteCandidates) {
+    const buffer = await fetchBuffer(url, logs, "font");
+    if (buffer) {
+      const out = path.join(TEMP_DIR, path.basename(url));
+      fs.writeFileSync(out, buffer);
+      logs.push(`Using remote font: ${out}`);
+      return out;
+    }
+  }
+
+  logs.push("No font found");
+  return null;
+}
+
+function fontFaceCss(fontPath: string | null) {
+  if (!fontPath || !fs.existsSync(fontPath)) return "";
+
+  const fontData = fs.readFileSync(fontPath).toString("base64");
+
+  return `
+    @font-face {
+      font-family: 'RajdhaniEmbed';
+      src: url("data:font/ttf;base64,${fontData}") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+    }
+  `;
+}
+
 async function renderCard(
   title: string,
   subtitle: string,
   out: string,
-  logoPath: string | null
+  logoPath: string | null,
+  fontPath: string | null
 ) {
   const lines = wrap(title);
+  const embeddedFont = fontFaceCss(fontPath);
 
   const titleSvg = lines
     .map(
       (line, i) => `
 <text
   x="540"
-  y="${760 + i * 90}"
+  y="${860 + i * 92}"
   text-anchor="middle"
-  font-size="82"
+  font-size="86"
   font-weight="700"
   fill="${BRAND.gold}"
-  font-family="Arial"
+  font-family="RajdhaniEmbed, Arial, sans-serif"
+  letter-spacing="1"
 >
   ${esc(line)}
 </text>
@@ -194,6 +248,10 @@ async function renderCard(
 
   const svg = `
 <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    ${embeddedFont}
+  </style>
+
   <rect width="${WIDTH}" height="${HEIGHT}" fill="#000000"/>
 
   <rect
@@ -208,40 +266,29 @@ async function renderCard(
     stroke-width="3"
   />
 
-  <rect
-    x="120"
-    y="220"
-    width="840"
-    height="1120"
-    rx="36"
-    ry="36"
-    fill="#0d0d0d"
-    opacity="0.92"
-    stroke="${BRAND.border}"
-    stroke-width="2"
-  />
-
   ${titleSvg}
 
   <text
     x="540"
-    y="1080"
+    y="1180"
     text-anchor="middle"
-    font-size="42"
+    font-size="44"
     font-weight="600"
     fill="${BRAND.soft}"
-    font-family="Arial"
+    font-family="RajdhaniEmbed, Arial, sans-serif"
+    letter-spacing="1"
   >
     ${esc(subtitle)}
   </text>
 
   <text
     x="540"
-    y="1840"
+    y="1830"
     text-anchor="middle"
-    font-size="32"
+    font-size="34"
     fill="#ffffff"
-    font-family="Arial"
+    font-family="RajdhaniEmbed, Arial, sans-serif"
+    letter-spacing="1"
   >
     vegan-masala.com
   </text>
@@ -259,7 +306,7 @@ async function renderCard(
   if (logoPath && fs.existsSync(logoPath)) {
     const logoBuffer = await sharp(logoPath)
       .trim({ threshold: 10 })
-      .resize(240, 240, {
+      .resize(260, 260, {
         fit: "contain",
         background: { r: 0, g: 0, b: 0, alpha: 0 },
       })
@@ -268,8 +315,8 @@ async function renderCard(
 
     composites.push({
       input: logoBuffer,
-      top: 360,
-      left: 420,
+      top: 420,
+      left: 410,
     });
   }
 
@@ -317,17 +364,17 @@ async function stillClip(
 
 async function mainClip(image: string, out: string, logs?: string[]) {
   const filter = [
-    `[0:v]scale=1200:2133:force_original_aspect_ratio=increase,` +
+    `[0:v]scale=1400:2488:force_original_aspect_ratio=increase,` +
       `crop=1080:1920,` +
-      `boxblur=25:10,` +
+      `boxblur=30:12,` +
       `zoompan=` +
-      `z='min(zoom+0.0008,1.12)':` +
+      `z='min(zoom+0.0012,1.18)':` +
       `d=300:` +
-      `x='iw/2-(iw/zoom/2)':` +
+      `x='if(lte(on,150),iw/2-(iw/zoom/2)-on*0.6,iw/2-(iw/zoom/2)-(300-on)*0.6)':` +
       `y='ih/2-(ih/zoom/2)':` +
       `s=1080x1920:` +
       `fps=30[bg]`,
-    `[1:v]scale=980:980:force_original_aspect_ratio=decrease[fg]`,
+    `[1:v]scale=960:960:force_original_aspect_ratio=decrease,format=rgba[fg]`,
     `[bg][fg]overlay=(W-w)/2:(H-h)/2:format=auto,` +
       `fade=t=in:st=0:d=0.8,` +
       `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8[outv]`,
@@ -501,10 +548,12 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
 
     const logoPath = await resolveLogo(resolvedBaseUrl, logs);
     const musicFile = await resolveMusic(resolvedBaseUrl, logs);
+    const fontPath = await resolveFont(resolvedBaseUrl, logs);
 
     logs.push(`Source image: ${image}`);
     logs.push(`Logo path: ${logoPath ?? "none"}`);
     logs.push(`Music file: ${musicFile ?? "none"}`);
+    logs.push(`Font path: ${fontPath ?? "none"}`);
 
     const introPng = path.join(TEMP_DIR, `${slug}-intro.png`);
     const outroPng = path.join(TEMP_DIR, `${slug}-outro.png`);
@@ -522,10 +571,10 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
       type === "guide" ? "Guides To Indian Cooking" : "Vegan Indian Recipes";
 
     logs.push("Rendering intro card");
-    await renderCard(titleFromSlug(slug), introText, introPng, logoPath);
+    await renderCard(titleFromSlug(slug), introText, introPng, logoPath, fontPath);
 
     logs.push("Rendering outro card");
-    await renderCard("Follow For More", outroText, outroPng, logoPath);
+    await renderCard("Follow For More", outroText, outroPng, logoPath, fontPath);
 
     logs.push("Creating intro clip");
     await stillClip(introPng, introMp4, INTRO_DURATION, logs);
