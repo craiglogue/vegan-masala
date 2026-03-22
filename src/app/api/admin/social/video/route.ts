@@ -20,10 +20,10 @@ export async function POST(req: Request) {
         ? body.selectedSlug.trim()
         : "";
 
-    const baseUrl = new URL(req.url).origin;
-
     logs.push("Video route called");
-    logs.push(`Base URL: ${baseUrl}`);
+
+    // marker so we know correct route deployed
+    logs.push("ROUTE MARKER social-video-fix");
 
     if (!slug) {
       logs.push("No slug received");
@@ -41,15 +41,24 @@ export async function POST(req: Request) {
 
     logs.push(`Slug: ${slug}`);
 
+    // Build base URL automatically
+    const baseUrl =
+      process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : req.headers.get("origin") || "";
+
+    logs.push(`Base URL: ${baseUrl || "none"}`);
+
     const result = (await buildRecipeVideo(slug, baseUrl)) as VideoBuildResult;
 
     return NextResponse.json({
       ok: true,
       slug,
-      video: result.video ?? "",
-      logs: [...logs, ...(result.logs ?? [])],
+      video: result?.video ?? "",
+      logs: [...logs, ...(result?.logs ?? [])],
       rawResult: result,
     });
+
   } catch (err: any) {
     logs.push("Video generation failed");
     logs.push(err?.message || "Unknown error");

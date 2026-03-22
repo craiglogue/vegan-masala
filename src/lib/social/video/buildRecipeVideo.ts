@@ -22,7 +22,12 @@ const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const GENERATED_IMAGE_DIR = path.join(ROOT, "generated", "instagram");
 const VIDEO_DIR = path.join(ROOT, "generated", "video");
 const TEMP_DIR = path.join(ROOT, "generated", "video-temp");
-const LOCAL_PUBLIC_VIDEO_DIR = path.join(process.cwd(), "public", "generated", "video");
+const LOCAL_PUBLIC_VIDEO_DIR = path.join(
+  process.cwd(),
+  "public",
+  "generated",
+  "video"
+);
 
 const WIDTH = 1080;
 const HEIGHT = 1920;
@@ -195,7 +200,12 @@ async function mainClip(image: string, out: string) {
 
 async function concat(intro: string, main: string, outro: string, final: string) {
   const temp = path.join(TEMP_DIR, "video.mp4");
-  const music = path.join(process.cwd(), "public", "audio", "vegan-masala-bed.mp3");
+  const music = path.join(
+    process.cwd(),
+    "public",
+    "audio",
+    "vegan-masala-bed.mp3"
+  );
 
   await run([
     "-y",
@@ -279,6 +289,11 @@ async function resolveSourceImage(
     return local;
   }
 
+  if (!baseUrl) {
+    logs.push("No base URL available for remote image fetch");
+    return null;
+  }
+
   const remoteCandidates = [
     `${baseUrl}/generated/instagram/${slug}.png`,
     `${baseUrl}/images/${type === "recipe" ? "recipes" : "guides"}/${slug}.png`,
@@ -300,7 +315,7 @@ async function resolveSourceImage(
   return null;
 }
 
-export async function buildRecipeVideo(slug: string, baseUrl: string) {
+export async function buildRecipeVideo(slug: string, baseUrl?: string) {
   const logs: string[] = [];
 
   try {
@@ -311,15 +326,18 @@ export async function buildRecipeVideo(slug: string, baseUrl: string) {
       ensureDir(LOCAL_PUBLIC_VIDEO_DIR);
     }
 
+    const resolvedBaseUrl =
+      baseUrl || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+
     logs.push(`Build start: ${slug}`);
-    logs.push(`Base URL: ${baseUrl}`);
+    logs.push(`Base URL: ${resolvedBaseUrl || "none"}`);
 
     const type = detectContentTypeBySlug(slug) || "recipe";
     logs.push(`Detected type: ${type}`);
     logs.push(`process.cwd(): ${process.cwd()}`);
     logs.push(`ROOT: ${ROOT}`);
 
-    const image = await resolveSourceImage(slug, type, baseUrl, logs);
+    const image = await resolveSourceImage(slug, type, resolvedBaseUrl, logs);
 
     if (!image) {
       throw new Error(`No source image found for slug: ${slug}`);
