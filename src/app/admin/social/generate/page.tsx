@@ -1,623 +1,534 @@
 "use client";
 
-import { useEffect,useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-type Platform =
-"instagram"|
-"pinterest"|
-"all";
+type SlugItem =
+  | string
+  | {
+      slug?: string;
+      type?: string;
+      title?: string;
+      label?: string;
+    };
 
-type Mode =
-"all"|
-"single"|
-"latest";
-
-type ApiResponse={
-success?:boolean;
-error?:string;
-details?:string;
-message?:string;
-platform?:string;
-mode?:string;
-slug?:string|null;
-count?:number;
+type SlugResponse = {
+  slugs?: SlugItem[];
 };
 
-type SlugOption={
-slug:string;
-title:string;
-label:string;
-type?:string;
+type GenerateResponse = {
+  success?: boolean;
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  slug?: string;
+  image?: string;
+  storage?: "blob" | "local";
+  path?: string;
+  generated?: Array<{
+    slug: string;
+    image: string;
+    storage: "blob" | "local";
+    path: string;
+  }>;
+  count?: number;
 };
 
-export default function SocialGeneratePage(){
+type NormalizedSlug = {
+  slug: string;
+  label: string;
+  type: "recipe" | "guide";
+};
 
-const [platform,setPlatform]=
-useState<Platform>("instagram");
+type GeneratedImageItem = {
+  slug: string;
+  label: string;
+  type: "recipe" | "guide";
+  image: string;
+  storage: "blob" | "local";
+  path: string;
+};
 
-const [mode,setMode]=
-useState<Mode>("latest");
+async function safeJson(res: Response) {
+  const text = await res.text();
 
-const [slug,setSlug]=
-useState("");
-
-const [availableSlugs,setAvailableSlugs]=
-useState<SlugOption[]>([]);
-
-const [slugsLoading,setSlugsLoading]=
-useState(false);
-
-const [loading,setLoading]=
-useState(false);
-
-const [result,setResult]=
-useState<ApiResponse|null>(null);
-
-const [log,setLog]=
-useState("Waiting...");
-
-
-async function loadSlugs(){
-
-try{
-
-setSlugsLoading(true);
-
-const res=
-await fetch(
-"/api/admin/social/slugs",
-{cache:"no-store"}
-);
-
-const data=
-await res.json();
-
-setAvailableSlugs(
-data.slugs||[]
-);
-
-}
-catch{
-
-setAvailableSlugs([]);
-
-}
-finally{
-
-setSlugsLoading(false);
-
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {
+      success: false,
+      error: text || "Invalid server response",
+    };
+  }
 }
 
+function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
+  if (typeof item === "string") {
+    const slug = item.trim();
+    if (!slug) return null;
+
+    return {
+      slug,
+      label: slug,
+      type: "recipe",
+    };
+  }
+
+  if (!item || typeof item !== "object") return null;
+
+  const slug = typeof item.slug === "string" ? item.slug.trim() : "";
+  if (!slug) return null;
+
+  const rawType = typeof item.type === "string" ? item.type.trim().toLowerCase() : "";
+  const type: "recipe" | "guide" = rawType === "guide" ? "guide" : "recipe";
+
+  const baseLabel =
+    typeof item.label === "string" && item.label.trim()
+      ? item.label.trim()
+      : typeof item.title === "string" && item.title.trim()
+        ? item.title.trim()
+        : slug;
+
+  return {
+    slug,
+    label: `${baseLabel} (${type})`,
+    type,
+  };
 }
 
-
-useEffect(()=>{
-
-void loadSlugs();
-
-},[]);
-
-
-async function run(
-nextPlatform=platform,
-nextMode=mode
-){
-
-if(
-nextMode==="single"
-&& !slug.trim()
-){
-
-setResult({
-
-error:"Slug required",
-
-details:
-"Select content first"
-
-});
-
-return;
-
-}
-
-setLoading(true);
-
-setResult(null);
-
-setLog(
-
-`Running generator
-
-Platform: ${nextPlatform}
-Mode: ${nextMode}
-
-${
-nextMode==="single"
-?`Slug: ${slug}`
-:""
-}`
-
-);
-
-try{
-
-const res=
-await fetch(
-"/api/admin/social",
-{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-platform:nextPlatform,
-mode:nextMode,
-
-slug:
-nextMode==="single"
-?slug.trim()
-:null
-
-})
-
-}
-
-);
-
-const data:
-ApiResponse=
-await res.json();
-
-setResult(data);
-
-if(!res.ok){
-
-setLog(
-prev=>prev+
-"\n\nFailed"
-);
-
-return;
-
-}
-
-setLog(
-
-prev=>
-prev+
-"\n\nSuccess\n"+
-(
-data.message||
-"Generation complete"
-)
-
-);
-
-if(
-nextMode==="single"
-){
-
-setSlug("");
-
-}
-
-await loadSlugs();
-
-}
-catch(err:any){
-
-setResult({
-
-error:"Request failed",
-
-details:
-err?.message||
-"Unknown error"
-
-});
-
-setLog(
-prev=>prev+
-"\n\nRequest failed"
-);
-
-}
-finally{
-
-setLoading(false);
-
-}
-
-}
-
-
-return(
-
-<main className="mx-auto max-w-6xl px-6 py-10">
-
-<div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-
-<div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--brand-gold)]/70">
-Admin
-</div>
-
-<h1 className="mt-2 text-3xl font-extrabold text-[var(--brand-gold)]">
-Content Generator
-</h1>
-
-<p className="mt-3 text-sm text-[var(--text-soft)] max-w-xl">
-
-Generate Instagram posts and Pinterest pins automatically.
-Use latest for daily publishing or all when rebuilding assets.
-
-</p>
-
-</div>
-
-
-
-{/* QUICK */}
-
-<section className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-
-<h2 className="text-xl font-bold text-[var(--brand-gold)]">
-
-Quick generate
-
-</h2>
-
-
-<div className="mt-6 flex flex-wrap gap-3">
-
-<button
-
-onClick={()=>
-run("instagram","latest")
-}
-
-disabled={loading}
-
-className="rounded-xl bg-[var(--brand-red)] px-6 py-3 text-sm font-bold text-white"
-
->
-
-Latest Instagram
-
-</button>
-
-
-<button
-
-onClick={()=>
-run("pinterest","latest")
-}
-
-disabled={loading}
-
-className="rounded-xl bg-[var(--brand-red)] px-6 py-3 text-sm font-bold text-white"
-
->
-
-Latest Pinterest
-
-</button>
-
-
-<button
-
-onClick={()=>
-run("all","latest")
-}
-
-disabled={loading}
-
-className="rounded-xl bg-[var(--brand-red)] px-6 py-3 text-sm font-bold text-white"
-
->
-
-Latest Both
-
-</button>
-
-
-<button
-
-onClick={()=>
-run("all","all")
-}
-
-disabled={loading}
-
-className="rounded-xl border border-[var(--border)] px-6 py-3 text-sm font-bold text-[var(--brand-gold)]"
-
->
-
-Generate Everything
-
-</button>
-
-</div>
-
-</section>
-
-
-
-
-{/* MANUAL */}
-
-<section className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-
-<h2 className="text-xl font-bold text-[var(--brand-gold)]">
-
-Manual run
-
-</h2>
-
-
-<div className="mt-6 grid gap-6 md:grid-cols-3">
-
-
-<div>
-
-<label className="text-sm font-bold text-[var(--brand-gold)]">
-
-Platform
-
-</label>
-
-
-<select
-
-value={platform}
-
-onChange={(e)=>
-setPlatform(
-e.target.value as Platform
-)
-}
-
-className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-white"
-
->
-
-<option value="instagram">
-Instagram
-</option>
-
-<option value="pinterest">
-Pinterest
-</option>
-
-<option value="all">
-Both
-</option>
-
-</select>
-
-</div>
-
-
-
-<div>
-
-<label className="text-sm font-bold text-[var(--brand-gold)]">
-
-Mode
-
-</label>
-
-
-<select
-
-value={mode}
-
-onChange={(e)=>
-setMode(
-e.target.value as Mode
-)
-}
-
-className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-white"
-
->
-
-<option value="all">
-Generate all
-</option>
-
-<option value="single">
-Generate single
-</option>
-
-<option value="latest">
-Latest
-</option>
-
-</select>
-
-</div>
-
-
-
-<div>
-
-<label className="text-sm font-bold text-[var(--brand-gold)]">
-
-Slug
-
-</label>
-
-
-<select
-
-value={slug}
-
-onChange={(e)=>
-setSlug(e.target.value)
-}
-
-disabled={mode!=="single"}
-
-className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-white disabled:opacity-40"
-
->
-
-<option value="">
-
-{mode!=="single"
-?"Single mode not selected"
-:slugsLoading
-?"Loading..."
-:"Select content"}
-
-</option>
-
-{availableSlugs.map(item=>(
-
-<option
-key={item.slug}
-value={item.slug}
->
-
-{item.label}
-
-</option>
-
-))}
-
-</select>
-
-</div>
-
-
-</div>
-
-
-
-<div className="mt-6">
-
-<button
-
-onClick={()=>run()}
-
-disabled={loading}
-
-className="rounded-xl bg-[var(--brand-red)] px-8 py-3 font-bold text-white"
-
->
-
-{loading
-?"Running"
-:"Run generator"}
-
-</button>
-
-</div>
-
-</section>
-
-
-
-{/* RESULT */}
-
-<section className="mt-8 grid gap-8 lg:grid-cols-2">
-
-
-<div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-
-<h2 className="text-xl font-bold text-[var(--brand-gold)]">
-
-Result
-
-</h2>
-
-
-<div className="mt-4 rounded-xl bg-black/30 p-5 text-sm">
-
-{result?(
-
-<>
-
-<p>
-
-{result.success
-?"Success"
-:"Failed"}
-
-</p>
-
-{result.message&&(
-
-<p className="mt-2">
-
-{result.message}
-
-</p>
-
-)}
-
-{result.error&&(
-
-<p className="mt-2 text-red-400">
-
-{result.error}
-
-</p>
-
-)}
-
-{result.count!==undefined&&(
-
-<p className="mt-2">
-
-Generated:
-{result.count}
-
-</p>
-
-)}
-
-</>
-
-):(
-
-<p>No run yet</p>
-
-)}
-
-</div>
-
-</div>
-
-
-
-<div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-
-<h2 className="text-xl font-bold text-[var(--brand-gold)]">
-
-Log
-
-</h2>
-
-
-<pre className="mt-4 min-h-[240px] rounded-xl bg-black/30 p-5 text-xs">
-
-{log}
-
-</pre>
-
-</div>
-
-</section>
-
-
-</main>
-
-);
-
+export default function AdminSocialGeneratePage() {
+  const [slugs, setSlugs] = useState<NormalizedSlug[]>([]);
+  const [selectedSlug, setSelectedSlug] = useState("");
+  const [filter, setFilter] = useState<"all" | "recipe" | "guide">("all");
+  const [loadingSlugs, setLoadingSlugs] = useState(true);
+  const [generatingOne, setGeneratingOne] = useState(false);
+  const [generatingAll, setGeneratingAll] = useState(false);
+  const [status, setStatus] = useState("");
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImageItem[]>([]);
+  const [activeImageUrl, setActiveImageUrl] = useState("");
+  const [activeImageLabel, setActiveImageLabel] = useState("");
+  const [activeStorage, setActiveStorage] = useState<"blob" | "local" | "">("");
+  const [activePath, setActivePath] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSlugs() {
+      try {
+        const res = await fetch("/api/admin/social/slugs", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = (await safeJson(res)) as SlugResponse & { error?: string };
+
+        if (!mounted) return;
+
+        if (!res.ok) {
+          throw new Error(data?.error || "Failed to load content");
+        }
+
+        const nextSlugs = (Array.isArray(data?.slugs) ? data.slugs : [])
+          .map(normalizeSlugItem)
+          .filter((item): item is NormalizedSlug => item !== null)
+          .sort((a, b) => a.label.localeCompare(b.label));
+
+        setSlugs(nextSlugs);
+
+        if (nextSlugs.length > 0) {
+          setSelectedSlug(nextSlugs[0].slug);
+        }
+      } catch (err: any) {
+        if (!mounted) return;
+        setStatus(err?.message || "Failed to load content");
+      } finally {
+        if (mounted) setLoadingSlugs(false);
+      }
+    }
+
+    loadSlugs();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const filteredSlugs = useMemo(() => {
+    if (filter === "all") return slugs;
+    return slugs.filter((item) => item.type === filter);
+  }, [slugs, filter]);
+
+  useEffect(() => {
+    if (!filteredSlugs.some((item) => item.slug === selectedSlug)) {
+      setSelectedSlug(filteredSlugs[0]?.slug || "");
+    }
+  }, [filteredSlugs, selectedSlug]);
+
+  const selectedItem = filteredSlugs.find((item) => item.slug === selectedSlug) ?? null;
+
+  function addGeneratedImage(item: GeneratedImageItem) {
+    setGeneratedImages((prev) => {
+      const withoutExisting = prev.filter((entry) => entry.slug !== item.slug);
+      return [item, ...withoutExisting];
+    });
+
+    setActiveImageUrl(item.image);
+    setActiveImageLabel(item.label);
+    setActiveStorage(item.storage);
+    setActivePath(item.path);
+  }
+
+  async function generateOne(slug: string) {
+    const res = await fetch("/api/admin/social", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "instagram",
+        slug,
+      }),
+    });
+
+    const data = (await safeJson(res)) as GenerateResponse;
+    return { res, data };
+  }
+
+  async function generateAll() {
+    const res = await fetch("/api/admin/social", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "instagram-all",
+      }),
+    });
+
+    const data = (await safeJson(res)) as GenerateResponse;
+    return { res, data };
+  }
+
+  async function handleGenerateOne() {
+    if (!selectedItem) {
+      setStatus("Please select an item first");
+      return;
+    }
+
+    try {
+      setGeneratingOne(true);
+      setStatus(`Generating Instagram image for ${selectedItem.slug}...`);
+
+      const { res, data } = await generateOne(selectedItem.slug);
+
+      if (!res.ok || (!data?.success && !data?.ok)) {
+        throw new Error(data?.error || data?.message || "Instagram generation failed");
+      }
+
+      if (data.image && data.storage && data.path) {
+        addGeneratedImage({
+          slug: selectedItem.slug,
+          label: selectedItem.label,
+          type: selectedItem.type,
+          image: data.image,
+          storage: data.storage,
+          path: data.path,
+        });
+      }
+
+      setStatus(data?.message || `Instagram image generated for ${selectedItem.slug}`);
+    } catch (err: any) {
+      setStatus(err?.message || "Instagram generation failed");
+    } finally {
+      setGeneratingOne(false);
+    }
+  }
+
+  async function handleGenerateAll() {
+    try {
+      setGeneratingAll(true);
+      setStatus("Generating all Instagram images...");
+
+      const { res, data } = await generateAll();
+
+      if (!res.ok || (!data?.success && !data?.ok)) {
+        throw new Error(data?.error || data?.message || "Bulk Instagram generation failed");
+      }
+
+      const generated = Array.isArray(data.generated) ? data.generated : [];
+
+      const mapped = generated
+        .map((item) => {
+          const match = slugs.find((s) => s.slug === item.slug);
+          return {
+            slug: item.slug,
+            label: match?.label || item.slug,
+            type: match?.type || "recipe",
+            image: item.image,
+            storage: item.storage,
+            path: item.path,
+          } satisfies GeneratedImageItem;
+        })
+        .reverse();
+
+      setGeneratedImages(mapped);
+
+      if (mapped.length > 0) {
+        const first = mapped[mapped.length - 1];
+        setActiveImageUrl(first.image);
+        setActiveImageLabel(first.label);
+        setActiveStorage(first.storage);
+        setActivePath(first.path);
+      }
+
+      setStatus(
+        data?.message || `Generated ${typeof data.count === "number" ? data.count : generated.length} Instagram images`
+      );
+    } catch (err: any) {
+      setStatus(err?.message || "Bulk Instagram generation failed");
+    } finally {
+      setGeneratingAll(false);
+    }
+  }
+
+  return (
+    <main className="mx-auto max-w-7xl px-6 py-10 text-white">
+      <div className="mb-8">
+        <p className="mb-2 text-sm uppercase tracking-[0.25em] text-yellow-300">
+          Admin Social
+        </p>
+        <h1 className="text-3xl font-bold text-yellow-100">Instagram Generator</h1>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-300">
+          Generate Instagram cards and see the returned asset URL, storage location,
+          and image preview immediately.
+        </p>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+        <section className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+          <h2 className="mb-4 text-lg font-semibold text-yellow-200">Controls</h2>
+
+          <label className="mb-2 block text-sm font-medium text-yellow-200">
+            Content type
+          </label>
+
+          <div className="mb-5 flex gap-2">
+            {(["all", "recipe", "guide"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                disabled={loadingSlugs || generatingOne || generatingAll}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  filter === value
+                    ? "bg-yellow-600 text-black"
+                    : "border border-yellow-700/40 bg-neutral-900 text-yellow-100"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                {value === "all" ? "All" : value === "recipe" ? "Recipes" : "Guides"}
+              </button>
+            ))}
+          </div>
+
+          <label
+            htmlFor="instagram-slug"
+            className="mb-2 block text-sm font-medium text-yellow-200"
+          >
+            Select item
+          </label>
+
+          <select
+            id="instagram-slug"
+            value={selectedSlug}
+            onChange={(e) => setSelectedSlug(e.target.value)}
+            disabled={loadingSlugs || generatingOne || generatingAll || filteredSlugs.length === 0}
+            className="w-full rounded-xl border border-yellow-700/40 bg-neutral-900 px-4 py-3 text-white outline-none disabled:opacity-50"
+          >
+            {loadingSlugs ? (
+              <option value="">Loading content...</option>
+            ) : filteredSlugs.length === 0 ? (
+              <option value="">No matching items found</option>
+            ) : (
+              filteredSlugs.map((item) => (
+                <option key={item.slug} value={item.slug}>
+                  {item.label}
+                </option>
+              ))
+            )}
+          </select>
+
+          <div className="mt-5 rounded-xl border border-yellow-700/20 bg-neutral-950/70 p-4 text-sm">
+            <div className="flex justify-between gap-3">
+              <span className="text-neutral-400">Visible items</span>
+              <span className="font-semibold text-white">{filteredSlugs.length}</span>
+            </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Selected type</span>
+              <span className="font-semibold capitalize text-white">
+                {selectedItem?.type || "—"}
+              </span>
+            </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Selected slug</span>
+              <span className="truncate font-semibold text-white">
+                {selectedItem?.slug || "—"}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3">
+            <button
+              type="button"
+              onClick={handleGenerateOne}
+              disabled={loadingSlugs || generatingOne || generatingAll || !selectedSlug}
+              className="rounded-xl bg-red-700 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {generatingOne ? "Generating..." : "Generate selected Instagram card"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleGenerateAll}
+              disabled={loadingSlugs || generatingOne || generatingAll || slugs.length === 0}
+              className="rounded-xl border border-yellow-700/40 bg-yellow-600 px-5 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {generatingAll ? "Generating all..." : `Generate all Instagram cards (${slugs.length})`}
+            </button>
+          </div>
+
+          {status ? (
+            <div className="mt-5 rounded-xl border border-yellow-700/30 bg-black/60 p-4 text-sm text-yellow-100">
+              {status}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="space-y-6">
+          <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h2 className="text-xl font-semibold text-yellow-200">Latest generated card</h2>
+              {activeImageUrl ? (
+                <a
+                  href={activeImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl bg-yellow-600 px-4 py-2 text-sm font-semibold text-black"
+                >
+                  Open full image
+                </a>
+              ) : null}
+            </div>
+
+            {activeImageUrl ? (
+              <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+                <a
+                  href={activeImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block overflow-hidden rounded-2xl border border-yellow-700/30 bg-black transition hover:border-yellow-500/60"
+                >
+                  <div className="aspect-square bg-black">
+                    <img
+                      src={activeImageUrl}
+                      alt={activeImageLabel}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                </a>
+
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.18em] text-neutral-400">
+                      Item
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-yellow-100">
+                      {activeImageLabel}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.18em] text-neutral-400">
+                      Storage
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-white">
+                      {activeStorage || "—"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.18em] text-neutral-400">
+                      Path
+                    </p>
+                    <p className="mt-1 break-all text-sm text-neutral-200">
+                      {activePath || "—"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.18em] text-neutral-400">
+                      Image URL
+                    </p>
+                    <a
+                      href={activeImageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 block break-all text-sm text-sky-300 hover:text-sky-200"
+                    >
+                      {activeImageUrl}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-yellow-700/20 bg-black px-4 py-10 text-center text-sm text-neutral-400">
+                No generated Instagram card yet.
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-yellow-200">Generated cards</h2>
+
+            {generatedImages.length ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {generatedImages.map((item) => (
+                  <button
+                    key={item.slug}
+                    type="button"
+                    onClick={() => {
+                      setActiveImageUrl(item.image);
+                      setActiveImageLabel(item.label);
+                      setActiveStorage(item.storage);
+                      setActivePath(item.path);
+                    }}
+                    className="overflow-hidden rounded-2xl border border-yellow-700/30 bg-neutral-950 text-left transition hover:border-yellow-500/60"
+                  >
+                    <div className="aspect-square bg-black">
+                      <img
+                        src={item.image}
+                        alt={item.label}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+
+                    <div className="p-3">
+                      <p className="truncate text-sm font-semibold text-yellow-100">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400">
+                        {item.storage}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-yellow-700/20 bg-black px-4 py-10 text-center text-sm text-neutral-400">
+                Generated Instagram cards will appear here.
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 }
