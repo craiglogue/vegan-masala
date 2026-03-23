@@ -185,6 +185,7 @@ export default function AdminSocialGeneratePage() {
     },
     body: JSON.stringify({
       platform: "instagram",
+      mode: "single",
       slug,
     }),
   });
