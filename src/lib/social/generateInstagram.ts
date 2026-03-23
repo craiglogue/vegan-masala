@@ -1,8 +1,9 @@
 import path from "node:path";
 import fs from "node:fs";
 import sharp from "sharp";
+import opentype from "opentype.js";
 
-import { BRAND } from "./core/brand";
+import { BRAND, findBrandLogo } from "./core/brand";
 import {
   allContent,
   detectContentTypeBySlug,
@@ -13,11 +14,7 @@ import {
   type ContentType,
 } from "./core/content";
 
-import {
-  backgroundBuffer,
-  findContentImage,
-  logoBuffer,
-} from "./core/images";
+import { findContentImage } from "./core/images";
 
 import {
   buildInstagramCaption,
@@ -37,6 +34,218 @@ const PUBLIC_OUTPUT = process.env.VERCEL
 
 const WIDTH = 1080;
 const HEIGHT = 1080;
+
+function getBaseUrl() {
+  return (
+    process.env.SOCIAL_ASSET_BASE_URL ||
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://www.vegan-masala.com"
+  ).replace(/\/+$/, "");
+}
+
+async function fetchBuffer(url: string) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) return null;
+  const arrayBuffer = await res.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
+async function resolveSourceImage(
+  slug: string,
+  type: ContentType
+): Promise<string | Buffer | null> {
+  if (!process.env.VERCEL) {
+    return findContentImage(slug, type);
+  }
+
+  const folder = type === "recipe" ? "recipes" : "guides";
+  const baseUrl = getBaseUrl();
+  const exts = ["png", "jpg", "jpeg", "webp"];
+
+  for (const ext of exts) {
+    const url = `${baseUrl}/images/${folder}/${slug}.${ext}`;
+    const buffer = await fetchBuffer(url);
+    if (buffer) return buffer;
+  }
+
+  return null;
+}
+
+async function resolveLogo(): Promise<Buffer | null> {
+  if (!process.env.VERCEL) {
+    const local = findBrandLogo();
+    if (!local || !fs.existsSync(local)) return null;
+    return fs.readFileSync(local);
+  }
+
+  const baseUrl = getBaseUrl();
+  const candidates = [
+    `${baseUrl}/brand/logo-flat.png`,
+    `${baseUrl}/brand/vegan-masala-logo.png`,
+    `${baseUrl}/brand/logo.png`,
+    `${baseUrl}/images/vegan-masala-logo.png`,
+    `${baseUrl}/images/logo.png`,
+    `${baseUrl}/logo.png`,
+  ];
+
+  for (const url of candidates) {
+    const buffer = await fetchBuffer(url);
+    if (buffer) return buffer;
+  }
+
+  return null;
+}
+
+async function resolveFontPath(): Promise<string | null> {
+  if (!process.env.VERCEL) {
+    const localCandidates = [
+      path.join(process.cwd(), "public", "fonts", "Rajdhani-Bold.ttf"),
+      path.join(process.cwd(), "public", "fonts", "Rajdhani-Regular.ttf"),
+    ];
+
+    for (const candidate of localCandidates) {
+      if (fs.existsSync(candidate)) return candidate;
+    }
+
+    return null;
+  }
+
+  const baseUrl = getBaseUrl();
+  const remoteCandidates = [
+    `${baseUrl}/fonts/Rajdhani-Bold.ttf`,
+    `${baseUrl}/fonts/Rajdhani-Regular.ttf`,
+  ];
+
+  for (const url of remoteCandidates) {
+    const buffer = await fetchBuffer(url);
+    if (buffer) {
+      const out = path.join(
+        ROOT,
+        "generated",
+        "instagram",
+        path.basename(url)
+      );
+      ensureDir(path.dirname(out));
+      fs.writeFileSync(out, buffer);
+      return out;
+    }
+  }
+
+  return null;
+}
+
+function loadFontOrThrow(fontPath: string | null) {
+  if (!fontPath || !fs.existsSync(fontPath)) {
+    throw new Error("Rajdhani font not found for Instagram rendering");
+  }
+
+  return opentype.loadSync(fontPath);
+}
+
+function makeTextPathSvg(
+  text: string,
+  font: opentype.Font,
+  fontSize: number,
+  fill: string,
+  centerX: number,
+  baselineY: number,
+  letterSpacing = 0
+) {
+  if (!text.trim()) return "";
+
+  let cursorX = 0;
+  const glyphs = font.stringToGlyphs(text);
+  const unitsPerEm = font.unitsPerEm || 1000;
+  const scale = fontSize / unitsPerEm;
+
+  const parts: string[] = [];
+  let minX = Infinity;
+  let maxX = -Infinity;
+
+  for (const glyph of glyphs) {
+    const pathObj = glyph.getPath(cursorX, baselineY, fontSize);
+    const bbox = pathObj.getBoundingBox();
+
+    if (Number.isFinite(bbox.x1) && Number.isFinite(bbox.x2)) {
+      minX = Math.min(minX, bbox.x1);
+      maxX = Math.max(maxX, bbox.x2);
+    }
+
+    parts.push(pathObj.toPathData(2));
+
+    const advance =
+      (glyph.advanceWidth || unitsPerEm * 0.5) * scale + letterSpacing;
+    cursorX += advance;
+  }
+
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
+    return "";
+  }
+
+  const width = maxX - minX;
+  const translateX = centerX - (minX + width / 2);
+
+  return `
+    <g transform="translate(${translateX},0)">
+      <path d="${parts.join(" ")}" fill="${fill}" />
+    </g>
+  `;
+}
+
+function wrapTitle(text: string) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+
+    if (next.length <= 16) {
+      current = next;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+      if (lines.length >= 1) break;
+    }
+  }
+
+  if (current && lines.length < 2) {
+    lines.push(current);
+  }
+
+  return lines;
+}
+
+function buildBadge(type: ContentType) {
+  return type === "recipe" ? "RECIPE" : "GUIDE";
+}
+
+function buildSubtitle(type: ContentType) {
+  return type === "recipe"
+    ? "Vegan Indian Recipe"
+    : "Indian Cooking Guide";
+}
+
+async function backgroundBufferFromSource(source: string | Buffer | null) {
+  if (!source) {
+    return sharp({
+      create: {
+        width: WIDTH,
+        height: HEIGHT,
+        channels: 4,
+        background: BRAND.bg,
+      },
+    })
+      .png()
+      .toBuffer();
+  }
+
+  return sharp(source)
+    .resize(WIDTH, HEIGHT, { fit: "cover" })
+    .png()
+    .toBuffer();
+}
 
 async function topGradient() {
   return sharp(
@@ -100,76 +309,23 @@ async function frameOverlay() {
     .toBuffer();
 }
 
-function wrapTitle(text: string) {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
-
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-
-    if (next.length <= 16) {
-      current = next;
-    } else {
-      if (current) lines.push(current);
-      current = word;
-      if (lines.length >= 1) break;
-    }
-  }
-
-  if (current && lines.length < 2) {
-    lines.push(current);
-  }
-
-  return lines;
-}
-
-function buildBadge(type: ContentType) {
-  return type === "recipe" ? "RECIPE" : "GUIDE";
-}
-
-function buildSubtitle(type: ContentType) {
-  return type === "recipe"
-    ? "Vegan Indian Recipe"
-    : "Indian Cooking Guide";
-}
-
-function esc(text: string) {
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
-async function textOverlay(
-  title: string,
-  subtitle: string,
-  badge: string
+async function badgeOverlay(
+  badge: string,
+  font: opentype.Font
 ) {
-  const lines = wrapTitle(title);
-
-  const lineSvgs = lines
-    .map(
-      (line, i) => `
-        <text
-          x="540"
-          y="${470 + i * 95}"
-          text-anchor="middle"
-          font-size="90"
-          font-weight="700"
-          fill="${BRAND.gold}"
-          font-family="Arial"
-        >
-          ${esc(line)}
-        </text>
-      `
-    )
-    .join("");
+  const badgeText = makeTextPathSvg(
+    badge,
+    font,
+    28,
+    "#ffffff",
+    155,
+    107,
+    0.6
+  );
 
   const svg = `
     <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
       <rect width="${WIDTH}" height="${HEIGHT}" fill="transparent"/>
-
       <rect
         x="70"
         y="70"
@@ -179,47 +335,69 @@ async function textOverlay(
         height="56"
         fill="${BRAND.red}"
       />
-
-      <text
-        x="155"
-        y="107"
-        text-anchor="middle"
-        font-size="28"
-        font-weight="700"
-        fill="#ffffff"
-        font-family="Arial"
-      >
-        ${esc(badge)}
-      </text>
-
-      ${lineSvgs}
-
-      <text
-        x="540"
-        y="${470 + lines.length * 95 + 40}"
-        text-anchor="middle"
-        font-size="42"
-        font-weight="600"
-        fill="${BRAND.soft}"
-        font-family="Arial"
-      >
-        ${esc(subtitle)}
-      </text>
-
-      <text
-        x="540"
-        y="970"
-        text-anchor="middle"
-        font-size="34"
-        fill="#ffffff"
-        font-family="Arial"
-      >
-        vegan-masala.com
-      </text>
+      ${badgeText}
     </svg>
   `;
 
   return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+async function textOverlay(
+  title: string,
+  subtitle: string,
+  font: opentype.Font
+) {
+  const lines = wrapTitle(title);
+
+  const titlePaths = lines
+    .map((line, i) =>
+      makeTextPathSvg(line, font, 90, BRAND.gold, 540, 470 + i * 95, 1)
+    )
+    .join("");
+
+  const subtitlePath = makeTextPathSvg(
+    subtitle,
+    font,
+    42,
+    BRAND.soft,
+    540,
+    470 + lines.length * 95 + 40,
+    0.8
+  );
+
+  const sitePath = makeTextPathSvg(
+    "vegan-masala.com",
+    font,
+    34,
+    "#ffffff",
+    540,
+    970,
+    0.8
+  );
+
+  const svg = `
+    <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="${WIDTH}" height="${HEIGHT}" fill="transparent"/>
+      ${titlePaths}
+      ${subtitlePath}
+      ${sitePath}
+    </svg>
+  `;
+
+  return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+async function logoOverlay(logo: Buffer | null) {
+  if (!logo) return null;
+
+  return sharp(logo)
+    .trim({ threshold: 10 })
+    .resize(250, 250, {
+      fit: "contain",
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png()
+    .toBuffer();
 }
 
 async function createPost(
@@ -233,32 +411,31 @@ async function createPost(
     ensureDir(PUBLIC_OUTPUT);
   }
 
-  const img = findContentImage(slug, type);
+  const sourceImage = await resolveSourceImage(slug, type);
+  const fontPath = await resolveFontPath();
+  const font = loadFontOrThrow(fontPath);
+  const logo = await resolveLogo();
 
-  const bg = await backgroundBuffer(WIDTH, HEIGHT, img, BRAND.bg);
+  const bg = await backgroundBufferFromSource(sourceImage);
   const grad = await topGradient();
   const vignette = await vignetteOverlay();
   const frame = await frameOverlay();
-
-  const text = await textOverlay(
-    title,
-    buildSubtitle(type),
-    buildBadge(type)
-  );
-
-  const logo = await logoBuffer(250);
+  const badge = await badgeOverlay(buildBadge(type), font);
+  const text = await textOverlay(title, buildSubtitle(type), font);
+  const logoPng = await logoOverlay(logo);
 
   const comps: sharp.OverlayOptions[] = [
     { input: bg, left: 0, top: 0 },
     { input: grad, left: 0, top: 0 },
     { input: vignette, left: 0, top: 0 },
+    { input: badge, left: 0, top: 0 },
     { input: text, left: 0, top: 0 },
     { input: frame, left: 0, top: 0 },
   ];
 
-  if (logo) {
+  if (logoPng) {
     comps.push({
-      input: logo,
+      input: logoPng,
       top: HEIGHT - 290,
       left: WIDTH - 290,
     });
@@ -357,14 +534,15 @@ export async function generateAllInstagram() {
 
   for (const item of items) {
     const slug = slugFromFile(item.file);
-
     const result = await createPost(slug, titleFromSlug(slug), item.type);
+
     generated.push({
       slug,
       image: result.image,
       storage: result.storage,
       path: result.path,
     });
+
     count++;
   }
 
