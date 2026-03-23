@@ -269,8 +269,8 @@ async function renderCard(
   logoPath: string | null,
   fontPath: string | null
 ) {
-  const lines = wrap(title);
   const font = loadFontOrThrow(fontPath);
+  const lines = wrap(title);
 
   let logoHref = "";
   if (logoPath && fs.existsSync(logoPath)) {
@@ -312,12 +312,12 @@ async function renderCard(
   <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
     <rect width="${WIDTH}" height="${HEIGHT}" fill="#000000"/>
     <rect
-      x="40"
-      y="40"
-      width="${WIDTH - 80}"
-      height="${HEIGHT - 80}"
-      rx="40"
-      ry="40"
+      x="14"
+      y="14"
+      width="${WIDTH - 28}"
+      height="${HEIGHT - 28}"
+      rx="34"
+      ry="34"
       fill="none"
       stroke="${BRAND.border}"
       stroke-width="3"
@@ -329,7 +329,33 @@ async function renderCard(
   </svg>
   `;
 
-  await sharp(Buffer.from(svg))
+  await sharp(Buffer.from(svg)).png().toFile(out);
+}
+
+async function buildRoundedMainImage(
+  sourceImage: string,
+  out: string
+) {
+  const size = 760;
+  const radius = 34;
+
+  const roundedMask = Buffer.from(`
+    <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="${size}" height="${size}" rx="${radius}" ry="${radius}" fill="white" />
+    </svg>
+  `);
+
+  await sharp(sourceImage)
+    .resize(size, size, {
+      fit: "cover",
+      position: "centre",
+    })
+    .composite([
+      {
+        input: roundedMask,
+        blend: "dest-in",
+      },
+    ])
     .png()
     .toFile(out);
 }
@@ -377,22 +403,25 @@ async function mainClip(
     type === "guide" ? "Indian Cooking Guide" : "Vegan Indian Recipe";
 
   const framePath = path.join(TEMP_DIR, `${slug}-main-frame.png`);
+  const roundedImagePath = path.join(TEMP_DIR, `${slug}-main-rounded.png`);
+
+  await buildRoundedMainImage(image, roundedImagePath);
 
   const titleLines = wrap(title);
 
   const titlePaths = titleLines
     .map((line, i) =>
-      makeTextPathSvg(line, font, 56, BRAND.gold, 540, 180 + i * 68, 0.5)
+      makeTextPathSvg(line, font, 58, BRAND.gold, 540, 170 + i * 70, 0.5)
     )
     .join("");
 
   const subtitlePath = makeTextPathSvg(
     subtitle,
     font,
-    28,
+    30,
     BRAND.soft,
     540,
-    330,
+    335,
     0.5
   );
 
@@ -402,7 +431,7 @@ async function mainClip(
     24,
     "#ffffff",
     540,
-    1760,
+    1770,
     0.5
   );
 
@@ -411,25 +440,24 @@ async function mainClip(
     <rect width="${WIDTH}" height="${HEIGHT}" fill="none"/>
 
     <rect
-      x="110"
-      y="110"
-      width="860"
-      height="1700"
-      rx="42"
-      ry="42"
-      fill="#000000"
-      fill-opacity="0.18"
+      x="20"
+      y="20"
+      width="${WIDTH - 40}"
+      height="${HEIGHT - 40}"
+      rx="36"
+      ry="36"
+      fill="none"
       stroke="${BRAND.border}"
-      stroke-width="4"
+      stroke-width="3"
     />
 
     <rect
-      x="170"
-      y="420"
-      width="740"
-      height="740"
-      rx="34"
-      ry="34"
+      x="150"
+      y="410"
+      width="780"
+      height="780"
+      rx="38"
+      ry="38"
       fill="none"
       stroke="${BRAND.border}"
       stroke-width="3"
@@ -449,21 +477,17 @@ async function mainClip(
       `setsar=1,` +
       `boxblur=30:12,` +
       `zoompan=` +
-      `z='min(zoom+0.0012,1.18)':` +
+      `z='min(zoom+0.0007,1.15)':` +
       `d=300:` +
-      `x='if(lte(on,150),iw/2-(iw/zoom/2)-on*0.6,iw/2-(iw/zoom/2)-(300-on)*0.6)':` +
+      `x='if(lte(on,150),iw/2-(iw/zoom/2)-on*0.45,iw/2-(iw/zoom/2)-(300-on)*0.45)':` +
       `y='ih/2-(ih/zoom/2)':` +
       `s=1080x1920:` +
       `fps=30[bg]`,
 
-    `[1:v]scale=740:740:force_original_aspect_ratio=increase,` +
-      `crop=740:740,` +
-      `setsar=1,` +
-      `format=rgba[fg]`,
-
+    `[1:v]setsar=1,format=rgba[fg]`,
     `[2:v]setsar=1,format=rgba[frame]`,
 
-    `[bg][fg]overlay=170:420:format=auto[tmp1]`,
+    `[bg][fg]overlay=160:420:format=auto[tmp1]`,
     `[tmp1][frame]overlay=0:0:format=auto,` +
       `setsar=1,` +
       `fade=t=in:st=0:d=0.8,` +
@@ -478,10 +502,8 @@ async function mainClip(
       "1",
       "-i",
       image,
-      "-loop",
-      "1",
       "-i",
-      image,
+      roundedImagePath,
       "-i",
       framePath,
       "-filter_complex",
@@ -574,12 +596,6 @@ async function resolveSourceImage(
   logs: string[]
 ) {
   if (!process.env.VERCEL) {
-    const generated = path.join(GENERATED_IMAGE_DIR, `${slug}.png`);
-    if (fs.existsSync(generated)) {
-      logs.push(`Local generated image: ${generated}`);
-      return generated;
-    }
-
     const local = findContentImage(slug, type);
     logs.push(`Local findContentImage(): ${local ?? "none"}`);
     return local;
@@ -590,12 +606,13 @@ async function resolveSourceImage(
     return null;
   }
 
+  const folder = type === "recipe" ? "recipes" : "guides";
+
   const remoteCandidates = [
-    `${baseUrl}/generated/instagram/${slug}.png`,
-    `${baseUrl}/images/${type === "recipe" ? "recipes" : "guides"}/${slug}.png`,
-    `${baseUrl}/images/${type === "recipe" ? "recipes" : "guides"}/${slug}.jpg`,
-    `${baseUrl}/images/${type === "recipe" ? "recipes" : "guides"}/${slug}.jpeg`,
-    `${baseUrl}/images/${type === "recipe" ? "recipes" : "guides"}/${slug}.webp`,
+    `${baseUrl}/images/${folder}/${slug}.png`,
+    `${baseUrl}/images/${folder}/${slug}.jpg`,
+    `${baseUrl}/images/${folder}/${slug}.jpeg`,
+    `${baseUrl}/images/${folder}/${slug}.webp`,
   ];
 
   for (const url of remoteCandidates) {
