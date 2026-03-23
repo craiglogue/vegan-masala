@@ -30,6 +30,18 @@ type GenerateResponse = {
     storage: "blob" | "local";
     path: string;
   }>;
+  result?: {
+    slug?: string;
+    image?: string;
+    storage?: "blob" | "local";
+    path?: string;
+    generated?: Array<{
+      slug: string;
+      image: string;
+      storage: "blob" | "local";
+      path: string;
+    }>;
+  };
   count?: number;
 };
 
@@ -178,37 +190,38 @@ export default function AdminSocialGeneratePage() {
   }
 
   async function generateOne(slug: string) {
-  const res = await fetch("/api/admin/social", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      platform: "instagram",
-      mode: "single",
-      slug,
-    }),
-  });
+    const res = await fetch("/api/admin/social", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        platform: "instagram",
+        mode: "single",
+        slug,
+      }),
+    });
 
-  const data = (await safeJson(res)) as GenerateResponse;
-  return { res, data };
-}
+    const data = (await safeJson(res)) as GenerateResponse;
+    return { res, data };
+  }
 
-async function generateAll() {
-  const res = await fetch("/api/admin/social", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      platform: "instagram",
-      mode: "all",
-    }),
-  });
+  async function generateAll() {
+    const res = await fetch("/api/admin/social", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        platform: "instagram",
+        mode: "all",
+      }),
+    });
 
-  const data = (await safeJson(res)) as GenerateResponse;
-  return { res, data };
-}
+    const data = (await safeJson(res)) as GenerateResponse;
+    return { res, data };
+  }
+
   async function handleGenerateOne() {
     if (!selectedItem) {
       setStatus("Please select an item first");
@@ -225,14 +238,18 @@ async function generateAll() {
         throw new Error(data?.error || data?.message || "Instagram generation failed");
       }
 
-      if (data.image && data.storage && data.path) {
+      const image = data.image || data.result?.image || "";
+      const storage = data.storage || data.result?.storage;
+      const assetPath = data.path || data.result?.path || "";
+
+      if (image && storage && assetPath) {
         addGeneratedImage({
           slug: selectedItem.slug,
           label: selectedItem.label,
           type: selectedItem.type,
-          image: data.image,
-          storage: data.storage,
-          path: data.path,
+          image,
+          storage,
+          path: assetPath,
         });
       }
 
@@ -255,7 +272,11 @@ async function generateAll() {
         throw new Error(data?.error || data?.message || "Bulk Instagram generation failed");
       }
 
-      const generated = Array.isArray(data.generated) ? data.generated : [];
+      const generated = Array.isArray(data.generated)
+        ? data.generated
+        : Array.isArray(data.result?.generated)
+          ? data.result.generated
+          : [];
 
       const mapped = generated
         .map((item) => {
@@ -274,7 +295,7 @@ async function generateAll() {
       setGeneratedImages(mapped);
 
       if (mapped.length > 0) {
-        const first = mapped[mapped.length - 1];
+        const first = mapped[0];
         setActiveImageUrl(first.image);
         setActiveImageLabel(first.label);
         setActiveStorage(first.storage);
@@ -282,7 +303,8 @@ async function generateAll() {
       }
 
       setStatus(
-        data?.message || `Generated ${typeof data.count === "number" ? data.count : generated.length} Instagram images`
+        data?.message ||
+          `Generated ${typeof data.count === "number" ? data.count : generated.length} Instagram images`
       );
     } catch (err: any) {
       setStatus(err?.message || "Bulk Instagram generation failed");
