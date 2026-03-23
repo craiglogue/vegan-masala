@@ -178,36 +178,36 @@ export default function AdminSocialGeneratePage() {
   }
 
   async function generateOne(slug: string) {
-    const res = await fetch("/api/admin/social", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "instagram",
-        slug,
-      }),
-    });
+  const res = await fetch("/api/admin/social", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      platform: "instagram",
+      slug,
+    }),
+  });
 
-    const data = (await safeJson(res)) as GenerateResponse;
-    return { res, data };
-  }
+  const data = (await safeJson(res)) as GenerateResponse;
+  return { res, data };
+}
 
-  async function generateAll() {
-    const res = await fetch("/api/admin/social", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "instagram-all",
-      }),
-    });
+async function generateAll() {
+  const res = await fetch("/api/admin/social", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      platform: "instagram",
+      mode: "all",
+    }),
+  });
 
-    const data = (await safeJson(res)) as GenerateResponse;
-    return { res, data };
-  }
-
+  const data = (await safeJson(res)) as GenerateResponse;
+  return { res, data };
+}
   async function handleGenerateOne() {
     if (!selectedItem) {
       setStatus("Please select an item first");
