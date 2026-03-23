@@ -4,7 +4,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import sharp from "sharp";
-import { put } from "@vercel/blob";
+import { put, list } from "@vercel/blob";
 import ffmpegPath from "ffmpeg-static";
 import opentype from "opentype.js";
 
@@ -13,13 +13,11 @@ import {
   titleFromSlug,
   type ContentType,
 } from "@/lib/social/core/content";
-import { findContentImage } from "@/lib/social/core/images";
 import { BRAND } from "@/lib/social/core/brand";
 
 const execFileAsync = promisify(execFile);
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
-const GENERATED_IMAGE_DIR = path.join(ROOT, "generated", "instagram");
 const VIDEO_DIR = path.join(ROOT, "generated", "video");
 const TEMP_DIR = path.join(ROOT, "generated", "video-temp");
 const LOCAL_PUBLIC_VIDEO_DIR = path.join(
@@ -39,6 +37,14 @@ const OUTRO_DURATION = 8;
 
 function ensureDir(dir: string) {
   fs.mkdirSync(dir, { recursive: true });
+}
+
+function getBlobToken() {
+  return (
+    process.env.BLOB_READ_WRITE_TOKEN ||
+    process.env.PUBLIC_VIDEO_BLOB_READ_WRITE_TOKEN ||
+    ""
+  );
 }
 
 function getFfmpegBinary(logs?: string[]) {
@@ -67,6 +73,7 @@ function wrap(text: string) {
 
   for (const w of words) {
     const next = current ? `${current} ${w}` : w;
+
     if (next.length <= 18) {
       current = next;
     } else {
@@ -77,13 +84,6 @@ function wrap(text: string) {
 
   if (current) lines.push(current);
   return lines.slice(0, 3);
-}
-
-function esc(text: string) {
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
 }
 
 async function run(args: string[], logs?: string[]) {
@@ -332,34 +332,6 @@ async function renderCard(
   await sharp(Buffer.from(svg)).png().toFile(out);
 }
 
-async function buildRoundedMainImage(
-  sourceImage: string,
-  out: string
-) {
-  const size = 760;
-  const radius = 34;
-
-  const roundedMask = Buffer.from(`
-    <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="${size}" height="${size}" rx="${radius}" ry="${radius}" fill="white" />
-    </svg>
-  `);
-
-  await sharp(sourceImage)
-    .resize(size, size, {
-      fit: "cover",
-      position: "centre",
-    })
-    .composite([
-      {
-        input: roundedMask,
-        blend: "dest-in",
-      },
-    ])
-    .png()
-    .toFile(out);
-}
-
 async function stillClip(
   image: string,
   out: string,
@@ -389,88 +361,7 @@ async function stillClip(
   );
 }
 
-async function mainClip(
-  image: string,
-  out: string,
-  slug: string,
-  type: ContentType,
-  fontPath: string | null,
-  logs?: string[]
-) {
-  const font = loadFontOrThrow(fontPath);
-  const title = titleFromSlug(slug);
-  const subtitle =
-    type === "guide" ? "Indian Cooking Guide" : "Vegan Indian Recipe";
-
-  const framePath = path.join(TEMP_DIR, `${slug}-main-frame.png`);
-  const roundedImagePath = path.join(TEMP_DIR, `${slug}-main-rounded.png`);
-
-  await buildRoundedMainImage(image, roundedImagePath);
-
-  const titleLines = wrap(title);
-
-  const titlePaths = titleLines
-    .map((line, i) =>
-      makeTextPathSvg(line, font, 58, BRAND.gold, 540, 170 + i * 70, 0.5)
-    )
-    .join("");
-
-  const subtitlePath = makeTextPathSvg(
-    subtitle,
-    font,
-    30,
-    BRAND.soft,
-    540,
-    335,
-    0.5
-  );
-
-  const sitePath = makeTextPathSvg(
-    "vegan-masala.com",
-    font,
-    24,
-    "#ffffff",
-    540,
-    1770,
-    0.5
-  );
-
-  const frameSvg = `
-  <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-    <rect width="${WIDTH}" height="${HEIGHT}" fill="none"/>
-
-    <rect
-      x="20"
-      y="20"
-      width="${WIDTH - 40}"
-      height="${HEIGHT - 40}"
-      rx="36"
-      ry="36"
-      fill="none"
-      stroke="${BRAND.border}"
-      stroke-width="3"
-    />
-
-    <rect
-      x="150"
-      y="410"
-      width="780"
-      height="780"
-      rx="38"
-      ry="38"
-      fill="none"
-      stroke="${BRAND.border}"
-      stroke-width="3"
-    />
-
-    ${titlePaths}
-    ${subtitlePath}
-    ${sitePath}
-  </svg>
-  `;
-
-  await sharp(Buffer.from(frameSvg)).png().toFile(framePath);
-
+async function mainClip(image: string, out: string, logs?: string[]) {
   const filter = [
     `[0:v]scale=1400:2488:force_original_aspect_ratio=increase,` +
       `crop=1080:1920,` +
@@ -483,12 +374,10 @@ async function mainClip(
       `y='ih/2-(ih/zoom/2)':` +
       `s=1080x1920:` +
       `fps=30[bg]`,
-
-    `[1:v]setsar=1,format=rgba[fg]`,
-    `[2:v]setsar=1,format=rgba[frame]`,
-
-    `[bg][fg]overlay=160:420:format=auto[tmp1]`,
-    `[tmp1][frame]overlay=0:0:format=auto,` +
+    `[1:v]scale=820:1458:force_original_aspect_ratio=decrease,` +
+      `pad=820:1458:(ow-iw)/2:(oh-ih)/2:color=0x00000000,` +
+      `setsar=1,format=rgba[card]`,
+    `[bg][card]overlay=(W-w)/2:(H-h)/2:format=auto,` +
       `setsar=1,` +
       `fade=t=in:st=0:d=0.8,` +
       `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8,` +
@@ -502,10 +391,10 @@ async function mainClip(
       "1",
       "-i",
       image,
+      "-loop",
+      "1",
       "-i",
-      roundedImagePath,
-      "-i",
-      framePath,
+      image,
       "-filter_complex",
       filter,
       "-map",
@@ -574,7 +463,7 @@ async function concat(
       musicFile,
       "-shortest",
       "-filter:a",
-      "volume=0.15",
+      "volume=0.12",
       "-map",
       "0:v",
       "-map",
@@ -589,43 +478,85 @@ async function concat(
   );
 }
 
-async function resolveSourceImage(
+async function resolveMainSlideImage(
   slug: string,
-  type: ContentType,
   baseUrl: string,
   logs: string[]
 ) {
-  if (!process.env.VERCEL) {
-    const local = findContentImage(slug, type);
-    logs.push(`Local findContentImage(): ${local ?? "none"}`);
-    return local;
+  const blobToken = getBlobToken();
+
+  if (blobToken) {
+    try {
+      logs.push(`Blob lookup: instagram/${slug}.png`);
+
+      const { blobs } = await list({
+        token: blobToken,
+        prefix: `instagram/${slug}.png`,
+      });
+
+      const exact = blobs.find(
+        (blob) => blob.pathname === `instagram/${slug}.png`
+      );
+
+      if (exact?.url) {
+        logs.push(`Blob match found: ${exact.url}`);
+
+        const buffer = await fetchBuffer(exact.url, logs, "main slide image (blob)");
+        if (buffer) {
+          const tempFile = path.join(TEMP_DIR, `${slug}-instagram-card.png`);
+          await sharp(buffer).png().toFile(tempFile);
+          logs.push(`Using blob instagram image: ${tempFile}`);
+          return tempFile;
+        }
+      } else {
+        logs.push(`No blob match for instagram/${slug}.png`);
+      }
+    } catch (error: any) {
+      logs.push(`Blob lookup failed: ${error?.message || "Unknown blob error"}`);
+    }
+  } else {
+    logs.push("No blob token available for main slide lookup");
   }
 
-  if (!baseUrl) {
-    logs.push("No base URL available for remote image fetch");
+  if (!process.env.VERCEL) {
+    const localGenerated = path.join(
+      process.cwd(),
+      "public",
+      "generated",
+      "instagram",
+      `${slug}.png`
+    );
+
+    if (fs.existsSync(localGenerated)) {
+      logs.push(`Using local generated instagram image: ${localGenerated}`);
+      return localGenerated;
+    }
+
+    logs.push(`Local generated instagram image missing: ${localGenerated}`);
     return null;
   }
 
-  const folder = type === "recipe" ? "recipes" : "guides";
-
-  const remoteCandidates = [
-    `${baseUrl}/images/${folder}/${slug}.png`,
-    `${baseUrl}/images/${folder}/${slug}.jpg`,
-    `${baseUrl}/images/${folder}/${slug}.jpeg`,
-    `${baseUrl}/images/${folder}/${slug}.webp`,
-  ];
-
-  for (const url of remoteCandidates) {
-    const buffer = await fetchBuffer(url, logs, "source image");
-    if (buffer) {
-      const tempFile = path.join(TEMP_DIR, `${slug}-source.png`);
-      await sharp(buffer).png().toFile(tempFile);
-      logs.push(`Using remote image via temp file: ${tempFile}`);
-      return tempFile;
-    }
+  if (!baseUrl) {
+    logs.push("No base URL available for remote main slide image fetch");
+    return null;
   }
 
-  return null;
+  const fallbackUrl = `${baseUrl}/generated/instagram/${slug}.png`;
+  const fallbackBuffer = await fetchBuffer(
+    fallbackUrl,
+    logs,
+    "main slide image (site fallback)"
+  );
+
+  if (!fallbackBuffer) {
+    logs.push(`Fallback site image missing for slug: ${slug}`);
+    return null;
+  }
+
+  const tempFile = path.join(TEMP_DIR, `${slug}-instagram-card.png`);
+  await sharp(fallbackBuffer).png().toFile(tempFile);
+  logs.push(`Using fallback site instagram image: ${tempFile}`);
+  return tempFile;
 }
 
 export async function buildRecipeVideo(slug: string, baseUrl?: string) {
@@ -650,10 +581,12 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
     logs.push(`process.cwd(): ${process.cwd()}`);
     logs.push(`ROOT: ${ROOT}`);
 
-    const image = await resolveSourceImage(slug, type, resolvedBaseUrl, logs);
+    const image = await resolveMainSlideImage(slug, resolvedBaseUrl, logs);
 
     if (!image) {
-      throw new Error(`No source image found for slug: ${slug}`);
+      throw new Error(
+        `No generated Instagram card found for slug: ${slug}. Generate the Instagram image first.`
+      );
     }
 
     const logoPath = await resolveLogo(resolvedBaseUrl, logs);
@@ -690,7 +623,7 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
     await stillClip(introPng, introMp4, INTRO_DURATION, logs);
 
     logs.push("Creating main clip");
-await mainClip(image, mainMp4, slug, type, fontPath, logs);
+    await mainClip(image, mainMp4, logs);
 
     logs.push("Creating outro clip");
     await stillClip(outroPng, outroMp4, OUTRO_DURATION, logs);
@@ -702,13 +635,18 @@ await mainClip(image, mainMp4, slug, type, fontPath, logs);
       logs.push("Uploading video to Vercel Blob");
 
       const fileBuffer = fs.readFileSync(final);
+      const token = getBlobToken();
+
+      if (!token) {
+        throw new Error("Missing blob token for video upload");
+      }
 
       const blob = await put(`videos/${slug}.mp4`, fileBuffer, {
         access: "public",
         contentType: "video/mp4",
         addRandomSuffix: false,
         allowOverwrite: true,
-        token: process.env.PUBLIC_VIDEO_BLOB_READ_WRITE_TOKEN,
+        token,
       });
 
       logs.push(`Blob URL: ${blob.url}`);
