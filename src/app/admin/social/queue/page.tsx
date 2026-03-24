@@ -97,6 +97,9 @@ export default function SocialQueuePage() {
   const [queueLoading, setQueueLoading] = useState(false);
   const [slugsLoading, setSlugsLoading] = useState(false);
   const [boardsLoading, setBoardsLoading] = useState(false);
+  const [itemActionLoadingId, setItemActionLoadingId] = useState<string | null>(
+    null
+  );
 
   const [log, setLog] = useState("Waiting...");
   const [debugResponse, setDebugResponse] = useState("");
@@ -289,9 +292,7 @@ export default function SocialQueuePage() {
       const attempted = data?.attempted ?? 0;
       const count = data?.count ?? 0;
 
-      setLog(
-        `Processed ${attempted}\nPosted: ${count}\nFailed: ${failed}`
-      );
+      setLog(`Processed ${attempted}\nPosted: ${count}\nFailed: ${failed}`);
 
       if (failed > 0) {
         setShowDebug(true);
@@ -391,43 +392,61 @@ export default function SocialQueuePage() {
     }
   }
 
-  async function deleteSingleItem(id: string) {
-    const next = queueItems.filter((item) => item.id !== id);
-    setQueueItems(next);
+  async function itemAction(id: string, action: "post-now" | "retry" | "delete") {
+    setItemActionLoadingId(id);
+    setDebugResponse("");
 
     try {
-      const res = await fetch("/api/admin/social/queue", {
-        cache: "no-store",
-      });
-      const data = await res.json();
-      const items = Array.isArray(data.items) ? data.items : [];
-      const filtered = items.filter((item: QueueItem) => item.id !== id);
+      let res: Response;
 
-      await fetch("/api/admin/social/queue", {
-        method: "DELETE",
-      });
-
-      for (const item of filtered.slice().reverse()) {
-        await fetch("/api/admin/social/queue", {
+      if (action === "delete") {
+        res = await fetch(`/api/admin/social/queue/item/${id}`, {
+          method: "DELETE",
+        });
+      } else {
+        res = await fetch(`/api/admin/social/queue/item/${id}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            slug: item.slug,
-            platform: item.platform,
-            scheduledFor: item.scheduledFor,
-            board: item.board ?? null,
-          }),
+          body: JSON.stringify({ action }),
         });
       }
 
+      const data = await res.json().catch(() => ({}));
+      setDebugResponse(JSON.stringify(data, null, 2));
+
+      if (!res.ok) {
+        setLog(data?.error || "Action failed");
+        setShowDebug(true);
+        await loadQueue();
+        return;
+      }
+
+      if (action === "delete") {
+        setLog("Queue item removed");
+      } else if (action === "retry") {
+        setLog("Failed item moved back to queued");
+      } else {
+        setLog("Item scheduled to post now");
+      }
+
       await loadQueue();
-      setLog("Item removed");
-    } catch {
-      setLog("Failed to remove item cleanly");
+    } catch (err: any) {
+      setLog(err?.message || "Action failed");
+      setDebugResponse(
+        JSON.stringify(
+          {
+            error: err?.message || "Unknown client error while updating queue item",
+          },
+          null,
+          2
+        )
+      );
       setShowDebug(true);
       await loadQueue();
+    } finally {
+      setItemActionLoadingId(null);
     }
   }
 
@@ -497,7 +516,9 @@ export default function SocialQueuePage() {
     );
   }
 
-  function renderItemCard(item: QueueItem, allowDelete = false) {
+  function renderItemCard(item: QueueItem) {
+    const busy = itemActionLoadingId === item.id;
+
     return (
       <div
         key={item.id}
@@ -615,17 +636,40 @@ export default function SocialQueuePage() {
               </div>
             ) : null}
 
-            {allowDelete ? (
-              <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(item.status === "queued" || item.status === "failed") && (
                 <button
                   type="button"
-                  onClick={() => deleteSingleItem(item.id)}
-                  className="rounded-lg border border-red-500/40 px-3 py-2 text-xs font-semibold text-red-300"
+                  disabled={busy}
+                  onClick={() => itemAction(item.id, "post-now")}
+                  className="rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--brand-gold)] disabled:opacity-50"
                 >
-                  Remove
+                  {busy ? "Working..." : "Post now"}
                 </button>
-              </div>
-            ) : null}
+              )}
+
+              {item.status === "failed" && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => itemAction(item.id, "retry")}
+                  className="rounded-lg border border-yellow-500/40 px-3 py-2 text-xs font-semibold text-yellow-300 disabled:opacity-50"
+                >
+                  {busy ? "Working..." : "Retry failed"}
+                </button>
+              )}
+
+              {item.status !== "posted" && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => itemAction(item.id, "delete")}
+                  className="rounded-lg border border-red-500/40 px-3 py-2 text-xs font-semibold text-red-300 disabled:opacity-50"
+                >
+                  {busy ? "Working..." : "Delete"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -672,13 +716,20 @@ export default function SocialQueuePage() {
 
           <div className="flex flex-wrap gap-2">
             <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-white">
-              Queued: <span className="font-bold text-[var(--brand-gold)]">{queuedItems.length}</span>
+              Queued:{" "}
+              <span className="font-bold text-[var(--brand-gold)]">
+                {queuedItems.length}
+              </span>
             </div>
             <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-white">
-              Failed: <span className="font-bold text-red-300">{failedItems.length}</span>
+              Failed:{" "}
+              <span className="font-bold text-red-300">{failedItems.length}</span>
             </div>
             <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-white">
-              Posted: <span className="font-bold text-emerald-300">{postedItems.length}</span>
+              Posted:{" "}
+              <span className="font-bold text-emerald-300">
+                {postedItems.length}
+              </span>
             </div>
           </div>
         </div>
@@ -748,7 +799,9 @@ export default function SocialQueuePage() {
                     onChange={(e) => setBoard(e.target.value)}
                     className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-white"
                   >
-                    <option value="">{boardsLoading ? "Loading" : "Select board"}</option>
+                    <option value="">
+                      {boardsLoading ? "Loading" : "Select board"}
+                    </option>
 
                     {boards.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -817,7 +870,7 @@ export default function SocialQueuePage() {
                 <button
                   onClick={() => queuePost()}
                   disabled={queueLoading}
-                  className="rounded-xl bg-[var(--brand-red)] px-6 py-3 font-bold text-white"
+                  className="rounded-xl bg-[var(--brand-red)] px-6 py-3 font-bold text-white disabled:opacity-50"
                 >
                   Queue post
                 </button>
@@ -825,7 +878,7 @@ export default function SocialQueuePage() {
                 <button
                   onClick={() => runQueue()}
                   disabled={queueLoading}
-                  className="rounded-xl border border-[var(--border)] px-6 py-3 font-bold text-[var(--brand-gold)]"
+                  className="rounded-xl border border-[var(--border)] px-6 py-3 font-bold text-[var(--brand-gold)] disabled:opacity-50"
                 >
                   Run queue
                 </button>
@@ -842,7 +895,7 @@ export default function SocialQueuePage() {
               <button
                 onClick={() => build30()}
                 disabled={queueLoading || !board}
-                className="rounded-xl bg-[var(--brand-gold)] px-6 py-3 font-bold text-black"
+                className="rounded-xl bg-[var(--brand-gold)] px-6 py-3 font-bold text-black disabled:opacity-50"
               >
                 Build 30 days Pinterest
               </button>
@@ -850,7 +903,7 @@ export default function SocialQueuePage() {
               <button
                 onClick={() => clearQueue()}
                 disabled={queueLoading}
-                className="rounded-xl border border-red-500 px-6 py-3 font-bold text-red-400"
+                className="rounded-xl border border-red-500 px-6 py-3 font-bold text-red-400 disabled:opacity-50"
               >
                 Clear queue
               </button>
@@ -895,7 +948,7 @@ export default function SocialQueuePage() {
 
             <div className="mt-5 space-y-4">
               {queuedItems.length ? (
-                queuedItems.map((item) => renderItemCard(item, true))
+                queuedItems.map((item) => renderItemCard(item))
               ) : (
                 <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-10 text-center text-sm text-[var(--text-soft)]">
                   No queued items.
@@ -916,7 +969,7 @@ export default function SocialQueuePage() {
 
             <div className="mt-5 space-y-4">
               {failedItems.length ? (
-                failedItems.map((item) => renderItemCard(item, true))
+                failedItems.map((item) => renderItemCard(item))
               ) : (
                 <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-10 text-center text-sm text-[var(--text-soft)]">
                   No failed items.

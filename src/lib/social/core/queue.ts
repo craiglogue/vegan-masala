@@ -24,7 +24,6 @@ export type QueueItem = {
   createdAt: string;
   postedAt?: string;
   error?: string;
-
   contentType?: QueueContentType;
   assetType?: QueueAssetType;
   imageUrl?: string;
@@ -39,10 +38,7 @@ function getRedis() {
     return null;
   }
 
-  return new Redis({
-    url,
-    token,
-  });
+  return new Redis({ url, token });
 }
 
 function ensureFile() {
@@ -135,6 +131,71 @@ export async function addQueueItem(input: {
   await writeQueue(items);
 
   return item;
+}
+
+export async function getQueueItem(id: string): Promise<QueueItem | null> {
+  const items = await readQueue();
+  return items.find((item) => item.id === id) ?? null;
+}
+
+export async function deleteQueueItem(id: string): Promise<boolean> {
+  const items = await readQueue();
+  const next = items.filter((item) => item.id !== id);
+
+  if (next.length === items.length) {
+    return false;
+  }
+
+  await writeQueue(next);
+  return true;
+}
+
+export async function retryQueueItem(id: string): Promise<QueueItem | null> {
+  const items = await readQueue();
+  let found: QueueItem | null = null;
+
+  const next = items.map((item) => {
+    if (item.id !== id) return item;
+
+    found = {
+      ...item,
+      status: "queued",
+      error: undefined,
+      postedAt: undefined,
+      scheduledFor: new Date(Date.now() - 60_000).toISOString(),
+    };
+
+    return found;
+  });
+
+  if (!found) return null;
+
+  await writeQueue(next);
+  return found;
+}
+
+export async function postNowQueueItem(id: string): Promise<QueueItem | null> {
+  const items = await readQueue();
+  let found: QueueItem | null = null;
+
+  const next = items.map((item) => {
+    if (item.id !== id) return item;
+
+    found = {
+      ...item,
+      status: "queued",
+      error: undefined,
+      postedAt: undefined,
+      scheduledFor: new Date(Date.now() - 60_000).toISOString(),
+    };
+
+    return found;
+  });
+
+  if (!found) return null;
+
+  await writeQueue(next);
+  return found;
 }
 
 export async function markQueueItemPosted(id: string) {
