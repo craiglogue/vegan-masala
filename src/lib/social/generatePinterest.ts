@@ -31,8 +31,28 @@ async function topGradient() {
         <defs>
           <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="black" stop-opacity="0.95"/>
-            <stop offset="30%" stop-color="black" stop-opacity="0.65"/>
-            <stop offset="60%" stop-color="black" stop-opacity="0.25"/>
+            <stop offset="28%" stop-color="black" stop-opacity="0.64"/>
+            <stop offset="58%" stop-color="black" stop-opacity="0.24"/>
+            <stop offset="100%" stop-color="black" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#g)"/>
+      </svg>
+    `)
+  )
+    .png()
+    .toBuffer();
+}
+
+async function bottomGradient() {
+  return sharp(
+    Buffer.from(`
+      <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="black" stop-opacity="0.72"/>
+            <stop offset="18%" stop-color="black" stop-opacity="0.42"/>
+            <stop offset="34%" stop-color="black" stop-opacity="0.16"/>
             <stop offset="100%" stop-color="black" stop-opacity="0"/>
           </linearGradient>
         </defs>
@@ -66,25 +86,54 @@ async function frameOverlay() {
     .toBuffer();
 }
 
+async function imageFrameOverlay() {
+  return sharp(
+    Buffer.from(`
+      <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+        <rect
+          x="84"
+          y="274"
+          width="832"
+          height="704"
+          rx="34"
+          ry="34"
+          fill="none"
+          stroke="${BRAND.border}"
+          stroke-opacity="0.95"
+          stroke-width="3"
+        />
+      </svg>
+    `)
+  )
+    .png()
+    .toBuffer();
+}
+
 function titleLines(text: string) {
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let current = "";
+  let maxLen = 17;
 
   for (const word of words) {
     const next = current ? `${current} ${word}` : word;
 
-    if (next.length < 20) {
+    if (next.length <= maxLen) {
       current = next;
     } else {
       if (current) lines.push(current);
       current = word;
+
+      if (lines.length === 1) maxLen = 20;
+      if (lines.length === 2) maxLen = 24;
     }
   }
 
   if (current) lines.push(current);
 
-  return lines.slice(0, 3);
+  if (lines.length <= 3) return lines;
+
+  return [lines[0], lines[1], lines.slice(2).join(" ")];
 }
 
 function buildSubtitle(type: ContentType) {
@@ -95,8 +144,54 @@ function buildBadge(type: ContentType) {
   return type === "recipe" ? "RECIPE" : "GUIDE";
 }
 
-async function textOverlay(title: string, subtitle: string, badge: string) {
+function buildHookLine(title: string, type: ContentType) {
+  const lower = title.toLowerCase();
+
+  if (type === "guide") {
+    if (lower.includes("beginner")) return "Beginner Friendly Guide";
+    if (lower.includes("spice")) return "Essential Spice Guide";
+    return "Indian Cooking Guide";
+  }
+
+  if (lower.includes("30 minute") || lower.includes("30-minute")) {
+    return "30 Minute Recipe";
+  }
+
+  if (lower.includes("easy")) {
+    return "Easy Weeknight Recipe";
+  }
+
+  if (lower.includes("restaurant") || lower.includes("hotel style")) {
+    return "Restaurant Style";
+  }
+
+  if (lower.includes("creamy")) {
+    return "Creamy Vegan Curry";
+  }
+
+  if (lower.includes("spicy")) {
+    return "Bold Flavour Recipe";
+  }
+
+  if (lower.includes("naan")) {
+    return "Homemade Favourite";
+  }
+
+  return "Vegan Indian Cooking";
+}
+
+async function textOverlay(
+  title: string,
+  subtitle: string,
+  badge: string,
+  hook: string
+) {
   const titleLinesOut = titleLines(title);
+  let titleFontSize = 84;
+
+  if (title.length > 28) titleFontSize = 76;
+  if (title.length > 40) titleFontSize = 68;
+  if (title.length > 56) titleFontSize = 60;
 
   const element = {
     type: "div",
@@ -116,15 +211,40 @@ async function textOverlay(title: string, subtitle: string, badge: string) {
           props: {
             style: {
               position: "absolute",
-              top: 70,
+              top: 64,
+              left: 64,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: BRAND.red,
+              color: "#fff",
+              paddingTop: 12,
+              paddingBottom: 12,
+              paddingLeft: 22,
+              paddingRight: 22,
+              borderRadius: 20,
+              fontSize: 28,
+              fontWeight: 700,
+              letterSpacing: 1,
+            },
+            children: badge,
+          },
+        },
+        {
+          type: "div",
+          props: {
+            style: {
+              position: "absolute",
+              top: 122,
               left: 60,
-              width: 760,
+              width: 880,
               display: "flex",
               flexDirection: "column",
               color: BRAND.gold,
-              fontSize: 90,
+              fontSize: titleFontSize,
               fontWeight: 700,
               lineHeight: 0.94,
+              textShadow: "0 3px 12px rgba(0,0,0,0.55)",
             },
             children: titleLinesOut.map((line) => ({
               type: "div",
@@ -143,12 +263,31 @@ async function textOverlay(title: string, subtitle: string, badge: string) {
           props: {
             style: {
               position: "absolute",
-              top: 320,
+              bottom: 164,
               left: 60,
-              color: BRAND.soft,
-              fontSize: 48,
-              fontWeight: 600,
+              width: 420,
+              color: BRAND.gold,
+              fontSize: 44,
+              fontWeight: 700,
               display: "flex",
+              textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+            },
+            children: hook,
+          },
+        },
+        {
+          type: "div",
+          props: {
+            style: {
+              position: "absolute",
+              bottom: 116,
+              left: 60,
+              width: 420,
+              color: BRAND.soft,
+              fontSize: 28,
+              fontWeight: 500,
+              display: "flex",
+              textShadow: "0 2px 10px rgba(0,0,0,0.45)",
             },
             children: subtitle,
           },
@@ -158,35 +297,13 @@ async function textOverlay(title: string, subtitle: string, badge: string) {
           props: {
             style: {
               position: "absolute",
-              top: 400,
-              left: 60,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: BRAND.red,
-              color: "#fff",
-              paddingTop: 12,
-              paddingBottom: 12,
-              paddingLeft: 18,
-              paddingRight: 18,
-              borderRadius: 20,
-              fontSize: 30,
-              fontWeight: 700,
-            },
-            children: badge,
-          },
-        },
-        {
-          type: "div",
-          props: {
-            style: {
-              position: "absolute",
               bottom: 60,
               left: 60,
-              color: BRAND.soft,
-              fontSize: 30,
+              color: "#ffffff",
+              fontSize: 26,
               fontWeight: 600,
               display: "flex",
+              textShadow: "0 2px 10px rgba(0,0,0,0.45)",
             },
             children: "vegan-masala.com",
           },
@@ -216,23 +333,32 @@ async function createPost(slug: string, title: string, type: ContentType) {
 
   const img = findContentImage(slug, type);
   const bg = await backgroundBuffer(WIDTH, HEIGHT, img, BRAND.bg);
-  const grad = await topGradient();
+  const gradTop = await topGradient();
+  const gradBottom = await bottomGradient();
   const frame = await frameOverlay();
-  const text = await textOverlay(title, buildSubtitle(type), buildBadge(type));
-  const logo = await logoBuffer(260);
+  const imageFrame = await imageFrameOverlay();
+  const text = await textOverlay(
+    title,
+    buildSubtitle(type),
+    buildBadge(type),
+    buildHookLine(title, type)
+  );
+  const logo = await logoBuffer(220);
 
   const comp: sharp.OverlayOptions[] = [
     { input: bg, left: 0, top: 0 },
-    { input: grad, left: 0, top: 0 },
+    { input: gradTop, left: 0, top: 0 },
+    { input: gradBottom, left: 0, top: 0 },
     { input: text, left: 0, top: 0 },
+    { input: imageFrame, left: 0, top: 0 },
     { input: frame, left: 0, top: 0 },
   ];
 
   if (logo) {
     comp.push({
       input: logo,
-      top: HEIGHT - 260 - 60,
-      left: WIDTH - 260 - 60,
+      top: HEIGHT - 220 - 56,
+      left: WIDTH - 220 - 56,
     });
   }
 
