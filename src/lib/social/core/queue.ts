@@ -6,6 +6,8 @@ const FILE = path.join(ROOT, "generated", "queue.json");
 
 export type QueuePlatform = "instagram" | "pinterest" | "facebook";
 export type QueueStatus = "queued" | "posted" | "failed";
+export type QueueAssetType = "image" | "video";
+export type QueueContentType = "recipe" | "guide";
 
 export type QueueItem = {
   id: string;
@@ -20,6 +22,11 @@ export type QueueItem = {
   createdAt: string;
   postedAt?: string;
   error?: string;
+
+  contentType?: QueueContentType;
+  assetType?: QueueAssetType;
+  imageUrl?: string;
+  videoUrl?: string;
 };
 
 function ensureFile() {
@@ -54,6 +61,10 @@ export function addQueueItem(input: {
   url: string;
   board?: string | null;
   scheduledFor: string;
+  contentType?: QueueContentType;
+  assetType?: QueueAssetType;
+  imageUrl?: string;
+  videoUrl?: string;
 }): QueueItem {
   const items = readQueue();
 
@@ -68,6 +79,10 @@ export function addQueueItem(input: {
     scheduledFor: input.scheduledFor,
     status: "queued",
     createdAt: new Date().toISOString(),
+    contentType: input.contentType,
+    assetType: input.assetType,
+    imageUrl: input.imageUrl,
+    videoUrl: input.videoUrl,
   };
 
   items.unshift(item);

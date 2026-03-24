@@ -29,7 +29,10 @@ export async function GET() {
       return NextResponse.json(
         {
           ok: false,
-          error: "Failed to fetch Pinterest boards",
+          error:
+            data?.message ||
+            data?.error ||
+            "Failed to fetch Pinterest boards",
           details: data,
           items: [],
         },
@@ -37,9 +40,16 @@ export async function GET() {
       );
     }
 
+    const items = Array.isArray(data?.items)
+      ? data.items.map((board: any) => ({
+          id: board.id,
+          name: board.name,
+        }))
+      : [];
+
     return NextResponse.json({
       ok: true,
-      items: data.items || [],
+      items,
       raw: data,
     });
   } catch (err: any) {

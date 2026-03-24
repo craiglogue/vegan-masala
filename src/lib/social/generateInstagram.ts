@@ -25,7 +25,6 @@ import { updateManifest } from "./core/manifest";
 import { saveGeneratedInstagramImage } from "./core/generatedAssets";
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
-
 const OUTPUT = path.join(ROOT, "generated", "instagram");
 
 const PUBLIC_OUTPUT = process.env.VERCEL
@@ -120,12 +119,7 @@ async function resolveFontPath(): Promise<string | null> {
   for (const url of remoteCandidates) {
     const buffer = await fetchBuffer(url);
     if (buffer) {
-      const out = path.join(
-        ROOT,
-        "generated",
-        "instagram",
-        path.basename(url)
-      );
+      const out = path.join(ROOT, "generated", "instagram", path.basename(url));
       ensureDir(path.dirname(out));
       fs.writeFileSync(out, buffer);
       return out;
@@ -148,9 +142,10 @@ function makeTextPathSvg(
   font: opentype.Font,
   fontSize: number,
   fill: string,
-  centerX: number,
+  x: number,
   baselineY: number,
-  letterSpacing = 0
+  letterSpacing = 0,
+  align: "left" | "center" = "center"
 ) {
   if (!text.trim()) return "";
 
@@ -183,8 +178,14 @@ function makeTextPathSvg(
     return "";
   }
 
-  const width = maxX - minX;
-  const translateX = centerX - (minX + width / 2);
+  let translateX = x;
+
+  if (align === "center") {
+    const width = maxX - minX;
+    translateX = x - (minX + width / 2);
+  } else {
+    translateX = x - minX;
+  }
 
   return `
     <g transform="translate(${translateX},0)">
@@ -192,29 +193,50 @@ function makeTextPathSvg(
     </g>
   `;
 }
+function makeShadowedTextPathSvg(
+  text: string,
+  font: opentype.Font,
+  fontSize: number,
+  fill: string,
+  x: number,
+  baselineY: number,
+  letterSpacing = 0,
+  shadowOpacity = 0.35,
+  shadowOffsetY = 4,
+  align: "left" | "center" = "center"
+) {
+  const shadow = makeTextPathSvg(
+    text,
+    font,
+    fontSize,
+    `rgba(0,0,0,${shadowOpacity})`,
+    x,
+    baselineY + shadowOffsetY,
+    letterSpacing,
+    align
+  );
+
+  const main = makeTextPathSvg(
+    text,
+    font,
+    fontSize,
+    fill,
+    x,
+    baselineY,
+    letterSpacing,
+    align
+  );
+
+  return `${shadow}${main}`;
+}
 
 function wrapTitle(text: string) {
   const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
 
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
+  if (words.length <= 2) return [text];
 
-    if (next.length <= 16) {
-      current = next;
-    } else {
-      if (current) lines.push(current);
-      current = word;
-      if (lines.length >= 1) break;
-    }
-  }
-
-  if (current && lines.length < 2) {
-    lines.push(current);
-  }
-
-  return lines;
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
 }
 
 function buildBadge(type: ContentType) {
@@ -222,9 +244,7 @@ function buildBadge(type: ContentType) {
 }
 
 function buildSubtitle(type: ContentType) {
-  return type === "recipe"
-    ? "Vegan Indian Recipe"
-    : "Indian Cooking Guide";
+  return type === "recipe" ? "Vegan Indian Recipe" : "Indian Cooking Guide";
 }
 
 async function backgroundBufferFromSource(source: string | Buffer | null) {
@@ -241,10 +261,7 @@ async function backgroundBufferFromSource(source: string | Buffer | null) {
       .toBuffer();
   }
 
-  return sharp(source)
-    .resize(WIDTH, HEIGHT, { fit: "cover" })
-    .png()
-    .toBuffer();
+  return sharp(source).resize(WIDTH, HEIGHT, { fit: "cover" }).png().toBuffer();
 }
 
 async function topGradient() {
@@ -253,10 +270,10 @@ async function topGradient() {
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="black" stop-opacity="0.94"/>
-            <stop offset="18%" stop-color="black" stop-opacity="0.76"/>
-            <stop offset="40%" stop-color="black" stop-opacity="0.38"/>
-            <stop offset="68%" stop-color="black" stop-opacity="0.10"/>
+            <stop offset="0%" stop-color="black" stop-opacity="0.96"/>
+            <stop offset="15%" stop-color="black" stop-opacity="0.82"/>
+            <stop offset="38%" stop-color="black" stop-opacity="0.42"/>
+            <stop offset="68%" stop-color="black" stop-opacity="0.12"/>
             <stop offset="100%" stop-color="black" stop-opacity="0"/>
           </linearGradient>
         </defs>
@@ -274,8 +291,8 @@ async function vignetteOverlay() {
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="v" cx="50%" cy="50%" r="75%">
-            <stop offset="58%" stop-color="black" stop-opacity="0"/>
-            <stop offset="100%" stop-color="black" stop-opacity="0.24"/>
+            <stop offset="56%" stop-color="black" stop-opacity="0"/>
+            <stop offset="100%" stop-color="black" stop-opacity="0.28"/>
           </radialGradient>
         </defs>
         <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#v)"/>
@@ -295,12 +312,12 @@ async function frameOverlay() {
           y="14"
           width="${WIDTH - 28}"
           height="${HEIGHT - 28}"
-          rx="34"
-          ry="34"
+          rx="38"
+          ry="38"
           fill="none"
           stroke="${BRAND.border}"
-          stroke-opacity="0.9"
-          stroke-width="2"
+          stroke-opacity="0.95"
+          stroke-width="3"
         />
       </svg>
     `)
@@ -309,75 +326,91 @@ async function frameOverlay() {
     .toBuffer();
 }
 
-async function badgeOverlay(
-  badge: string,
-  font: opentype.Font
-) {
-  const badgeText = makeTextPathSvg(
-    badge,
-    font,
-    28,
-    "#ffffff",
-    155,
-    107,
-    0.6
-  );
-
-  const svg = `
-    <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${WIDTH}" height="${HEIGHT}" fill="transparent"/>
-      <rect
-        x="70"
-        y="70"
-        rx="28"
-        ry="28"
-        width="170"
-        height="56"
-        fill="${BRAND.red}"
-      />
-      ${badgeText}
-    </svg>
-  `;
-
-  return sharp(Buffer.from(svg)).png().toBuffer();
-}
-
 async function textOverlay(
   title: string,
   subtitle: string,
+  badge: string,
   font: opentype.Font
 ) {
   const lines = wrapTitle(title);
 
+  const TEXT_LEFT = 70;
+  const TITLE_START = 360;
+  const LINE_HEIGHT = 88;
+
+  const badgeRect = `
+    <rect
+      x="70"
+      y="70"
+      rx="26"
+      ry="26"
+      width="170"
+      height="58"
+      fill="${BRAND.red}"
+    />
+  `;
+
+  const badgePath = makeShadowedTextPathSvg(
+    badge,
+    font,
+    30,
+    "#ffffff",
+    155,
+    108,
+    0.9,
+    0.22,
+    2,
+    "center"
+  );
+
   const titlePaths = lines
     .map((line, i) =>
-      makeTextPathSvg(line, font, 90, BRAND.gold, 540, 470 + i * 95, 1)
+      makeShadowedTextPathSvg(
+        line,
+        font,
+        92,
+        BRAND.gold,
+        TEXT_LEFT,
+        TITLE_START + i * LINE_HEIGHT,
+        1,
+        0.38,
+        4,
+        "left"
+      )
     )
     .join("");
 
-  const subtitlePath = makeTextPathSvg(
+  const subtitlePath = makeShadowedTextPathSvg(
     subtitle,
     font,
-    42,
+    44,
     BRAND.soft,
-    540,
-    470 + lines.length * 95 + 40,
-    0.8
+    TEXT_LEFT,
+    TITLE_START + lines.length * LINE_HEIGHT + 30,
+    0.85,
+    0.28,
+    3,
+    "left"
   );
 
-  const sitePath = makeTextPathSvg(
+  const sitePath = makeShadowedTextPathSvg(
     "vegan-masala.com",
     font,
-    34,
+    36,
     "#ffffff",
     540,
-    970,
-    0.8
+    HEIGHT - 70,
+    0.7,
+    0.24,
+    2,
+    "center"
   );
 
   const svg = `
     <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
       <rect width="${WIDTH}" height="${HEIGHT}" fill="transparent"/>
+      ${badgeRect}
+      ${badgePath}
       ${titlePaths}
       ${subtitlePath}
       ${sitePath}
@@ -400,11 +433,7 @@ async function logoOverlay(logo: Buffer | null) {
     .toBuffer();
 }
 
-async function createPost(
-  slug: string,
-  title: string,
-  type: ContentType
-) {
+async function createPost(slug: string, title: string, type: ContentType) {
   ensureDir(OUTPUT);
 
   if (PUBLIC_OUTPUT) {
@@ -420,15 +449,13 @@ async function createPost(
   const grad = await topGradient();
   const vignette = await vignetteOverlay();
   const frame = await frameOverlay();
-  const badge = await badgeOverlay(buildBadge(type), font);
-  const text = await textOverlay(title, buildSubtitle(type), font);
+  const text = await textOverlay(title, buildSubtitle(type), buildBadge(type), font);
   const logoPng = await logoOverlay(logo);
 
   const comps: sharp.OverlayOptions[] = [
     { input: bg, left: 0, top: 0 },
     { input: grad, left: 0, top: 0 },
     { input: vignette, left: 0, top: 0 },
-    { input: badge, left: 0, top: 0 },
     { input: text, left: 0, top: 0 },
     { input: frame, left: 0, top: 0 },
   ];

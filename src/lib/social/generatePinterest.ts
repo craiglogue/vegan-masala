@@ -15,6 +15,7 @@ import {
 import { backgroundBuffer, findContentImage, logoBuffer } from "./core/images";
 import { buildPinterestCaption, saveCaption } from "./core/captions";
 import { updateManifest } from "./core/manifest";
+import { saveGeneratedPinterestImage } from "./core/generatedAssets";
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const OUTPUT = path.join(ROOT, "generated", "pinterest");
@@ -94,11 +95,7 @@ function buildBadge(type: ContentType) {
   return type === "recipe" ? "RECIPE" : "GUIDE";
 }
 
-async function textOverlay(
-  title: string,
-  subtitle: string,
-  badge: string
-) {
+async function textOverlay(title: string, subtitle: string, badge: string) {
   const titleLinesOut = titleLines(title);
 
   const element = {
@@ -224,8 +221,6 @@ async function createPost(slug: string, title: string, type: ContentType) {
   const text = await textOverlay(title, buildSubtitle(type), buildBadge(type));
   const logo = await logoBuffer(260);
 
-  const out = path.join(OUTPUT, `${slug}.png`);
-
   const comp: sharp.OverlayOptions[] = [
     { input: bg, left: 0, top: 0 },
     { input: grad, left: 0, top: 0 },
@@ -241,7 +236,7 @@ async function createPost(slug: string, title: string, type: ContentType) {
     });
   }
 
-  await sharp({
+  const finalPngBuffer = await sharp({
     create: {
       width: WIDTH,
       height: HEIGHT,
@@ -251,28 +246,48 @@ async function createPost(slug: string, title: string, type: ContentType) {
   })
     .composite(comp)
     .png()
-    .toFile(out);
+    .toBuffer();
+
+  const out = path.join(OUTPUT, `${slug}.png`);
+  await sharp(finalPngBuffer).toFile(out);
+
+  const saved = await saveGeneratedPinterestImage(slug, finalPngBuffer);
 
   const caption = buildPinterestCaption(slug, type);
   saveCaption("pinterest", slug, caption);
   updateManifest(slug, "pinterest");
 
-  return out;
+  return {
+    slug,
+    localPath: out,
+    image: saved.url,
+    storage: saved.storage,
+    path: saved.path,
+    caption,
+  };
 }
 
 export async function generateLatestPinterest() {
   const chosen = latestContent();
 
   if (!chosen) {
-    return { success: false, count: 0, message: "No content found" };
+    return {
+      success: false,
+      count: 0,
+      message: "No content found",
+    };
   }
 
   const slug = slugFromFile(chosen.file);
-  await createPost(slug, titleFromSlug(slug), chosen.type);
+  const result = await createPost(slug, titleFromSlug(slug), chosen.type);
 
   return {
     success: true,
     count: 1,
+    slug,
+    image: result.image,
+    storage: result.storage,
+    path: result.path,
     message: "Pinterest asset generated",
   };
 }
@@ -284,29 +299,48 @@ export async function generatePinterestBySlug(slug: string) {
     throw new Error("Slug not found");
   }
 
-  await createPost(slug, titleFromSlug(slug), type);
+  const result = await createPost(slug, titleFromSlug(slug), type);
 
   return {
     success: true,
     count: 1,
+    slug,
+    image: result.image,
+    storage: result.storage,
+    path: result.path,
     message: `Pinterest asset generated for ${slug}`,
   };
 }
 
 export async function generateAllPinterest() {
   const items = allContent();
-
   let count = 0;
+
+  const generated: Array<{
+    slug: string;
+    image: string;
+    storage: "blob" | "local";
+    path: string;
+  }> = [];
 
   for (const item of items) {
     const slug = slugFromFile(item.file);
-    await createPost(slug, titleFromSlug(slug), item.type);
+    const result = await createPost(slug, titleFromSlug(slug), item.type);
+
+    generated.push({
+      slug,
+      image: result.image,
+      storage: result.storage,
+      path: result.path,
+    });
+
     count++;
   }
 
   return {
     success: true,
     count,
+    generated,
     message: "Pinterest assets generated",
   };
 }

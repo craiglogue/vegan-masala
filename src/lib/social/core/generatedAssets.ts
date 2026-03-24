@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import sharp from "sharp";
 import { put } from "@vercel/blob";
 
 const LOCAL_PUBLIC_GENERATED_DIR = path.join(
@@ -20,22 +21,32 @@ function getBlobToken() {
   );
 }
 
+function hasBlobToken() {
+  return Boolean(getBlobToken());
+}
+
+async function toInstagramJpeg(buffer: Buffer) {
+  return sharp(buffer)
+    .flatten({ background: "#000000" })
+    .jpeg({
+      quality: 92,
+      mozjpeg: true,
+    })
+    .toBuffer();
+}
+
 export async function saveGeneratedInstagramImage(
   slug: string,
   buffer: Buffer
 ) {
-  if (process.env.VERCEL) {
+  const jpegBuffer = await toInstagramJpeg(buffer);
+
+  if (hasBlobToken()) {
     const token = getBlobToken();
 
-    if (!token) {
-      throw new Error(
-        "Missing BLOB_READ_WRITE_TOKEN for Instagram image upload"
-      );
-    }
-
-    const blob = await put(`instagram/${slug}.png`, buffer, {
+    const blob = await put(`instagram/${slug}.jpg`, jpegBuffer, {
       access: "public",
-      contentType: "image/png",
+      contentType: "image/jpeg",
       addRandomSuffix: false,
       allowOverwrite: true,
       token,
@@ -51,11 +62,11 @@ export async function saveGeneratedInstagramImage(
   const dir = path.join(LOCAL_PUBLIC_GENERATED_DIR, "instagram");
   ensureDir(dir);
 
-  const localFile = path.join(dir, `${slug}.png`);
-  fs.writeFileSync(localFile, buffer);
+  const localFile = path.join(dir, `${slug}.jpg`);
+  fs.writeFileSync(localFile, jpegBuffer);
 
   return {
-    url: `/generated/instagram/${slug}.png?v=${Date.now()}`,
+    url: `/generated/instagram/${slug}.jpg?v=${Date.now()}`,
     storage: "local" as const,
     path: localFile,
   };
@@ -65,14 +76,8 @@ export async function saveGeneratedPinterestImage(
   slug: string,
   buffer: Buffer
 ) {
-  if (process.env.VERCEL) {
+  if (hasBlobToken()) {
     const token = getBlobToken();
-
-    if (!token) {
-      throw new Error(
-        "Missing BLOB_READ_WRITE_TOKEN for Pinterest image upload"
-      );
-    }
 
     const blob = await put(`pinterest/${slug}.png`, buffer, {
       access: "public",
@@ -102,16 +107,9 @@ export async function saveGeneratedPinterestImage(
   };
 }
 
-export async function saveGeneratedVideo(
-  slug: string,
-  buffer: Buffer
-) {
-  if (process.env.VERCEL) {
+export async function saveGeneratedVideo(slug: string, buffer: Buffer) {
+  if (hasBlobToken()) {
     const token = getBlobToken();
-
-    if (!token) {
-      throw new Error("Missing BLOB_READ_WRITE_TOKEN for video upload");
-    }
 
     const blob = await put(`videos/${slug}.mp4`, buffer, {
       access: "public",

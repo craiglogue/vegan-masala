@@ -18,9 +18,19 @@ const ROOT = process.cwd();
 export async function POST(req: Request) {
   try {
     const requiredSecret = process.env.SOCIAL_SCHEDULER_SECRET;
-    const providedSecret = req.headers.get("x-scheduler-secret");
 
-    if (requiredSecret && providedSecret !== requiredSecret) {
+    const providedSecret = req.headers.get("x-scheduler-secret");
+    const cronHeader = req.headers.get("x-vercel-cron");
+
+    const isManualAuthorized =
+      Boolean(requiredSecret) && providedSecret === requiredSecret;
+
+    const isVercelCron = Boolean(cronHeader);
+
+    const isAdminUI =
+      process.env.NODE_ENV !== "production";
+
+    if (requiredSecret && !isManualAuthorized && !isVercelCron && !isAdminUI) {
       return NextResponse.json(
         {
           ok: false,
@@ -32,6 +42,14 @@ export async function POST(req: Request) {
 
     const due = dueQueueItems();
     let count = 0;
+
+    const results: Array<{
+      id: string;
+      slug: string;
+      platform: string;
+      status: "posted" | "failed";
+      error?: string;
+    }> = [];
 
     for (const item of due) {
       try {
@@ -49,7 +67,7 @@ export async function POST(req: Request) {
             `${item.slug}.png`
           );
 
-          await postPinterestPin({
+          const result = await postPinterestPin({
             title: item.title || item.slug,
             description: item.caption || "",
             link: item.url || "",
@@ -57,42 +75,93 @@ export async function POST(req: Request) {
             boardId: item.board,
           });
 
+          console.log("QUEUE PINTEREST RESULT:", result);
+
           markQueueItemPosted(item.id);
           count++;
+          results.push({
+            id: item.id,
+            slug: item.slug,
+            platform: item.platform,
+            status: "posted",
+          });
           continue;
         }
 
         if (item.platform === "instagram") {
-          await publishInstagram({
+          const result = await publishInstagram({
             slug: item.slug,
             caption: item.caption || "",
           });
 
+          console.log("QUEUE INSTAGRAM RESULT:", result);
+
           markQueueItemPosted(item.id);
           count++;
+          results.push({
+            id: item.id,
+            slug: item.slug,
+            platform: item.platform,
+            status: "posted",
+          });
           continue;
         }
 
         if (item.platform === "facebook") {
-          await publishFacebook({
+          const result = await publishFacebook({
             slug: item.slug,
             caption: item.caption || "",
           });
 
+          console.log("QUEUE FACEBOOK RESULT:", result);
+
           markQueueItemPosted(item.id);
           count++;
+          results.push({
+            id: item.id,
+            slug: item.slug,
+            platform: item.platform,
+            status: "posted",
+          });
           continue;
         }
 
-        markQueueItemFailed(item.id, `Unsupported platform: ${item.platform}`);
+        const unsupported = `Unsupported platform: ${item.platform}`;
+        markQueueItemFailed(item.id, unsupported);
+        results.push({
+          id: item.id,
+          slug: item.slug,
+          platform: item.platform,
+          status: "failed",
+          error: unsupported,
+        });
       } catch (err: any) {
-        markQueueItemFailed(item.id, err?.message || "Queue run failed");
+        const message = err?.message || "Queue run failed";
+
+        console.error("QUEUE ITEM FAILED:", {
+          id: item.id,
+          slug: item.slug,
+          platform: item.platform,
+          error: message,
+        });
+
+        markQueueItemFailed(item.id, message);
+        results.push({
+          id: item.id,
+          slug: item.slug,
+          platform: item.platform,
+          status: "failed",
+          error: message,
+        });
       }
     }
 
     return NextResponse.json({
       ok: true,
       count,
+      attempted: due.length,
+      failed: results.filter((r) => r.status === "failed").length,
+      results,
       message: "Due posts processed",
     });
   } catch (err: any) {

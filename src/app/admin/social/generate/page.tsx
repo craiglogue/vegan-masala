@@ -58,6 +58,7 @@ type GeneratedImageItem = {
   image: string;
   storage: "blob" | "local";
   path: string;
+  cacheKey: number;
 };
 
 async function safeJson(res: Response) {
@@ -107,6 +108,12 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
   };
 }
 
+function withCacheBust(url: string, cacheKey: number) {
+  if (!url) return "";
+  const joiner = url.includes("?") ? "&" : "?";
+  return `${url}${joiner}v=${cacheKey}`;
+}
+
 export default function AdminSocialGeneratePage() {
   const [slugs, setSlugs] = useState<NormalizedSlug[]>([]);
   const [selectedSlug, setSelectedSlug] = useState("");
@@ -120,6 +127,7 @@ export default function AdminSocialGeneratePage() {
   const [activeImageLabel, setActiveImageLabel] = useState("");
   const [activeStorage, setActiveStorage] = useState<"blob" | "local" | "">("");
   const [activePath, setActivePath] = useState("");
+  const [activeCacheKey, setActiveCacheKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -177,16 +185,26 @@ export default function AdminSocialGeneratePage() {
 
   const selectedItem = filteredSlugs.find((item) => item.slug === selectedSlug) ?? null;
 
-  function addGeneratedImage(item: GeneratedImageItem) {
-    setGeneratedImages((prev) => {
-      const withoutExisting = prev.filter((entry) => entry.slug !== item.slug);
-      return [item, ...withoutExisting];
-    });
-
+  function setActiveFromItem(item: GeneratedImageItem) {
     setActiveImageUrl(item.image);
     setActiveImageLabel(item.label);
     setActiveStorage(item.storage);
     setActivePath(item.path);
+    setActiveCacheKey(item.cacheKey);
+  }
+
+  function addGeneratedImage(item: Omit<GeneratedImageItem, "cacheKey">) {
+    const nextItem: GeneratedImageItem = {
+      ...item,
+      cacheKey: Date.now(),
+    };
+
+    setGeneratedImages((prev) => {
+      const withoutExisting = prev.filter((entry) => entry.slug !== nextItem.slug);
+      return [nextItem, ...withoutExisting];
+    });
+
+    setActiveFromItem(nextItem);
   }
 
   async function generateOne(slug: string) {
@@ -278,28 +296,26 @@ export default function AdminSocialGeneratePage() {
           ? data.result.generated
           : [];
 
-      const mapped = generated
-        .map((item) => {
-          const match = slugs.find((s) => s.slug === item.slug);
-          return {
-            slug: item.slug,
-            label: match?.label || item.slug,
-            type: match?.type || "recipe",
-            image: item.image,
-            storage: item.storage,
-            path: item.path,
-          } satisfies GeneratedImageItem;
-        })
-        .reverse();
+      const now = Date.now();
+
+      const mapped = generated.map((item, index) => {
+        const match = slugs.find((s) => s.slug === item.slug);
+
+        return {
+          slug: item.slug,
+          label: match?.label || item.slug,
+          type: match?.type || "recipe",
+          image: item.image,
+          storage: item.storage,
+          path: item.path,
+          cacheKey: now + index,
+        } satisfies GeneratedImageItem;
+      });
 
       setGeneratedImages(mapped);
 
       if (mapped.length > 0) {
-        const first = mapped[0];
-        setActiveImageUrl(first.image);
-        setActiveImageLabel(first.label);
-        setActiveStorage(first.storage);
-        setActivePath(first.path);
+        setActiveFromItem(mapped[0]);
       }
 
       setStatus(
@@ -312,6 +328,8 @@ export default function AdminSocialGeneratePage() {
       setGeneratingAll(false);
     }
   }
+
+  const activeImageSrc = activeImageUrl ? withCacheBust(activeImageUrl, activeCacheKey || Date.now()) : "";
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 text-white">
@@ -431,7 +449,7 @@ export default function AdminSocialGeneratePage() {
               <h2 className="text-xl font-semibold text-yellow-200">Latest generated card</h2>
               {activeImageUrl ? (
                 <a
-                  href={activeImageUrl}
+                  href={activeImageSrc}
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-xl bg-yellow-600 px-4 py-2 text-sm font-semibold text-black"
@@ -444,14 +462,14 @@ export default function AdminSocialGeneratePage() {
             {activeImageUrl ? (
               <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
                 <a
-                  href={activeImageUrl}
+                  href={activeImageSrc}
                   target="_blank"
                   rel="noreferrer"
                   className="block overflow-hidden rounded-2xl border border-yellow-700/30 bg-black transition hover:border-yellow-500/60"
                 >
                   <div className="aspect-square bg-black">
                     <img
-                      src={activeImageUrl}
+                      src={activeImageSrc}
                       alt={activeImageLabel}
                       className="h-full w-full object-cover"
                     />
@@ -491,12 +509,12 @@ export default function AdminSocialGeneratePage() {
                       Image URL
                     </p>
                     <a
-                      href={activeImageUrl}
+                      href={activeImageSrc}
                       target="_blank"
                       rel="noreferrer"
                       className="mt-1 block break-all text-sm text-sky-300 hover:text-sky-200"
                     >
-                      {activeImageUrl}
+                      {activeImageSrc}
                     </a>
                   </div>
                 </div>
@@ -513,36 +531,35 @@ export default function AdminSocialGeneratePage() {
 
             {generatedImages.length ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {generatedImages.map((item) => (
-                  <button
-                    key={item.slug}
-                    type="button"
-                    onClick={() => {
-                      setActiveImageUrl(item.image);
-                      setActiveImageLabel(item.label);
-                      setActiveStorage(item.storage);
-                      setActivePath(item.path);
-                    }}
-                    className="overflow-hidden rounded-2xl border border-yellow-700/30 bg-neutral-950 text-left transition hover:border-yellow-500/60"
-                  >
-                    <div className="aspect-square bg-black">
-                      <img
-                        src={item.image}
-                        alt={item.label}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
+                {generatedImages.map((item) => {
+                  const previewSrc = withCacheBust(item.image, item.cacheKey);
 
-                    <div className="p-3">
-                      <p className="truncate text-sm font-semibold text-yellow-100">
-                        {item.label}
-                      </p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400">
-                        {item.storage}
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                  return (
+                    <button
+                      key={`${item.slug}-${item.cacheKey}`}
+                      type="button"
+                      onClick={() => setActiveFromItem(item)}
+                      className="overflow-hidden rounded-2xl border border-yellow-700/30 bg-neutral-950 text-left transition hover:border-yellow-500/60"
+                    >
+                      <div className="aspect-square bg-black">
+                        <img
+                          src={previewSrc}
+                          alt={item.label}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+
+                      <div className="p-3">
+                        <p className="truncate text-sm font-semibold text-yellow-100">
+                          {item.label}
+                        </p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400">
+                          {item.storage}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-xl border border-yellow-700/20 bg-black px-4 py-10 text-center text-sm text-neutral-400">

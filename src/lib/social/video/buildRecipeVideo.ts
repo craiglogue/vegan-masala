@@ -361,23 +361,72 @@ async function stillClip(
   );
 }
 
-async function mainClip(image: string, out: string, logs?: string[]) {
+async function mainClip(
+  image: string,
+  out: string,
+  logoPath: string | null,
+  logs?: string[]
+) {
+  const mainFramePng = path.join(TEMP_DIR, "main-frame-overlay.png");
+  const roundedCardPng = path.join(TEMP_DIR, "main-card-rounded.png");
+
+  const frameSvg = `
+    <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+      <rect
+        x="14"
+        y="14"
+        width="${WIDTH - 28}"
+        height="${HEIGHT - 28}"
+        rx="34"
+        ry="34"
+        fill="none"
+        stroke="${BRAND.border}"
+        stroke-width="3"
+        stroke-opacity="0.95"
+      />
+    </svg>
+  `;
+
+  await sharp(Buffer.from(frameSvg)).png().toFile(mainFramePng);
+
+  const roundedMask = Buffer.from(`
+    <svg width="820" height="820" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="820" height="820" rx="34" ry="34" fill="white"/>
+    </svg>
+  `);
+
+  await sharp(image)
+    .resize(820, 820, {
+      fit: "contain",
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .composite([
+      {
+        input: roundedMask,
+        blend: "dest-in",
+      },
+    ])
+    .png()
+    .toFile(roundedCardPng);
+
   const filter = [
     `[0:v]scale=1400:2488:force_original_aspect_ratio=increase,` +
       `crop=1080:1920,` +
       `setsar=1,` +
       `boxblur=30:12,` +
       `zoompan=` +
-      `z='min(zoom+0.0007,1.15)':` +
+      `z='min(zoom+0.0012,1.18)':` +
       `d=300:` +
-      `x='if(lte(on,150),iw/2-(iw/zoom/2)-on*0.45,iw/2-(iw/zoom/2)-(300-on)*0.45)':` +
+      `x='if(lte(on,150),iw/2-(iw/zoom/2)-on*0.6,iw/2-(iw/zoom/2)-(300-on)*0.6)':` +
       `y='ih/2-(ih/zoom/2)':` +
       `s=1080x1920:` +
       `fps=30[bg]`,
-    `[1:v]scale=820:1458:force_original_aspect_ratio=decrease,` +
-      `pad=820:1458:(ow-iw)/2:(oh-ih)/2:color=0x00000000,` +
-      `setsar=1,format=rgba[card]`,
-    `[bg][card]overlay=(W-w)/2:(H-h)/2:format=auto,` +
+
+    `[1:v]setsar=1,format=rgba[card]`,
+    `[2:v]setsar=1,format=rgba[frame]`,
+
+    `[bg][card]overlay=(W-w)/2:420:format=auto[tmp1]`,
+    `[tmp1][frame]overlay=0:0:format=auto,` +
       `setsar=1,` +
       `fade=t=in:st=0:d=0.8,` +
       `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8,` +
@@ -394,7 +443,9 @@ async function mainClip(image: string, out: string, logs?: string[]) {
       "-loop",
       "1",
       "-i",
-      image,
+      roundedCardPng,
+      "-i",
+      mainFramePng,
       "-filter_complex",
       filter,
       "-map",
@@ -623,7 +674,7 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
     await stillClip(introPng, introMp4, INTRO_DURATION, logs);
 
     logs.push("Creating main clip");
-    await mainClip(image, mainMp4, logs);
+    await mainClip(image, mainMp4, logoPath, logs);
 
     logs.push("Creating outro clip");
     await stillClip(outroPng, outroMp4, OUTRO_DURATION, logs);

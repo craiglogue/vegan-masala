@@ -1,24 +1,34 @@
 import { NextResponse } from "next/server";
+import { list } from "@vercel/blob";
+
+import { generateInstagramBySlug } from "@/lib/social/generateInstagram";
+import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
+
 import {
   addQueueItem,
   readQueue,
   writeQueue,
+  type QueueAssetType,
+  type QueueContentType,
   type QueuePlatform,
 } from "@/lib/social/core/queue";
+
 import {
   titleFromSlug,
   detectContentTypeBySlug,
 } from "@/lib/social/core/content";
+
 import {
   buildInstagramCaption,
   buildPinterestCaption,
 } from "@/lib/social/core/captions";
+
 import { contentUrl } from "@/lib/social/core/urls";
 
 function buildCaptionForPlatform(
   platform: QueuePlatform,
   slug: string,
-  type: "recipe" | "guide"
+  type: QueueContentType
 ) {
   if (platform === "pinterest") {
     return buildPinterestCaption(slug, type);
@@ -29,6 +39,112 @@ function buildCaptionForPlatform(
   }
 
   throw new Error(`Unsupported platform: ${platform}`);
+}
+
+function getBlobToken() {
+  return (
+    process.env.BLOB_READ_WRITE_TOKEN ||
+    process.env.PUBLIC_VIDEO_BLOB_READ_WRITE_TOKEN ||
+    ""
+  );
+}
+
+function getSiteBaseUrl() {
+  return (
+    process.env.SOCIAL_ASSET_BASE_URL ||
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://www.vegan-masala.com"
+  ).replace(/\/+$/, "");
+}
+
+async function findBlobUrl(pathname: string): Promise<string | null> {
+  const token = getBlobToken();
+  if (!token) return null;
+
+  try {
+    const result = await list({
+      token,
+      prefix: pathname,
+    });
+
+    const exact = result.blobs.find((blob) => blob.pathname === pathname);
+    return exact?.url ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveAssetUrls(
+  slug: string,
+  type: QueueContentType,
+  platform: QueuePlatform
+) {
+  const siteBase = getSiteBaseUrl();
+
+  let generatedInstagramImageUrl: string | null = null;
+  let generatedPinterestImageUrl: string | null = null;
+
+  if (platform === "instagram" || platform === "facebook") {
+    try {
+      const generated = await generateInstagramBySlug(slug);
+      generatedInstagramImageUrl = generated.image ?? null;
+    } catch (err) {
+      console.warn(
+        "Failed to pre-generate Instagram asset for queue:",
+        slug,
+        err
+      );
+    }
+  }
+
+  if (platform === "pinterest") {
+    try {
+      const generated = await generatePinterestBySlug(slug);
+      generatedPinterestImageUrl = generated.image ?? null;
+    } catch (err) {
+      console.warn(
+        "Failed to pre-generate Pinterest asset for queue:",
+        slug,
+        err
+      );
+    }
+  }
+
+  const instagramImageUrl =
+    generatedInstagramImageUrl ||
+    (await findBlobUrl(`instagram/${slug}.jpg`)) ||
+    `${siteBase}/generated/instagram/${slug}.jpg`;
+
+  const pinterestImageUrl =
+    generatedPinterestImageUrl ||
+    (await findBlobUrl(`pinterest/${slug}.png`)) ||
+    `${siteBase}/generated/pinterest/${slug}.png`;
+
+  const videoUrl = await findBlobUrl(`videos/${slug}.mp4`);
+
+  let assetType: QueueAssetType = "image";
+  let imageUrl = instagramImageUrl;
+
+  if (platform === "pinterest") {
+    assetType = "image";
+    imageUrl = pinterestImageUrl;
+  }
+
+  if (platform === "instagram" || platform === "facebook") {
+    if (videoUrl) {
+      assetType = "video";
+    } else {
+      assetType = "image";
+      imageUrl = instagramImageUrl;
+    }
+  }
+
+  return {
+    assetType,
+    imageUrl,
+    videoUrl: videoUrl ?? undefined,
+  };
 }
 
 export async function GET() {
@@ -106,6 +222,7 @@ export async function POST(req: Request) {
     const title = titleFromSlug(slug);
     const caption = buildCaptionForPlatform(platform, slug, type);
     const url = contentUrl(slug, type);
+    const assets = await resolveAssetUrls(slug, type, platform);
 
     const item = addQueueItem({
       slug,
@@ -115,6 +232,10 @@ export async function POST(req: Request) {
       url,
       board,
       scheduledFor: new Date(scheduledFor).toISOString(),
+      contentType: type,
+      assetType: assets.assetType,
+      imageUrl: assets.imageUrl,
+      videoUrl: assets.videoUrl,
     });
 
     return NextResponse.json({

@@ -7,7 +7,7 @@ function getRedis() {
   const token = process.env.KV_REST_API_TOKEN;
 
   if (!url || !token) {
-    throw new Error("KV environment variables are missing");
+    return null;
   }
 
   return new Redis({
@@ -19,6 +19,11 @@ function getRedis() {
 export async function savePinterestToken(data: any) {
   const redis = getRedis();
 
+  if (!redis) {
+    console.warn("Pinterest token not saved (KV missing)");
+    return false;
+  }
+
   await redis.set(KEY, data);
 
   return true;
@@ -27,17 +32,29 @@ export async function savePinterestToken(data: any) {
 export async function loadPinterestToken() {
   const redis = getRedis();
 
-  const token = await redis.get(KEY);
-
-  return token;
-}
-
-export async function getPinterestAccessToken() {
-  const token: any = await loadPinterestToken();
-
-  if (!token) {
+  if (!redis) {
     return null;
   }
 
-  return token.access_token || null;
+  return await redis.get(KEY);
+}
+
+export async function getPinterestAccessToken() {
+  // Try KV first
+  try {
+    const token: any = await loadPinterestToken();
+
+    if (token?.access_token) {
+      return token.access_token;
+    }
+  } catch {
+    console.warn("Pinterest KV load failed");
+  }
+
+  // Fallback to ENV (like Instagram)
+  if (process.env.PINTEREST_ACCESS_TOKEN) {
+    return process.env.PINTEREST_ACCESS_TOKEN;
+  }
+
+  return null;
 }

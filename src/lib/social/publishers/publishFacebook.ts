@@ -1,9 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import { generateInstagramBySlug } from "@/lib/social/generateInstagram";
 
-const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const GRAPH_BASE = "https://graph.facebook.com/v23.0";
 
 type PublishFacebookInput = {
@@ -17,31 +13,6 @@ function getRequiredEnv(name: string): string {
     throw new Error(`${name} missing`);
   }
   return value;
-}
-
-function getSiteUrl(): string {
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "";
-
-  if (!siteUrl) {
-    throw new Error("NEXT_PUBLIC_SITE_URL missing");
-  }
-
-  return siteUrl.replace(/\/$/, "");
-}
-
-function getFacebookImagePath(slug: string): string {
-  return path.join(ROOT, "public", "generated", "instagram", `${slug}.png`);
-}
-
-function ensureFileExists(filePath: string): void {
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`File not found: ${filePath}`);
-  }
-}
-
-function buildPublicImageUrl(slug: string): string {
-  return `${getSiteUrl()}/generated/instagram/${slug}.png`;
 }
 
 async function metaPostForm(
@@ -74,18 +45,20 @@ async function metaPostForm(
 }
 
 export async function publishFacebook(input: PublishFacebookInput) {
-  if (!input.slug.trim()) {
+  const slug = input.slug.trim();
+
+  if (!slug) {
     throw new Error("Facebook publish slug missing");
   }
 
   const pageId = getRequiredEnv("META_PAGE_ID");
 
-  await generateInstagramBySlug(input.slug);
+  const generated = await generateInstagramBySlug(slug);
+  const imageUrl = generated.image;
 
-  const imagePath = getFacebookImagePath(input.slug);
-  ensureFileExists(imagePath);
-
-  const imageUrl = buildPublicImageUrl(input.slug);
+  if (!imageUrl) {
+    throw new Error("Generated Facebook image URL missing");
+  }
 
   const published = await metaPostForm(`/${pageId}/photos`, {
     url: imageUrl,
@@ -93,5 +66,9 @@ export async function publishFacebook(input: PublishFacebookInput) {
     published: "true",
   });
 
-  return published;
+  return {
+    ok: true,
+    imageUrl,
+    published,
+  };
 }
