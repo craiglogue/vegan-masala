@@ -151,7 +151,7 @@ export async function GET() {
   try {
     return NextResponse.json({
       ok: true,
-      items: readQueue(),
+      items: await readQueue(),
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -224,7 +224,7 @@ export async function POST(req: Request) {
     const url = contentUrl(slug, type);
     const assets = await resolveAssetUrls(slug, type, platform);
 
-    const item = addQueueItem({
+    const item = await addQueueItem({
       slug,
       title,
       platform,
@@ -256,7 +256,7 @@ export async function POST(req: Request) {
 
 export async function DELETE() {
   try {
-    writeQueue([]);
+    await writeQueue([]);
 
     return NextResponse.json({
       ok: true,

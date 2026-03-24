@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const due = dueQueueItems();
+    const due = await dueQueueItems();
     let count = 0;
 
     const results: Array<{
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 
           console.log("QUEUE PINTEREST RESULT:", result);
 
-          markQueueItemPosted(item.id);
+          await markQueueItemPosted(item.id);
           count++;
           results.push({
             id: item.id,
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
 
           console.log("QUEUE INSTAGRAM RESULT:", result);
 
-          markQueueItemPosted(item.id);
+          await markQueueItemPosted(item.id);
           count++;
           results.push({
             id: item.id,
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
 
           console.log("QUEUE FACEBOOK RESULT:", result);
 
-          markQueueItemPosted(item.id);
+         await markQueueItemPosted(item.id);
           count++;
           results.push({
             id: item.id,
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
         }
 
         const unsupported = `Unsupported platform: ${item.platform}`;
-        markQueueItemFailed(item.id, unsupported);
+        await markQueueItemFailed(item.id, unsupported);
         results.push({
           id: item.id,
           slug: item.slug,
@@ -145,7 +145,7 @@ export async function POST(req: Request) {
           error: message,
         });
 
-        markQueueItemFailed(item.id, message);
+        await markQueueItemFailed(item.id, message);
         results.push({
           id: item.id,
           slug: item.slug,
