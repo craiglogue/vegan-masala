@@ -332,7 +332,24 @@ async function createPost(slug: string, title: string, type: ContentType) {
   ensureDir(OUTPUT);
 
   const img = findContentImage(slug, type);
-  const bg = await backgroundBuffer(WIDTH, HEIGHT, img, BRAND.bg);
+
+const bg = await backgroundBuffer(
+  WIDTH,
+  HEIGHT,
+  null,
+  BRAND.bg
+);
+
+let contentImage = null;
+
+if (img) {
+  contentImage = await sharp(img)
+    .resize(832,704,{
+      fit:"cover"
+    })
+    .png()
+    .toBuffer();
+}
   const gradTop = await topGradient();
   const gradBottom = await bottomGradient();
   const frame = await frameOverlay();
@@ -346,14 +363,23 @@ async function createPost(slug: string, title: string, type: ContentType) {
   const logo = await logoBuffer(220);
 
   const comp: sharp.OverlayOptions[] = [
-    { input: bg, left: 0, top: 0 },
-    { input: gradTop, left: 0, top: 0 },
-    { input: gradBottom, left: 0, top: 0 },
-    { input: text, left: 0, top: 0 },
-    { input: imageFrame, left: 0, top: 0 },
-    { input: frame, left: 0, top: 0 },
-  ];
+  { input: bg, left: 0, top: 0 },
 
+  ...(contentImage ? [{
+    input: contentImage,
+    left: 84,
+    top: 274
+  }] : []),
+
+  { input: gradTop, left: 0, top: 0 },
+  { input: gradBottom, left: 0, top: 0 },
+
+  { input: text, left: 0, top: 0 },
+
+  { input: imageFrame, left: 0, top: 0 },
+
+  { input: frame, left: 0, top: 0 },
+];
   if (logo) {
     comp.push({
       input: logo,
