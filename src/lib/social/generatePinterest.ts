@@ -333,23 +333,62 @@ async function createPost(slug: string, title: string, type: ContentType) {
 
   const img = findContentImage(slug, type);
 
-const bg = await backgroundBuffer(
-  WIDTH,
-  HEIGHT,
-  null,
-  BRAND.bg
-);
+  const bg = await backgroundBuffer(
+    WIDTH,
+    HEIGHT,
+    null,
+    BRAND.bg
+  );
 
-let contentImage = null;
+  let contentImage: Buffer | null = null;
+  let contentImageShadow: Buffer | null = null;
 
-if (img) {
-  contentImage = await sharp(img)
-    .resize(832,704,{
-      fit:"cover"
-    })
-    .png()
-    .toBuffer();
-}
+  if (img) {
+    const roundedMask = Buffer.from(`
+      <svg width="832" height="704" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="832" height="704" rx="30" ry="30" fill="white"/>
+      </svg>
+    `);
+
+    contentImage = await sharp(img)
+      .resize(832, 704, {
+        fit: "cover",
+      })
+      .composite([
+        {
+          input: roundedMask,
+          blend: "dest-in",
+        },
+      ])
+      .png()
+      .toBuffer();
+
+    contentImageShadow = await sharp(
+      Buffer.from(`
+        <svg width="860" height="732" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="black" flood-opacity="0.35"/>
+            </filter>
+          </defs>
+          <rect
+            x="14"
+            y="14"
+            width="832"
+            height="704"
+            rx="30"
+            ry="30"
+            fill="black"
+            opacity="0.22"
+            filter="url(#shadow)"
+          />
+        </svg>
+      `)
+    )
+      .png()
+      .toBuffer();
+  }
+
   const gradTop = await topGradient();
   const gradBottom = await bottomGradient();
   const frame = await frameOverlay();
@@ -363,23 +402,37 @@ if (img) {
   const logo = await logoBuffer(220);
 
   const comp: sharp.OverlayOptions[] = [
-  { input: bg, left: 0, top: 0 },
+    { input: bg, left: 0, top: 0 },
 
-  ...(contentImage ? [{
-    input: contentImage,
-    left: 84,
-    top: 274
-  }] : []),
+    ...(contentImageShadow
+      ? [
+          {
+            input: contentImageShadow,
+            left: 70,
+            top: 260,
+          },
+        ]
+      : []),
 
-  { input: gradTop, left: 0, top: 0 },
-  { input: gradBottom, left: 0, top: 0 },
+    ...(contentImage
+      ? [
+          {
+            input: contentImage,
+            left: 84,
+            top: 274,
+          },
+        ]
+      : []),
 
-  { input: text, left: 0, top: 0 },
+    { input: gradTop, left: 0, top: 0 },
+    { input: gradBottom, left: 0, top: 0 },
 
-  { input: imageFrame, left: 0, top: 0 },
+    { input: text, left: 0, top: 0 },
 
-  { input: frame, left: 0, top: 0 },
-];
+    { input: imageFrame, left: 0, top: 0 },
+    { input: frame, left: 0, top: 0 },
+  ];
+
   if (logo) {
     comp.push({
       input: logo,
