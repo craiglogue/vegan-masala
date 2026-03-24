@@ -274,9 +274,9 @@ export default function SocialQueuePage() {
     setDebugResponse("");
 
     try {
-      const res = await fetch("/api/admin/social/queue/run", {
-        method: "POST",
-      });
+     const res = await fetch("/api/admin/social/queue/run-now", {
+  method: "POST",
+});
 
       const data = await res.json();
       setDebugResponse(JSON.stringify(data, null, 2));
@@ -400,38 +400,86 @@ export default function SocialQueuePage() {
       let res: Response;
 
       if (action === "delete") {
-        res = await fetch(`/api/admin/social/queue/item/${id}`, {
-          method: "DELETE",
-        });
-      } else {
-        res = await fetch(`/api/admin/social/queue/item/${id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ action }),
-        });
-      }
+  setLog("Queue item removed");
+  await loadQueue();
+  return;
+}
 
-      const data = await res.json().catch(() => ({}));
-      setDebugResponse(JSON.stringify(data, null, 2));
+if (action === "retry") {
+  setLog("Failed item moved back to queued");
+  await loadQueue();
+  return;
+}
 
-      if (!res.ok) {
-        setLog(data?.error || "Action failed");
-        setShowDebug(true);
-        await loadQueue();
-        return;
-      }
+if (action === "post-now") {
+  const runRes = await fetch("/api/admin/social/queue/run-now", {
+    method: "POST",
+  });
+
+  const runData = await runRes.json().catch(() => ({}));
+  setDebugResponse(JSON.stringify(runData, null, 2));
+
+  if (!runRes.ok) {
+    setLog(runData?.error || "Failed to run queue after post now");
+    setShowDebug(true);
+    await loadQueue();
+    return;
+  }
+
+  const failed = runData?.failed ?? 0;
+  const attempted = runData?.attempted ?? 0;
+  const count = runData?.count ?? 0;
+
+  setLog(`Processed ${attempted}\nPosted: ${count}\nFailed: ${failed}`);
+
+  if (failed > 0) {
+    setShowDebug(true);
+  }
+
+  await loadQueue();
+  return;
+}
 
       if (action === "delete") {
-        setLog("Queue item removed");
-      } else if (action === "retry") {
-        setLog("Failed item moved back to queued");
-      } else {
-        setLog("Item scheduled to post now");
-      }
+  setLog("Queue item removed");
+  await loadQueue();
+  return;
+}
 
-      await loadQueue();
+if (action === "retry") {
+  setLog("Failed item moved back to queued");
+  await loadQueue();
+  return;
+}
+
+if (action === "post-now") {
+  const runRes = await fetch("/api/admin/social/queue/run-now", {
+    method: "POST",
+  });
+
+  const runData = await runRes.json().catch(() => ({}));
+  setDebugResponse(JSON.stringify(runData, null, 2));
+
+  if (!runRes.ok) {
+    setLog(runData?.error || "Failed to run queue after post now");
+    setShowDebug(true);
+    await loadQueue();
+    return;
+  }
+
+  const failed = runData?.failed ?? 0;
+  const attempted = runData?.attempted ?? 0;
+  const count = runData?.count ?? 0;
+
+  setLog(`Processed ${attempted}\nPosted: ${count}\nFailed: ${failed}`);
+
+  if (failed > 0) {
+    setShowDebug(true);
+  }
+
+  await loadQueue();
+  return;
+}
     } catch (err: any) {
       setLog(err?.message || "Action failed");
       setDebugResponse(
