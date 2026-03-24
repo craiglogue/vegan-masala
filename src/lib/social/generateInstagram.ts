@@ -16,10 +16,7 @@ import {
 
 import { findContentImage } from "./core/images";
 
-import {
-  buildInstagramCaption,
-  saveCaption,
-} from "./core/captions";
+import { buildInstagramCaption, saveCaption } from "./core/captions";
 
 import { updateManifest } from "./core/manifest";
 import { saveGeneratedInstagramImage } from "./core/generatedAssets";
@@ -119,7 +116,12 @@ async function resolveFontPath(): Promise<string | null> {
   for (const url of remoteCandidates) {
     const buffer = await fetchBuffer(url);
     if (buffer) {
-      const out = path.join(ROOT, "generated", "instagram", path.basename(url));
+      const out = path.join(
+        ROOT,
+        "generated",
+        "instagram",
+        path.basename(url)
+      );
       ensureDir(path.dirname(out));
       fs.writeFileSync(out, buffer);
       return out;
@@ -193,6 +195,7 @@ function makeTextPathSvg(
     </g>
   `;
 }
+
 function makeShadowedTextPathSvg(
   text: string,
   font: opentype.Font,
@@ -201,8 +204,8 @@ function makeShadowedTextPathSvg(
   x: number,
   baselineY: number,
   letterSpacing = 0,
-  shadowOpacity = 0.35,
-  shadowOffsetY = 4,
+  shadowOpacity = 0.28,
+  shadowOffsetY = 3,
   align: "left" | "center" = "center"
 ) {
   const shadow = makeTextPathSvg(
@@ -232,11 +235,30 @@ function makeShadowedTextPathSvg(
 
 function wrapTitle(text: string) {
   const words = text.split(/\s+/).filter(Boolean);
+  if (!words.length) return [text];
 
-  if (words.length <= 2) return [text];
+  const lines: string[] = [];
+  let current = "";
 
-  const mid = Math.ceil(words.length / 2);
-  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+
+    if (candidate.length <= 13) {
+      current = candidate;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+
+  if (current) lines.push(current);
+
+  if (lines.length <= 3) return lines;
+
+  const first = lines[0];
+  const second = lines[1];
+  const rest = lines.slice(2).join(" ");
+  return [first, second, rest];
 }
 
 function buildBadge(type: ContentType) {
@@ -270,14 +292,34 @@ async function topGradient() {
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="black" stop-opacity="0.96"/>
-            <stop offset="15%" stop-color="black" stop-opacity="0.82"/>
-            <stop offset="38%" stop-color="black" stop-opacity="0.42"/>
-            <stop offset="68%" stop-color="black" stop-opacity="0.12"/>
+            <stop offset="0%" stop-color="black" stop-opacity="0.88"/>
+            <stop offset="18%" stop-color="black" stop-opacity="0.66"/>
+            <stop offset="42%" stop-color="black" stop-opacity="0.28"/>
+            <stop offset="72%" stop-color="black" stop-opacity="0.10"/>
             <stop offset="100%" stop-color="black" stop-opacity="0"/>
           </linearGradient>
         </defs>
         <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#g)"/>
+      </svg>
+    `)
+  )
+    .png()
+    .toBuffer();
+}
+
+async function bottomGradient() {
+  return sharp(
+    Buffer.from(`
+      <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="black" stop-opacity="0.62"/>
+            <stop offset="18%" stop-color="black" stop-opacity="0.34"/>
+            <stop offset="38%" stop-color="black" stop-opacity="0.10"/>
+            <stop offset="100%" stop-color="black" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#bg)"/>
       </svg>
     `)
   )
@@ -290,12 +332,34 @@ async function vignetteOverlay() {
     Buffer.from(`
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="v" cx="50%" cy="50%" r="75%">
-            <stop offset="56%" stop-color="black" stop-opacity="0"/>
-            <stop offset="100%" stop-color="black" stop-opacity="0.28"/>
+          <radialGradient id="v" cx="50%" cy="50%" r="72%">
+            <stop offset="58%" stop-color="black" stop-opacity="0"/>
+            <stop offset="100%" stop-color="black" stop-opacity="0.18"/>
           </radialGradient>
         </defs>
         <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#v)"/>
+      </svg>
+    `)
+  )
+    .png()
+    .toBuffer();
+}
+
+async function cornerSoftMask() {
+  return sharp(
+    Buffer.from(`
+      <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+        <rect
+          x="0"
+          y="0"
+          width="${WIDTH}"
+          height="${HEIGHT}"
+          rx="34"
+          ry="34"
+          fill="none"
+          stroke="rgba(0,0,0,0.18)"
+          stroke-width="28"
+        />
       </svg>
     `)
   )
@@ -308,16 +372,16 @@ async function frameOverlay() {
     Buffer.from(`
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <rect
-          x="14"
-          y="14"
-          width="${WIDTH - 28}"
-          height="${HEIGHT - 28}"
-          rx="38"
-          ry="38"
+          x="18"
+          y="18"
+          width="${WIDTH - 36}"
+          height="${HEIGHT - 36}"
+          rx="34"
+          ry="34"
           fill="none"
           stroke="${BRAND.border}"
-          stroke-opacity="0.95"
-          stroke-width="3"
+          stroke-opacity="0.9"
+          stroke-width="2.5"
         />
       </svg>
     `)
@@ -332,20 +396,29 @@ async function textOverlay(
   badge: string,
   font: opentype.Font
 ) {
-  const lines = wrapTitle(title);
+  const lines = wrapTitle(title).slice(0, 3);
 
-  const TEXT_LEFT = 70;
-  const TITLE_START = 360;
-  const LINE_HEIGHT = 88;
+  const TEXT_LEFT = 88;
+  const TEXT_RIGHT_SAFE = 910;
+  const TITLE_START = 305;
+  const LINE_HEIGHT = 68;
+
+  let titleFontSize = 72;
+
+  if (title.length > 28) titleFontSize = 64;
+  if (title.length > 38) titleFontSize = 58;
+  if (title.length > 52) titleFontSize = 52;
+
+  const badgeWidth = badge === "GUIDE" ? 160 : 175;
 
   const badgeRect = `
     <rect
-      x="70"
-      y="70"
-      rx="26"
-      ry="26"
-      width="170"
-      height="58"
+      x="${TEXT_LEFT}"
+      y="84"
+      rx="22"
+      ry="22"
+      width="${badgeWidth}"
+      height="52"
       fill="${BRAND.red}"
     />
   `;
@@ -353,12 +426,12 @@ async function textOverlay(
   const badgePath = makeShadowedTextPathSvg(
     badge,
     font,
-    30,
+    27,
     "#ffffff",
-    155,
-    108,
-    0.9,
-    0.22,
+    TEXT_LEFT + badgeWidth / 2,
+    118,
+    0.75,
+    0.18,
     2,
     "center"
   );
@@ -368,13 +441,13 @@ async function textOverlay(
       makeShadowedTextPathSvg(
         line,
         font,
-        92,
+        titleFontSize,
         BRAND.gold,
         TEXT_LEFT,
         TITLE_START + i * LINE_HEIGHT,
-        1,
-        0.38,
-        4,
+        0.6,
+        0.28,
+        3,
         "left"
       )
     )
@@ -383,25 +456,25 @@ async function textOverlay(
   const subtitlePath = makeShadowedTextPathSvg(
     subtitle,
     font,
-    44,
-    BRAND.soft,
+    32,
+    "rgba(255,255,255,0.92)",
     TEXT_LEFT,
-    TITLE_START + lines.length * LINE_HEIGHT + 30,
-    0.85,
-    0.28,
-    3,
+    TITLE_START + lines.length * LINE_HEIGHT + 20,
+    0.35,
+    0.18,
+    2,
     "left"
   );
 
   const sitePath = makeShadowedTextPathSvg(
-    "vegan-masala.com",
+    "VM-TEST",
     font,
-    36,
+    30,
     "#ffffff",
-    540,
-    HEIGHT - 70,
-    0.7,
-    0.24,
+    WIDTH / 2,
+    HEIGHT - 82,
+    0.45,
+    0.18,
     2,
     "center"
   );
@@ -418,14 +491,14 @@ async function textOverlay(
   `;
 
   return sharp(Buffer.from(svg)).png().toBuffer();
-}
+}f
 
 async function logoOverlay(logo: Buffer | null) {
   if (!logo) return null;
 
   return sharp(logo)
     .trim({ threshold: 10 })
-    .resize(250, 250, {
+    .resize(145, 145, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
@@ -446,28 +519,36 @@ async function createPost(slug: string, title: string, type: ContentType) {
   const logo = await resolveLogo();
 
   const bg = await backgroundBufferFromSource(sourceImage);
-  const grad = await topGradient();
+    const gradTop = await topGradient();
+  const gradBottom = await bottomGradient();
   const vignette = await vignetteOverlay();
+  const cornerMask = await cornerSoftMask();
   const frame = await frameOverlay();
-  const text = await textOverlay(title, buildSubtitle(type), buildBadge(type), font);
+  const text = await textOverlay(
+    title,
+    buildSubtitle(type),
+    buildBadge(type),
+    font
+  );
   const logoPng = await logoOverlay(logo);
 
   const comps: sharp.OverlayOptions[] = [
     { input: bg, left: 0, top: 0 },
-    { input: grad, left: 0, top: 0 },
+    { input: gradTop, left: 0, top: 0 },
+    { input: gradBottom, left: 0, top: 0 },
     { input: vignette, left: 0, top: 0 },
+    { input: cornerMask, left: 0, top: 0 },
     { input: text, left: 0, top: 0 },
     { input: frame, left: 0, top: 0 },
   ];
 
-  if (logoPng) {
+    if (logoPng) {
     comps.push({
       input: logoPng,
-      top: HEIGHT - 290,
-      left: WIDTH - 290,
+      top: HEIGHT - 210,
+      left: WIDTH - 210,
     });
   }
-
   const finalPngBuffer = await sharp({
     create: {
       width: WIDTH,
