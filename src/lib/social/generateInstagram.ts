@@ -467,7 +467,7 @@ async function textOverlay(
   );
 
   const sitePath = makeShadowedTextPathSvg(
-    "VM-TEST",
+    "vegan-masala.com",
     font,
     30,
     "#ffffff",

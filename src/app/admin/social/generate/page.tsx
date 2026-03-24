@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+type Platform = "instagram" | "pinterest";
+
 type SlugItem =
   | string
   | {
@@ -59,6 +61,7 @@ type GeneratedImageItem = {
   storage: "blob" | "local";
   path: string;
   cacheKey: number;
+  platform: Platform;
 };
 
 async function safeJson(res: Response) {
@@ -74,6 +77,10 @@ async function safeJson(res: Response) {
   }
 }
 
+function cleanLabel(label: string) {
+  return label.replace(/\s*\((recipe|guide)\)\s*$/i, "").trim();
+}
+
 function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
   if (typeof item === "string") {
     const slug = item.trim();
@@ -81,7 +88,7 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
 
     return {
       slug,
-      label: slug,
+      label: cleanLabel(slug),
       type: "recipe",
     };
   }
@@ -91,7 +98,8 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
   const slug = typeof item.slug === "string" ? item.slug.trim() : "";
   if (!slug) return null;
 
-  const rawType = typeof item.type === "string" ? item.type.trim().toLowerCase() : "";
+  const rawType =
+    typeof item.type === "string" ? item.type.trim().toLowerCase() : "";
   const type: "recipe" | "guide" = rawType === "guide" ? "guide" : "recipe";
 
   const baseLabel =
@@ -103,7 +111,7 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
 
   return {
     slug,
-    label: `${baseLabel} (${type})`,
+    label: cleanLabel(baseLabel),
     type,
   };
 }
@@ -115,6 +123,7 @@ function withCacheBust(url: string, cacheKey: number) {
 }
 
 export default function AdminSocialGeneratePage() {
+  const [platform, setPlatform] = useState<Platform>("instagram");
   const [slugs, setSlugs] = useState<NormalizedSlug[]>([]);
   const [selectedSlug, setSelectedSlug] = useState("");
   const [filter, setFilter] = useState<"all" | "recipe" | "guide">("all");
@@ -122,12 +131,15 @@ export default function AdminSocialGeneratePage() {
   const [generatingOne, setGeneratingOne] = useState(false);
   const [generatingAll, setGeneratingAll] = useState(false);
   const [status, setStatus] = useState("");
-  const [generatedImages, setGeneratedImages] = useState<GeneratedImageItem[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImageItem[]>(
+    []
+  );
   const [activeImageUrl, setActiveImageUrl] = useState("");
   const [activeImageLabel, setActiveImageLabel] = useState("");
   const [activeStorage, setActiveStorage] = useState<"blob" | "local" | "">("");
   const [activePath, setActivePath] = useState("");
   const [activeCacheKey, setActiveCacheKey] = useState(0);
+  const [activePlatform, setActivePlatform] = useState<Platform>("instagram");
 
   useEffect(() => {
     let mounted = true;
@@ -150,7 +162,12 @@ export default function AdminSocialGeneratePage() {
         const nextSlugs = (Array.isArray(data?.slugs) ? data.slugs : [])
           .map(normalizeSlugItem)
           .filter((item): item is NormalizedSlug => item !== null)
-          .sort((a, b) => a.label.localeCompare(b.label));
+          .sort((a, b) => {
+            if (a.type !== b.type) {
+              return a.type === "recipe" ? -1 : 1;
+            }
+            return a.label.localeCompare(b.label);
+          });
 
         setSlugs(nextSlugs);
 
@@ -177,13 +194,24 @@ export default function AdminSocialGeneratePage() {
     return slugs.filter((item) => item.type === filter);
   }, [slugs, filter]);
 
+  const recipeSlugs = useMemo(
+    () => filteredSlugs.filter((item) => item.type === "recipe"),
+    [filteredSlugs]
+  );
+
+  const guideSlugs = useMemo(
+    () => filteredSlugs.filter((item) => item.type === "guide"),
+    [filteredSlugs]
+  );
+
   useEffect(() => {
     if (!filteredSlugs.some((item) => item.slug === selectedSlug)) {
       setSelectedSlug(filteredSlugs[0]?.slug || "");
     }
   }, [filteredSlugs, selectedSlug]);
 
-  const selectedItem = filteredSlugs.find((item) => item.slug === selectedSlug) ?? null;
+  const selectedItem =
+    filteredSlugs.find((item) => item.slug === selectedSlug) ?? null;
 
   function setActiveFromItem(item: GeneratedImageItem) {
     setActiveImageUrl(item.image);
@@ -191,6 +219,7 @@ export default function AdminSocialGeneratePage() {
     setActiveStorage(item.storage);
     setActivePath(item.path);
     setActiveCacheKey(item.cacheKey);
+    setActivePlatform(item.platform);
   }
 
   function addGeneratedImage(item: Omit<GeneratedImageItem, "cacheKey">) {
@@ -200,21 +229,23 @@ export default function AdminSocialGeneratePage() {
     };
 
     setGeneratedImages((prev) => {
-      const withoutExisting = prev.filter((entry) => entry.slug !== nextItem.slug);
+      const withoutExisting = prev.filter(
+        (entry) => !(entry.slug === nextItem.slug && entry.platform === nextItem.platform)
+      );
       return [nextItem, ...withoutExisting];
     });
 
     setActiveFromItem(nextItem);
   }
 
-  async function generateOne(slug: string) {
+  async function generateOne(slug: string, currentPlatform: Platform) {
     const res = await fetch("/api/admin/social", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        platform: "instagram",
+        platform: currentPlatform,
         mode: "single",
         slug,
       }),
@@ -224,14 +255,14 @@ export default function AdminSocialGeneratePage() {
     return { res, data };
   }
 
-  async function generateAll() {
+  async function generateAll(currentPlatform: Platform) {
     const res = await fetch("/api/admin/social", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        platform: "instagram",
+        platform: currentPlatform,
         mode: "all",
       }),
     });
@@ -248,12 +279,18 @@ export default function AdminSocialGeneratePage() {
 
     try {
       setGeneratingOne(true);
-      setStatus(`Generating Instagram image for ${selectedItem.slug}...`);
+      setStatus(
+        `Generating ${platform === "instagram" ? "Instagram card" : "Pinterest pin"} for ${selectedItem.slug}...`
+      );
 
-      const { res, data } = await generateOne(selectedItem.slug);
+      const { res, data } = await generateOne(selectedItem.slug, platform);
 
       if (!res.ok || (!data?.success && !data?.ok)) {
-        throw new Error(data?.error || data?.message || "Instagram generation failed");
+        throw new Error(
+          data?.error ||
+            data?.message ||
+            `${platform} generation failed`
+        );
       }
 
       const image = data.image || data.result?.image || "";
@@ -268,12 +305,16 @@ export default function AdminSocialGeneratePage() {
           image,
           storage,
           path: assetPath,
+          platform,
         });
       }
 
-      setStatus(data?.message || `Instagram image generated for ${selectedItem.slug}`);
+      setStatus(
+        data?.message ||
+          `${platform === "instagram" ? "Instagram card" : "Pinterest pin"} generated for ${selectedItem.slug}`
+      );
     } catch (err: any) {
-      setStatus(err?.message || "Instagram generation failed");
+      setStatus(err?.message || `${platform} generation failed`);
     } finally {
       setGeneratingOne(false);
     }
@@ -282,12 +323,18 @@ export default function AdminSocialGeneratePage() {
   async function handleGenerateAll() {
     try {
       setGeneratingAll(true);
-      setStatus("Generating all Instagram images...");
+      setStatus(
+        `Generating all ${platform === "instagram" ? "Instagram cards" : "Pinterest pins"}...`
+      );
 
-      const { res, data } = await generateAll();
+      const { res, data } = await generateAll(platform);
 
       if (!res.ok || (!data?.success && !data?.ok)) {
-        throw new Error(data?.error || data?.message || "Bulk Instagram generation failed");
+        throw new Error(
+          data?.error ||
+            data?.message ||
+            `Bulk ${platform} generation failed`
+        );
       }
 
       const generated = Array.isArray(data.generated)
@@ -309,6 +356,7 @@ export default function AdminSocialGeneratePage() {
           storage: item.storage,
           path: item.path,
           cacheKey: now + index,
+          platform,
         } satisfies GeneratedImageItem;
       });
 
@@ -320,16 +368,20 @@ export default function AdminSocialGeneratePage() {
 
       setStatus(
         data?.message ||
-          `Generated ${typeof data.count === "number" ? data.count : generated.length} Instagram images`
+          `Generated ${
+            typeof data.count === "number" ? data.count : generated.length
+          } ${platform === "instagram" ? "Instagram cards" : "Pinterest pins"}`
       );
     } catch (err: any) {
-      setStatus(err?.message || "Bulk Instagram generation failed");
+      setStatus(err?.message || `Bulk ${platform} generation failed`);
     } finally {
       setGeneratingAll(false);
     }
   }
 
-  const activeImageSrc = activeImageUrl ? withCacheBust(activeImageUrl, activeCacheKey || Date.now()) : "";
+  const activeImageSrc = activeImageUrl
+    ? withCacheBust(activeImageUrl, activeCacheKey || Date.now())
+    : "";
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 text-white">
@@ -337,16 +389,38 @@ export default function AdminSocialGeneratePage() {
         <p className="mb-2 text-sm uppercase tracking-[0.25em] text-yellow-300">
           Admin Social
         </p>
-        <h1 className="text-3xl font-bold text-yellow-100">Instagram Generator</h1>
+        <h1 className="text-3xl font-bold text-yellow-100">Social Generator</h1>
         <p className="mt-2 max-w-3xl text-sm text-neutral-300">
-          Generate Instagram cards and see the returned asset URL, storage location,
-          and image preview immediately.
+          Generate Instagram cards and Pinterest pins, then preview the returned
+          asset URL, storage location, and final image immediately.
         </p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <section className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
           <h2 className="mb-4 text-lg font-semibold text-yellow-200">Controls</h2>
+
+          <label className="mb-2 block text-sm font-medium text-yellow-200">
+            Platform
+          </label>
+
+          <div className="mb-5 grid grid-cols-2 gap-2">
+            {(["instagram", "pinterest"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPlatform(value)}
+                disabled={loadingSlugs || generatingOne || generatingAll}
+                className={`rounded-xl px-4 py-3 text-sm font-semibold transition capitalize ${
+                  platform === value
+                    ? "bg-yellow-600 text-black"
+                    : "border border-yellow-700/40 bg-neutral-900 text-yellow-100"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
 
           <label className="mb-2 block text-sm font-medium text-yellow-200">
             Content type
@@ -371,17 +445,19 @@ export default function AdminSocialGeneratePage() {
           </div>
 
           <label
-            htmlFor="instagram-slug"
+            htmlFor="social-slug"
             className="mb-2 block text-sm font-medium text-yellow-200"
           >
             Select item
           </label>
 
           <select
-            id="instagram-slug"
+            id="social-slug"
             value={selectedSlug}
             onChange={(e) => setSelectedSlug(e.target.value)}
-            disabled={loadingSlugs || generatingOne || generatingAll || filteredSlugs.length === 0}
+            disabled={
+              loadingSlugs || generatingOne || generatingAll || filteredSlugs.length === 0
+            }
             className="w-full rounded-xl border border-yellow-700/40 bg-neutral-900 px-4 py-3 text-white outline-none disabled:opacity-50"
           >
             {loadingSlugs ? (
@@ -389,11 +465,27 @@ export default function AdminSocialGeneratePage() {
             ) : filteredSlugs.length === 0 ? (
               <option value="">No matching items found</option>
             ) : (
-              filteredSlugs.map((item) => (
-                <option key={item.slug} value={item.slug}>
-                  {item.label}
-                </option>
-              ))
+              <>
+                {recipeSlugs.length > 0 ? (
+                  <optgroup label="Recipes">
+                    {recipeSlugs.map((item) => (
+                      <option key={item.slug} value={item.slug}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+
+                {guideSlugs.length > 0 ? (
+                  <optgroup label="Guides">
+                    {guideSlugs.map((item) => (
+                      <option key={item.slug} value={item.slug}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+              </>
             )}
           </select>
 
@@ -401,6 +493,14 @@ export default function AdminSocialGeneratePage() {
             <div className="flex justify-between gap-3">
               <span className="text-neutral-400">Visible items</span>
               <span className="font-semibold text-white">{filteredSlugs.length}</span>
+            </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Recipes</span>
+              <span className="font-semibold text-white">{recipeSlugs.length}</span>
+            </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Guides</span>
+              <span className="font-semibold text-white">{guideSlugs.length}</span>
             </div>
             <div className="mt-2 flex justify-between gap-3">
               <span className="text-neutral-400">Selected type</span>
@@ -414,6 +514,10 @@ export default function AdminSocialGeneratePage() {
                 {selectedItem?.slug || "—"}
               </span>
             </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Platform</span>
+              <span className="font-semibold capitalize text-white">{platform}</span>
+            </div>
           </div>
 
           <div className="mt-5 grid gap-3">
@@ -423,7 +527,11 @@ export default function AdminSocialGeneratePage() {
               disabled={loadingSlugs || generatingOne || generatingAll || !selectedSlug}
               className="rounded-xl bg-red-700 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {generatingOne ? "Generating..." : "Generate selected Instagram card"}
+              {generatingOne
+                ? "Generating..."
+                : platform === "instagram"
+                  ? "Generate selected Instagram card"
+                  : "Generate selected Pinterest pin"}
             </button>
 
             <button
@@ -432,7 +540,11 @@ export default function AdminSocialGeneratePage() {
               disabled={loadingSlugs || generatingOne || generatingAll || slugs.length === 0}
               className="rounded-xl border border-yellow-700/40 bg-yellow-600 px-5 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {generatingAll ? "Generating all..." : `Generate all Instagram cards (${slugs.length})`}
+              {generatingAll
+                ? "Generating all..."
+                : platform === "instagram"
+                  ? `Generate all Instagram cards (${slugs.length})`
+                  : `Generate all Pinterest pins (${slugs.length})`}
             </button>
           </div>
 
@@ -446,7 +558,9 @@ export default function AdminSocialGeneratePage() {
         <section className="space-y-6">
           <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
             <div className="mb-4 flex items-center justify-between gap-4">
-              <h2 className="text-xl font-semibold text-yellow-200">Latest generated card</h2>
+              <h2 className="text-xl font-semibold text-yellow-200">
+                Latest generated asset
+              </h2>
               {activeImageUrl ? (
                 <a
                   href={activeImageSrc}
@@ -467,7 +581,7 @@ export default function AdminSocialGeneratePage() {
                   rel="noreferrer"
                   className="block overflow-hidden rounded-2xl border border-yellow-700/30 bg-black transition hover:border-yellow-500/60"
                 >
-                  <div className="aspect-square bg-black">
+                  <div className={`${activePlatform === "pinterest" ? "aspect-[2/3]" : "aspect-square"} bg-black`}>
                     <img
                       src={activeImageSrc}
                       alt={activeImageLabel}
@@ -483,6 +597,15 @@ export default function AdminSocialGeneratePage() {
                     </p>
                     <p className="mt-1 text-lg font-semibold text-yellow-100">
                       {activeImageLabel}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.18em] text-neutral-400">
+                      Platform
+                    </p>
+                    <p className="mt-1 text-sm font-semibold capitalize text-white">
+                      {activePlatform}
                     </p>
                   </div>
 
@@ -521,13 +644,15 @@ export default function AdminSocialGeneratePage() {
               </div>
             ) : (
               <div className="rounded-xl border border-yellow-700/20 bg-black px-4 py-10 text-center text-sm text-neutral-400">
-                No generated Instagram card yet.
+                No generated asset yet.
               </div>
             )}
           </div>
 
           <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-            <h2 className="mb-4 text-xl font-semibold text-yellow-200">Generated cards</h2>
+            <h2 className="mb-4 text-xl font-semibold text-yellow-200">
+              Generated assets
+            </h2>
 
             {generatedImages.length ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -536,12 +661,12 @@ export default function AdminSocialGeneratePage() {
 
                   return (
                     <button
-                      key={`${item.slug}-${item.cacheKey}`}
+                      key={`${item.platform}-${item.slug}-${item.cacheKey}`}
                       type="button"
                       onClick={() => setActiveFromItem(item)}
                       className="overflow-hidden rounded-2xl border border-yellow-700/30 bg-neutral-950 text-left transition hover:border-yellow-500/60"
                     >
-                      <div className="aspect-square bg-black">
+                      <div className={`${item.platform === "pinterest" ? "aspect-[2/3]" : "aspect-square"} bg-black`}>
                         <img
                           src={previewSrc}
                           alt={item.label}
@@ -554,7 +679,7 @@ export default function AdminSocialGeneratePage() {
                           {item.label}
                         </p>
                         <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400">
-                          {item.storage}
+                          {item.platform} • {item.storage}
                         </p>
                       </div>
                     </button>
@@ -563,7 +688,7 @@ export default function AdminSocialGeneratePage() {
               </div>
             ) : (
               <div className="rounded-xl border border-yellow-700/20 bg-black px-4 py-10 text-center text-sm text-neutral-400">
-                Generated Instagram cards will appear here.
+                Generated assets will appear here.
               </div>
             )}
           </div>
