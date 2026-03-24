@@ -491,7 +491,7 @@ async function textOverlay(
   `;
 
   return sharp(Buffer.from(svg)).png().toBuffer();
-}f
+}
 
 async function logoOverlay(logo: Buffer | null) {
   if (!logo) return null;
