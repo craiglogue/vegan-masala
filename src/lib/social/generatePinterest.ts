@@ -24,6 +24,43 @@ const WIDTH = 1000;
 const HEIGHT = 1500;
 const FONT = getBrandFont();
 
+function getBaseUrl() {
+  return (
+    process.env.SOCIAL_ASSET_BASE_URL ||
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://www.vegan-masala.com"
+  ).replace(/\/+$/, "");
+}
+
+async function fetchBuffer(url: string) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) return null;
+  const arrayBuffer = await res.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
+async function resolveSourceImage(
+  slug: string,
+  type: ContentType
+): Promise<string | Buffer | null> {
+  if (!process.env.VERCEL) {
+    return findContentImage(slug, type);
+  }
+
+  const folder = type === "recipe" ? "recipes" : "guides";
+  const baseUrl = getBaseUrl();
+  const exts = ["png", "jpg", "jpeg", "webp"];
+
+  for (const ext of exts) {
+    const url = `${baseUrl}/images/${folder}/${slug}.${ext}`;
+    const buffer = await fetchBuffer(url);
+    if (buffer) return buffer;
+  }
+
+  return null;
+}
+
 async function topGradient() {
   return sharp(
     Buffer.from(`
@@ -331,14 +368,9 @@ async function textOverlay(
 async function createPost(slug: string, title: string, type: ContentType) {
   ensureDir(OUTPUT);
 
-  const img = findContentImage(slug, type);
+  const img = await resolveSourceImage(slug, type);
 
-  const bg = await backgroundBuffer(
-    WIDTH,
-    HEIGHT,
-    null,
-    BRAND.bg
-  );
+  const bg = await backgroundBuffer(WIDTH, HEIGHT, null, BRAND.bg);
 
   let contentImage: Buffer | null = null;
   let contentImageShadow: Buffer | null = null;
@@ -410,7 +442,7 @@ async function createPost(slug: string, title: string, type: ContentType) {
             input: contentImageShadow,
             left: 70,
             top: 260,
-          },
+          } as sharp.OverlayOptions,
         ]
       : []),
 
@@ -420,15 +452,13 @@ async function createPost(slug: string, title: string, type: ContentType) {
             input: contentImage,
             left: 84,
             top: 274,
-          },
+          } as sharp.OverlayOptions,
         ]
       : []),
 
     { input: gradTop, left: 0, top: 0 },
     { input: gradBottom, left: 0, top: 0 },
-
     { input: text, left: 0, top: 0 },
-
     { input: imageFrame, left: 0, top: 0 },
     { input: frame, left: 0, top: 0 },
   ];
