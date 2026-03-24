@@ -1,138 +1,112 @@
-import { addQueueItem } from "./queue";
+import { addQueueItem, type QueuePlatform } from "./queue";
 import {
   allContent,
   slugFromFile,
   titleFromSlug,
-  detectContentTypeBySlug
+  detectContentTypeBySlug,
 } from "./content";
 
 import {
   buildPinterestCaption,
-  buildInstagramCaption
+  buildInstagramCaption,
 } from "./captions";
 
 import { contentUrl } from "./urls";
 
-function randomTime(hour:number){
-  const minute=Math.floor(Math.random()*40)+10;
+type AutoPlatform = "pinterest" | "instagram" | "all";
 
-  return new Date(
-    Date.now() +
-    (hour*60*60*1000)
-  );
-}
+function buildScheduleDate(dayOffset: number, hour: number, minute: number) {
+  const base = new Date();
 
-function buildScheduleDate(day:number){
-
-  const base=new Date();
-
-  base.setDate(
-    base.getDate()+day
-  );
-
-  base.setHours(18);
-  base.setMinutes(
-    Math.floor(Math.random()*40)+10
-  );
+  base.setDate(base.getDate() + dayOffset);
+  base.setHours(hour, minute, 0, 0);
 
   return base.toISOString();
 }
 
-export function buildAutoQueue(
-  days:number,
-  platform:"pinterest"|"instagram"|"all",
-  board?:string
-){
+function captionForPlatform(
+  platform: Exclude<QueuePlatform, "facebook">,
+  slug: string,
+  type: "recipe" | "guide"
+) {
+  if (platform === "pinterest") {
+    return buildPinterestCaption(slug, type);
+  }
 
-  const items=allContent();
+  return buildInstagramCaption(slug, type);
+}
 
-  let count=0;
+async function queueOne(
+  slug: string,
+  platform: Exclude<QueuePlatform, "facebook">,
+  scheduledFor: string,
+  board?: string
+) {
+  const type = detectContentTypeBySlug(slug);
+  if (!type) return false;
 
-  for(let i=0;i<days;i++){
+  const title = titleFromSlug(slug);
+  const url = contentUrl(slug, type);
 
-    const item=
-    items[
-      i % items.length
-    ];
+  await addQueueItem({
+    slug,
+    title,
+    platform,
+    caption: captionForPlatform(platform, slug, type),
+    url,
+    board: platform === "pinterest" ? board ?? null : null,
+    scheduledFor,
+    contentType: type,
+  });
 
-    const slug=
-    slugFromFile(
-      item.file
-    );
+  return true;
+}
 
-    const type=
-    detectContentTypeBySlug(slug);
+export async function buildAutoQueue(
+  days: number,
+  platform: AutoPlatform,
+  board?: string
+) {
+  const items = allContent();
+  if (!items.length) return 0;
 
-    if(!type) continue;
+  let count = 0;
+  let cursor = 0;
 
-    const title=
-    titleFromSlug(slug);
+  for (let day = 0; day < days; day++) {
+    const morningSlug = slugFromFile(items[cursor % items.length].file);
+    cursor++;
 
-    const url=
-    contentUrl(slug,type);
+    const eveningSlug = slugFromFile(items[cursor % items.length].file);
+    cursor++;
 
-    if(
-      platform==="pinterest"||
-      platform==="all"
-    ){
+    const morningTime = buildScheduleDate(day, 9, 15);
+    const eveningTime = buildScheduleDate(day, 18, 15);
 
-      addQueueItem({
+    if (platform === "pinterest" || platform === "all") {
+      if (!board) {
+        throw new Error("Pinterest board required for auto queue");
+      }
 
-        slug,
-        title,
+      if (await queueOne(morningSlug, "pinterest", morningTime, board)) {
+        count++;
+      }
 
-        platform:"pinterest",
-
-        caption:
-        buildPinterestCaption(
-          slug,
-          type
-        ),
-
-        url,
-
-        board,
-
-        scheduledFor:
-        buildScheduleDate(i)
-
-      });
-
-      count++;
-
+      if (await queueOne(eveningSlug, "pinterest", eveningTime, board)) {
+        count++;
+      }
     }
 
-    if(
-      platform==="instagram"||
-      platform==="all"
-    ){
+    if (platform === "instagram" || platform === "all") {
+      if (await queueOne(morningSlug, "instagram", morningTime)) {
+        count++;
+      }
 
-      addQueueItem({
-
-        slug,
-        title,
-
-        platform:"instagram",
-
-        caption:
-        buildInstagramCaption(
-          slug,
-          type
-        ),
-
-        url,
-
-        scheduledFor:
-        buildScheduleDate(i)
-
-      });
-
-      count++;
-
+      if (await queueOne(eveningSlug, "instagram", eveningTime)) {
+        count++;
+      }
     }
-
   }
 
   return count;
-
 }

@@ -27,10 +27,7 @@ export async function POST(req: Request) {
 
     const isVercelCron = Boolean(cronHeader);
 
-    const isAdminUI =
-      process.env.NODE_ENV !== "production";
-
-    if (requiredSecret && !isManualAuthorized && !isVercelCron && !isAdminUI) {
+    if (requiredSecret && !isManualAuthorized && !isVercelCron) {
       return NextResponse.json(
         {
           ok: false,
@@ -115,7 +112,7 @@ export async function POST(req: Request) {
 
           console.log("QUEUE FACEBOOK RESULT:", result);
 
-         await markQueueItemPosted(item.id);
+          await markQueueItemPosted(item.id);
           count++;
           results.push({
             id: item.id,
