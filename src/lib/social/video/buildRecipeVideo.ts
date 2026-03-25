@@ -10,8 +10,7 @@ import opentype from "opentype.js";
 
 import {
   detectContentTypeBySlug,
-  titleFromSlug,
-  type ContentType,
+  titleFromSlug
 } from "@/lib/social/core/content";
 
 import { BRAND } from "@/lib/social/core/brand";
@@ -23,70 +22,28 @@ const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const VIDEO_DIR = path.join(ROOT,"generated","video");
 const TEMP_DIR = path.join(ROOT,"generated","video-temp");
 
-const LOCAL_PUBLIC_VIDEO_DIR = path.join(
-process.cwd(),
-"public",
-"generated",
-"video"
-);
-
 const WIDTH=1080;
 const HEIGHT=1920;
 const FPS=30;
 
-const INTRO_DURATION=4;
+const INTRO_DURATION=6;
 const MAIN_DURATION=9;
-const OUTRO_DURATION=4;
+const OUTRO_DURATION=5;
 
-function ensureDir(dir:string){
-
+function ensure(dir:string){
 fs.mkdirSync(dir,{recursive:true});
-
 }
 
 function getBlobToken(){
-
-return (
-process.env.BLOB_READ_WRITE_TOKEN||
-process.env.PUBLIC_VIDEO_BLOB_READ_WRITE_TOKEN||
-""
-);
-
+return process.env.BLOB_READ_WRITE_TOKEN||"";
 }
 
-function getFfmpegBinary(logs?:string[]){
+function getFfmpeg(){
 
-const candidates=[
+if(typeof ffmpegPath==="string")
+return ffmpegPath;
 
-typeof ffmpegPath==="string"
-?ffmpegPath
-:null,
-
-"/var/task/node_modules/ffmpeg-static/ffmpeg",
-
-path.join(
-process.cwd(),
-"node_modules",
-"ffmpeg-static",
-"ffmpeg"
-)
-
-].filter(Boolean) as string[];
-
-for(const c of candidates){
-
-if(fs.existsSync(c)){
-
-if(logs)
-logs.push(`ffmpeg binary: ${c}`);
-
-return c;
-
-}
-
-}
-
-throw new Error("ffmpeg not found");
+throw new Error("ffmpeg missing");
 
 }
 
@@ -95,10 +52,8 @@ args:string[],
 logs?:string[]
 ){
 
-const bin=getFfmpegBinary(logs);
-
 await execFileAsync(
-bin,
+getFfmpeg(),
 args
 );
 
@@ -118,12 +73,11 @@ const next=current
 ?`${current} ${w}`
 :w;
 
-if(next.length<=16){
+if(next.length<18){
 
 current=next;
 
-}
-else{
+}else{
 
 if(current)
 lines.push(current);
@@ -141,28 +95,8 @@ return lines.slice(0,3);
 
 }
 
-async function fetchBuffer(
-url:string,
-logs:string[]
-){
-
-logs.push(`Fetch: ${url}`);
-
-const res=
-await fetch(url);
-
-if(!res.ok)
-return null;
-
-return Buffer.from(
-await res.arrayBuffer()
-);
-
-}
-
-async function resolveMainSlideImage(
+async function resolveImage(
 slug:string,
-baseUrl:string,
 logs:string[]
 ){
 
@@ -177,8 +111,6 @@ const candidates=[
 
 for(const file of candidates){
 
-try{
-
 const {blobs}=await list({
 
 token,
@@ -191,19 +123,15 @@ blobs.find(
 b=>b.pathname===file
 );
 
-if(match?.url){
+if(match){
 
-logs.push(
-`Using blob ${match.url}`
-);
+const res=
+await fetch(match.url);
 
 const buffer=
-await fetchBuffer(
-match.url,
-logs
+Buffer.from(
+await res.arrayBuffer()
 );
-
-if(buffer){
 
 const temp=
 path.join(
@@ -221,57 +149,25 @@ return temp;
 
 }
 
-}catch{}
+throw new Error(
+"No generated image"
+);
 
 }
 
-return null;
+function loadFont(){
 
-}
-async function resolveFont(baseUrl: string, logs: string[]) {
-  if (!process.env.VERCEL) {
-    const localCandidates = [
-      path.join(process.cwd(), "public", "fonts", "Rajdhani-Bold.ttf"),
-      path.join(process.cwd(), "public", "fonts", "Rajdhani-Regular.ttf"),
-      path.join(process.cwd(), "Rajdhani", "Rajdhani-Bold.ttf"),
-      path.join(process.cwd(), "Rajdhani", "Rajdhani-Regular.ttf"),
-    ];
+const local=
 
-    for (const candidate of localCandidates) {
-      if (fs.existsSync(candidate)) {
-        logs.push(`Using local font: ${candidate}`);
-        return candidate;
-      }
-    }
+path.join(
+process.cwd(),
+"public",
+"fonts",
+"Rajdhani-Bold.ttf"
+);
 
-    return null;
-  }
-
-  const remoteCandidates = [
-    `${baseUrl}/fonts/Rajdhani-Bold.ttf`,
-    `${baseUrl}/fonts/Rajdhani-Regular.ttf`,
-  ];
-
-  for (const url of remoteCandidates) {
-    const buffer = await fetchBuffer(url, logs);
-    if (buffer) {
-      const out = path.join(TEMP_DIR, path.basename(url));
-      fs.writeFileSync(out, buffer);
-      logs.push(`Using remote font: ${out}`);
-      return out;
-    }
-  }
-
-  logs.push("No font found");
-  return null;
-}
-
-function loadFontOrThrow(
-fontPath:string|null
-){
-
-if(!fontPath||
-!fs.existsSync(fontPath)){
+if(fs.existsSync(local))
+return opentype.loadSync(local);
 
 throw new Error(
 "Font missing"
@@ -279,63 +175,54 @@ throw new Error(
 
 }
 
-return opentype.loadSync(
-fontPath
-);
-
-}
-
-function makeTextPathSvg(
+function textSvg(
 
 text:string,
 
 font:opentype.Font,
 
-fontSize:number,
+size:number,
 
-fill:string,
+color:string,
 
-centerX:number,
+center:number,
 
-baselineY:number
+y:number
 
 ){
 
-let cursorX=0;
+let cursor=0;
 
 const glyphs=
 font.stringToGlyphs(text);
 
-const units=
-font.unitsPerEm||1000;
-
 const scale=
-fontSize/units;
+size/font.unitsPerEm;
+
+let min=Infinity;
+let max=-Infinity;
 
 const parts:string[]=[];
-
-let minX=Infinity;
-let maxX=-Infinity;
 
 for(const g of glyphs){
 
 const p=
 g.getPath(
-cursorX,
-baselineY,
-fontSize
+cursor,
+y,
+size
 );
 
 const box=
 p.getBoundingBox();
 
-minX=Math.min(
-minX,
+min=Math.min(
+min,
 box.x1
 );
 
-maxX=Math.max(
-maxX,
+max=Math.max(
+max,
 box.x2
 );
 
@@ -343,23 +230,26 @@ parts.push(
 p.toPathData(2)
 );
 
-cursorX+=
-(g.advanceWidth||
-units*0.5)*scale;
+cursor+=
+(g.advanceWidth||500)
+*scale;
 
 }
 
-const width=
-maxX-minX;
+const width=max-min;
 
 const tx=
-centerX-(minX+width/2);
+center-(min+width/2);
 
 return`
+
 <g transform="translate(${tx},0)">
-<path d="${parts.join(" ")}"
-fill="${fill}"/>
+<path
+d="${parts.join(" ")}"
+fill="${color}"
+/>
 </g>
+
 `;
 
 }
@@ -370,72 +260,43 @@ title:string,
 
 subtitle:string,
 
-out:string,
-
-logo:string|null,
-
-fontPath:string|null
+out:string
 
 ){
 
 const font=
-loadFontOrThrow(fontPath);
+loadFont();
 
 const lines=
 wrap(title);
 
-let logoSvg="";
-
-if(logo){
-
-const buf=
-fs.readFileSync(logo);
-
-logoSvg=
-`<image href="data:image/png;base64,
-${buf.toString("base64")}"
-x="430"
-y="300"
-width="220"
-height="220"/>`;
-
-}
-
-const titlePaths=
+const titleSvg=
 lines.map(
 
 (l,i)=>
-makeTextPathSvg(
+
+textSvg(
 
 l,
-
 font,
-
-82,
-
+84,
 BRAND.gold,
-
 540,
-
-860+i*92
+860+i*100
 
 )
 
 ).join("");
 
-const sub=
-makeTextPathSvg(
+const subSvg=
+
+textSvg(
 
 subtitle,
-
 font,
-
-40,
-
+42,
 BRAND.soft,
-
 540,
-
 1210
 
 );
@@ -450,13 +311,24 @@ xmlns="http://www.w3.org/2000/svg">
 <rect
 width="${WIDTH}"
 height="${HEIGHT}"
-fill="#000"/>
+fill="#000"
+/>
 
-${logoSvg}
+<rect
+x="14"
+y="14"
+width="${WIDTH-28}"
+height="${HEIGHT-28}"
+rx="34"
+ry="34"
+fill="none"
+stroke="${BRAND.border}"
+stroke-width="3"
+/>
 
-${titlePaths}
+${titleSvg}
 
-${sub}
+${subSvg}
 
 </svg>
 
@@ -470,15 +342,11 @@ Buffer.from(svg)
 
 }
 
-async function stillClip(
+async function still(
 
 image:string,
-
 out:string,
-
-duration:number,
-
-logs?:string[]
+duration:number
 
 ){
 
@@ -494,12 +362,11 @@ await run([
 
 "-vf",
 
-`scale=${WIDTH}:${HEIGHT},
-fade=t=in:st=0:d=0.5,
-fade=t=out:st=${duration-0.5}:d=0.5,
-format=yuv420p`,
+`scale=1080:1920,
+fade=t=in:st=0:d=0.6,
+fade=t=out:st=${duration-0.6}:d=0.6`,
 
-"-r",String(FPS),
+"-r","30",
 
 "-c:v","libx264",
 
@@ -507,7 +374,7 @@ format=yuv420p`,
 
 out
 
-],logs);
+]);
 
 }
 
@@ -515,41 +382,96 @@ async function mainClip(
 
 image:string,
 
-out:string,
-
-logs?:string[]
+out:string
 
 ){
+
+const card=
+path.join(
+TEMP_DIR,
+"card.png"
+);
+
+const mask=
+
+Buffer.from(`
+
+<svg width="820"
+height="820">
+
+<rect
+width="820"
+height="820"
+rx="34"
+ry="34"
+fill="white"/>
+
+</svg>
+
+`);
+
+await sharp(image)
+
+.resize(820,820)
+
+.composite([
+
+{
+input:mask,
+blend:"dest-in"
+}
+
+])
+
+.png()
+
+.toFile(card);
 
 const filter=[
 
 `[0:v]
-scale=1450:2578:
+
+scale=1400:2488:
+
 force_original_aspect_ratio=increase,
 
 crop=1080:1920,
 
-setsar=1,
-
-boxblur=24:10,
+boxblur=30:12,
 
 zoompan=
-z='min(zoom+0.0016,1.22)':
+
+z='min(zoom+0.0012,1.18)':
+
 d=${MAIN_DURATION*FPS}:
+
 x='iw/2-(iw/zoom/2)':
+
 y='ih/2-(ih/zoom/2)':
-s=1080x1920:fps=${FPS}
+
+s=1080x1920:fps=30
+
+[bg]`,
+
+`[1:v]format=rgba[card]`,
+
+`[bg][card]
+
+overlay=(W-w)/2:420
+
 [outv]`
 
-].join("");
+].join(";");
 
 await run([
 
 "-y",
 
 "-loop","1",
-
 "-i",image,
+
+"-loop","1",
+"-i",card,
 
 "-filter_complex",
 filter,
@@ -559,9 +481,6 @@ filter,
 "-t",
 String(MAIN_DURATION),
 
-"-r",
-String(FPS),
-
 "-c:v",
 "libx264",
 
@@ -570,7 +489,7 @@ String(FPS),
 
 out
 
-],logs);
+]);
 
 }
 
@@ -582,19 +501,9 @@ main:string,
 
 outro:string,
 
-final:string,
-
-music:string|null,
-
-logs?:string[]
+final:string
 
 ){
-
-const temp=
-path.join(
-TEMP_DIR,
-"video.mp4"
-);
 
 await run([
 
@@ -614,85 +523,26 @@ await run([
 
 "-c:v","libx264",
 
-temp
-
-],logs);
-
-if(!music){
-
-fs.copyFileSync(
-temp,
-final
-);
-
-return;
-
-}
-
-await run([
-
-"-y",
-
-"-i",temp,
-
-"-stream_loop","-1",
-
-"-i",music,
-
-"-shortest",
-
-"-map","0:v",
-
-"-map","1:a",
-
-"-c:v","copy",
-
-"-c:a","aac",
-
 final
 
-],logs);
+]);
 
 }
 
 export async function buildRecipeVideo(
 
-slug:string,
-
-baseUrl?:string
+slug:string
 
 ){
 
-const logs:string[]=[];
-
-ensureDir(VIDEO_DIR);
-ensureDir(TEMP_DIR);
-
-const base=
-baseUrl||
-(process.env.VERCEL_URL
-?`https://${process.env.VERCEL_URL}`
-:"");
-
-const type=
-detectContentTypeBySlug(slug)
-||"recipe";
+ensure(VIDEO_DIR);
+ensure(TEMP_DIR);
 
 const image=
-await resolveMainSlideImage(
+await resolveImage(
 slug,
-base,
-logs
+[]
 );
-
-if(!image){
-
-throw new Error(
-"No Instagram card"
-);
-
-}
-const fontPath = await resolveFont(base, logs);
 
 const introPng=
 path.join(
@@ -707,37 +557,41 @@ TEMP_DIR,
 );
 
 await renderCard(
-  titleFromSlug(slug),
-  "Vegan Indian Recipe",
-  introPng,
-  null,
-  fontPath
+
+titleFromSlug(slug),
+
+"Vegan Indian Recipe",
+
+introPng
+
 );
 
 await renderCard(
-  "Follow For More",
-  "vegan-masala.com",
-  outroPng,
-  null,
-  fontPath
+
+"Follow For More",
+
+"vegan-masala.com",
+
+outroPng
+
 );
 
 const introMp4=
 path.join(
 TEMP_DIR,
-`${slug}-intro.mp4`
+"intro.mp4"
 );
 
 const mainMp4=
 path.join(
 TEMP_DIR,
-`${slug}-main.mp4`
+"main.mp4"
 );
 
 const outroMp4=
 path.join(
 TEMP_DIR,
-`${slug}-outro.mp4`
+"outro.mp4"
 );
 
 const final=
@@ -746,7 +600,7 @@ VIDEO_DIR,
 `${slug}.mp4`
 );
 
-await stillClip(
+await still(
 introPng,
 introMp4,
 INTRO_DURATION
@@ -757,7 +611,7 @@ image,
 mainMp4
 );
 
-await stillClip(
+await still(
 outroPng,
 outroMp4,
 OUTRO_DURATION
@@ -767,8 +621,7 @@ await concat(
 introMp4,
 mainMp4,
 outroMp4,
-final,
-null
+final
 );
 
 const buffer=
@@ -785,12 +638,11 @@ buffer,
 
 access:"public",
 
-contentType:
-"video/mp4",
+contentType:"video/mp4",
 
-allowOverwrite:true,
+token:getBlobToken(),
 
-token:getBlobToken()
+allowOverwrite:true
 
 }
 
@@ -800,9 +652,7 @@ return{
 
 success:true,
 
-video:blob.url,
-
-logs
+video:blob.url
 
 };
 
