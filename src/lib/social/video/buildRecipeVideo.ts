@@ -31,9 +31,9 @@ const WIDTH = 1080;
 const HEIGHT = 1920;
 const FPS = 30;
 
-const INTRO_DURATION = 8;
-const MAIN_DURATION = 10;
-const OUTRO_DURATION = 8;
+const INTRO_DURATION = 4;
+const MAIN_DURATION = 9;
+const OUTRO_DURATION = 4;
 
 function ensureDir(dir: string) {
   fs.mkdirSync(dir, { recursive: true });
@@ -74,7 +74,7 @@ function wrap(text: string) {
   for (const w of words) {
     const next = current ? `${current} ${w}` : w;
 
-    if (next.length <= 18) {
+    if (next.length <= 16) {
       current = next;
     } else {
       if (current) lines.push(current);
@@ -262,12 +262,25 @@ function makeTextPathSvg(
   `;
 }
 
+function buildIntroHook(type: ContentType) {
+  return type === "guide" ? "Master This Guide" : "Make This Tonight";
+}
+
+function buildIntroSub(type: ContentType) {
+  return type === "guide" ? "Vegan Indian Cooking" : "Vegan Indian Recipe";
+}
+
+function buildOutroTitle(type: ContentType) {
+  return type === "guide" ? "More Cooking Guides" : "More Vegan Indian Recipes";
+}
+
 async function renderCard(
   title: string,
   subtitle: string,
   out: string,
   logoPath: string | null,
-  fontPath: string | null
+  fontPath: string | null,
+  eyebrow?: string
 ) {
   const font = loadFontOrThrow(fontPath);
   const lines = wrap(title);
@@ -278,26 +291,30 @@ async function renderCard(
     logoHref = `data:image/png;base64,${logoBuffer.toString("base64")}`;
   }
 
+  const eyebrowPath = eyebrow
+    ? makeTextPathSvg(eyebrow, font, 40, BRAND.soft, 540, 620, 1)
+    : "";
+
   const titlePaths = lines
     .map((line, i) =>
-      makeTextPathSvg(line, font, 86, BRAND.gold, 540, 860 + i * 96, 1)
+      makeTextPathSvg(line, font, 82, BRAND.gold, 540, 860 + i * 92, 1)
     )
     .join("");
 
   const subtitlePath = makeTextPathSvg(
     subtitle,
     font,
-    44,
+    40,
     BRAND.soft,
     540,
-    1180,
+    1210,
     1
   );
 
   const sitePath = makeTextPathSvg(
     "vegan-masala.com",
     font,
-    34,
+    32,
     "#ffffff",
     540,
     1830,
@@ -305,24 +322,26 @@ async function renderCard(
   );
 
   const logoSvg = logoHref
-    ? `<image href="${logoHref}" x="410" y="420" width="260" height="260" />`
+    ? `<image href="${logoHref}" x="430" y="300" width="220" height="220" />`
     : "";
 
   const svg = `
   <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
     <rect width="${WIDTH}" height="${HEIGHT}" fill="#000000"/>
     <rect
-      x="14"
-      y="14"
-      width="${WIDTH - 28}"
-      height="${HEIGHT - 28}"
+      x="16"
+      y="16"
+      width="${WIDTH - 32}"
+      height="${HEIGHT - 32}"
       rx="34"
       ry="34"
       fill="none"
       stroke="${BRAND.border}"
       stroke-width="3"
+      stroke-opacity="0.95"
     />
     ${logoSvg}
+    ${eyebrowPath}
     ${titlePaths}
     ${subtitlePath}
     ${sitePath}
@@ -348,7 +367,7 @@ async function stillClip(
       "-t",
       String(duration),
       "-vf",
-      `scale=${WIDTH}:${HEIGHT},fade=t=in:st=0:d=1,fade=t=out:st=${duration - 1}:d=1,format=yuv420p`,
+      `scale=${WIDTH}:${HEIGHT},fade=t=in:st=0:d=0.5,fade=t=out:st=${duration - 0.6}:d=0.6,format=yuv420p`,
       "-r",
       String(FPS),
       "-c:v",
@@ -364,7 +383,6 @@ async function stillClip(
 async function mainClip(
   image: string,
   out: string,
-  logoPath: string | null,
   logs?: string[]
 ) {
   const mainFramePng = path.join(TEMP_DIR, "main-frame-overlay.png");
@@ -373,10 +391,10 @@ async function mainClip(
   const frameSvg = `
     <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
       <rect
-        x="14"
-        y="14"
-        width="${WIDTH - 28}"
-        height="${HEIGHT - 28}"
+        x="16"
+        y="16"
+        width="${WIDTH - 32}"
+        height="${HEIGHT - 32}"
         rx="34"
         ry="34"
         fill="none"
@@ -390,13 +408,13 @@ async function mainClip(
   await sharp(Buffer.from(frameSvg)).png().toFile(mainFramePng);
 
   const roundedMask = Buffer.from(`
-    <svg width="820" height="820" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="820" height="820" rx="34" ry="34" fill="white"/>
+    <svg width="840" height="840" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="840" height="840" rx="34" ry="34" fill="white"/>
     </svg>
   `);
 
   await sharp(image)
-    .resize(820, 820, {
+    .resize(840, 840, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
@@ -410,26 +428,26 @@ async function mainClip(
     .toFile(roundedCardPng);
 
   const filter = [
-    `[0:v]scale=1400:2488:force_original_aspect_ratio=increase,` +
+    `[0:v]scale=1450:2578:force_original_aspect_ratio=increase,` +
       `crop=1080:1920,` +
       `setsar=1,` +
-      `boxblur=30:12,` +
+      `boxblur=24:10,` +
       `zoompan=` +
-      `z='min(zoom+0.0012,1.18)':` +
-      `d=300:` +
-      `x='if(lte(on,150),iw/2-(iw/zoom/2)-on*0.6,iw/2-(iw/zoom/2)-(300-on)*0.6)':` +
+      `z='min(zoom+0.0016,1.22)':` +
+      `d=${MAIN_DURATION * FPS}:` +
+      `x='iw/2-(iw/zoom/2)':` +
       `y='ih/2-(ih/zoom/2)':` +
       `s=1080x1920:` +
-      `fps=30[bg]`,
+      `fps=${FPS}[bg]`,
 
     `[1:v]setsar=1,format=rgba[card]`,
     `[2:v]setsar=1,format=rgba[frame]`,
 
-    `[bg][card]overlay=(W-w)/2:420:format=auto[tmp1]`,
+    `[bg][card]overlay=(W-w)/2:410:format=auto[tmp1]`,
     `[tmp1][frame]overlay=0:0:format=auto,` +
       `setsar=1,` +
-      `fade=t=in:st=0:d=0.8,` +
-      `fade=t=out:st=${MAIN_DURATION - 0.8}:d=0.8,` +
+      `fade=t=in:st=0:d=0.5,` +
+      `fade=t=out:st=${MAIN_DURATION - 0.6}:d=0.6,` +
       `format=yuv420p[outv]`,
   ].join(";");
 
@@ -537,53 +555,58 @@ async function resolveMainSlideImage(
   const blobToken = getBlobToken();
 
   if (blobToken) {
-    try {
-      logs.push(`Blob lookup: instagram/${slug}.png`);
+    const candidates = [
+      `instagram/${slug}.jpg`,
+      `instagram/${slug}.png`,
+    ];
 
-      const { blobs } = await list({
-        token: blobToken,
-        prefix: `instagram/${slug}.png`,
-      });
+    for (const candidate of candidates) {
+      try {
+        logs.push(`Blob lookup: ${candidate}`);
 
-      const exact = blobs.find(
-        (blob) => blob.pathname === `instagram/${slug}.png`
-      );
+        const { blobs } = await list({
+          token: blobToken,
+          prefix: candidate,
+        });
 
-      if (exact?.url) {
-        logs.push(`Blob match found: ${exact.url}`);
+        const exact = blobs.find((blob) => blob.pathname === candidate);
 
-        const buffer = await fetchBuffer(exact.url, logs, "main slide image (blob)");
-        if (buffer) {
-          const tempFile = path.join(TEMP_DIR, `${slug}-instagram-card.png`);
-          await sharp(buffer).png().toFile(tempFile);
-          logs.push(`Using blob instagram image: ${tempFile}`);
-          return tempFile;
+        if (exact?.url) {
+          logs.push(`Blob match found: ${exact.url}`);
+
+          const buffer = await fetchBuffer(exact.url, logs, "main slide image (blob)");
+          if (buffer) {
+            const ext = candidate.endsWith(".jpg") ? "jpg" : "png";
+            const tempFile = path.join(TEMP_DIR, `${slug}-instagram-card.${ext}`);
+            await sharp(buffer).png().toFile(tempFile);
+            logs.push(`Using blob instagram image: ${tempFile}`);
+            return tempFile;
+          }
+        } else {
+          logs.push(`No blob match for ${candidate}`);
         }
-      } else {
-        logs.push(`No blob match for instagram/${slug}.png`);
+      } catch (error: any) {
+        logs.push(`Blob lookup failed for ${candidate}: ${error?.message || "Unknown blob error"}`);
       }
-    } catch (error: any) {
-      logs.push(`Blob lookup failed: ${error?.message || "Unknown blob error"}`);
     }
   } else {
     logs.push("No blob token available for main slide lookup");
   }
 
   if (!process.env.VERCEL) {
-    const localGenerated = path.join(
-      process.cwd(),
-      "public",
-      "generated",
-      "instagram",
-      `${slug}.png`
-    );
+    const localCandidates = [
+      path.join(process.cwd(), "public", "generated", "instagram", `${slug}.jpg`),
+      path.join(process.cwd(), "public", "generated", "instagram", `${slug}.png`),
+    ];
 
-    if (fs.existsSync(localGenerated)) {
-      logs.push(`Using local generated instagram image: ${localGenerated}`);
-      return localGenerated;
+    for (const candidate of localCandidates) {
+      if (fs.existsSync(candidate)) {
+        logs.push(`Using local generated instagram image: ${candidate}`);
+        return candidate;
+      }
     }
 
-    logs.push(`Local generated instagram image missing: ${localGenerated}`);
+    logs.push(`Local generated instagram image missing for slug: ${slug}`);
     return null;
   }
 
@@ -592,22 +615,28 @@ async function resolveMainSlideImage(
     return null;
   }
 
-  const fallbackUrl = `${baseUrl}/generated/instagram/${slug}.png`;
-  const fallbackBuffer = await fetchBuffer(
-    fallbackUrl,
-    logs,
-    "main slide image (site fallback)"
-  );
+  const fallbackCandidates = [
+    `${baseUrl}/generated/instagram/${slug}.jpg`,
+    `${baseUrl}/generated/instagram/${slug}.png`,
+  ];
 
-  if (!fallbackBuffer) {
-    logs.push(`Fallback site image missing for slug: ${slug}`);
-    return null;
+  for (const fallbackUrl of fallbackCandidates) {
+    const fallbackBuffer = await fetchBuffer(
+      fallbackUrl,
+      logs,
+      "main slide image (site fallback)"
+    );
+
+    if (fallbackBuffer) {
+      const tempFile = path.join(TEMP_DIR, `${slug}-instagram-card.png`);
+      await sharp(fallbackBuffer).png().toFile(tempFile);
+      logs.push(`Using fallback site instagram image: ${tempFile}`);
+      return tempFile;
+    }
   }
 
-  const tempFile = path.join(TEMP_DIR, `${slug}-instagram-card.png`);
-  await sharp(fallbackBuffer).png().toFile(tempFile);
-  logs.push(`Using fallback site instagram image: ${tempFile}`);
-  return tempFile;
+  logs.push(`Fallback site image missing for slug: ${slug}`);
+  return null;
 }
 
 export async function buildRecipeVideo(slug: string, baseUrl?: string) {
@@ -658,23 +687,25 @@ export async function buildRecipeVideo(slug: string, baseUrl?: string) {
 
     const final = path.join(VIDEO_DIR, `${slug}.mp4`);
 
-    const introText =
-      type === "guide" ? "Indian Cooking Guide" : "Vegan Indian Recipe";
+    const introText = titleFromSlug(slug);
+    const introEyebrow = buildIntroHook(type);
+    const introSub = buildIntroSub(type);
 
-    const outroText =
-      type === "guide" ? "Guides To Indian Cooking" : "Vegan Indian Recipes";
+    const outroText = "Follow For More";
+    const outroEyebrow = buildOutroTitle(type);
+    const outroSub = "vegan-masala.com";
 
     logs.push("Rendering intro card");
-    await renderCard(titleFromSlug(slug), introText, introPng, logoPath, fontPath);
+    await renderCard(introText, introSub, introPng, logoPath, fontPath, introEyebrow);
 
     logs.push("Rendering outro card");
-    await renderCard("Follow For More", outroText, outroPng, logoPath, fontPath);
+    await renderCard(outroText, outroSub, outroPng, logoPath, fontPath, outroEyebrow);
 
     logs.push("Creating intro clip");
     await stillClip(introPng, introMp4, INTRO_DURATION, logs);
 
     logs.push("Creating main clip");
-    await mainClip(image, mainMp4, logoPath, logs);
+    await mainClip(image, mainMp4, logs);
 
     logs.push("Creating outro clip");
     await stillClip(outroPng, outroMp4, OUTRO_DURATION, logs);

@@ -91,10 +91,18 @@ export async function POST(req: Request) {
         }
 
         if (item.platform === "facebook") {
-          const result = await publishFacebook({
-            slug: item.slug,
-            caption: item.caption || "",
-          });
+
+const result = await publishFacebook({
+
+slug:item.slug,
+
+caption:item.caption||"",
+
+videoUrl:item.videoUrl||undefined,
+
+imageUrl:item.imageUrl||undefined
+
+});
 
           console.log("QUEUE FACEBOOK RESULT:", result);
 

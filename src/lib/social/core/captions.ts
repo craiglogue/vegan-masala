@@ -121,6 +121,34 @@ https://vegan-masala.com
 `;
 }
 
+export function buildFacebookCaption(
+slug:string,
+type:ContentType
+){
+
+let title=titleFromSlug(slug);
+
+let hook=
+type==="recipe"
+?`Most people don't realise how easy it is to make ${title} at home 👇`
+:`If you're learning vegan Indian cooking, this ${title} guide will help 👇`;
+
+let body=
+type==="recipe"
+?`This authentic vegan Indian recipe shows you how to cook ${title} step-by-step using simple ingredients and traditional spices.`
+:`This beginner friendly guide explains ${title} clearly so you can improve your cooking skills fast.`;
+
+return `${hook}
+
+${body}
+
+Full guide:
+https://vegan-masala.com
+
+Would you try this at home? 👇
+`;
+}
+
 export function saveCaption(
 platform:"instagram"|"pinterest",
 slug:string,
