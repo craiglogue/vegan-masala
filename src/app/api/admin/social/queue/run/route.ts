@@ -1,4 +1,3 @@
-import path from "node:path";
 import { NextResponse } from "next/server";
 
 import {
@@ -7,13 +6,9 @@ import {
   markQueueItemPosted,
 } from "@/lib/social/core/queue";
 
-import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
-import { postPinterestPin } from "@/lib/social/core/pinterestPost";
-
+import { publishPinterest } from "@/lib/social/publishers/publishPinterest";
 import { publishInstagram } from "@/lib/social/publishers/publishInstagram";
 import { publishFacebook } from "@/lib/social/publishers/publishFacebook";
-
-const ROOT = process.cwd();
 
 export async function POST(req: Request) {
   try {
@@ -55,21 +50,12 @@ export async function POST(req: Request) {
             throw new Error("Pinterest board missing");
           }
 
-          await generatePinterestBySlug(item.slug);
-
-          const imagePath = path.join(
-            ROOT,
-            "generated",
-            "pinterest",
-            `${item.slug}.png`
-          );
-
-          const result = await postPinterestPin({
+          const result = await publishPinterest({
+            slug: item.slug,
             title: item.title || item.slug,
-            description: item.caption || "",
-            link: item.url || "",
-            imagePath,
-            boardId: item.board,
+            caption: item.caption || "",
+            url: item.url || "",
+            board: item.board,
           });
 
           console.log("QUEUE PINTEREST RESULT:", result);

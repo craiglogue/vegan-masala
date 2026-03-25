@@ -12,7 +12,7 @@ import {
   generateLatestPinterest,
 } from "@/lib/social/generatePinterest";
 
-type Platform = "instagram" | "pinterest" | "all";
+type Platform = "instagram" | "pinterest" | "facebook" | "all";
 type Mode = "all" | "single" | "latest";
 
 export async function POST(req: Request) {
@@ -36,6 +36,54 @@ export async function POST(req: Request) {
     }
 
     if (platform === "instagram") {
+      if (mode === "all") {
+        const result = await generateAllInstagram();
+        const generated = (result as any)?.generated ?? [];
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          count: result.count ?? 0,
+          generated,
+        });
+      }
+
+      if (mode === "single" && slug) {
+        const result = await generateInstagramBySlug(slug);
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          slug,
+          count: result.count ?? 0,
+          image: (result as any).image ?? null,
+          storage: (result as any).storage ?? null,
+          path: (result as any).path ?? null,
+        });
+      }
+
+      if (mode === "latest") {
+        const result = await generateLatestInstagram();
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          slug: (result as any).slug ?? null,
+          count: result.count ?? 0,
+          image: (result as any).image ?? null,
+          storage: (result as any).storage ?? null,
+          path: (result as any).path ?? null,
+        });
+      }
+    }
+
+    if (platform === "facebook") {
       if (mode === "all") {
         const result = await generateAllInstagram();
         const generated = (result as any)?.generated ?? [];
@@ -152,6 +200,10 @@ export async function POST(req: Request) {
             count: pin.count ?? 0,
             generated: (pin as any).generated ?? [],
           },
+          facebook: {
+            count: ig.count ?? 0,
+            generated: (ig as any).generated ?? [],
+          },
         });
       }
 
@@ -167,7 +219,7 @@ export async function POST(req: Request) {
           platform,
           mode,
           slug,
-          count: (ig.count ?? 0) + (pin.count ?? 0),
+          count: (ig.count ?? 0) + (pin.count ?? 0) + (ig.count ?? 0),
           instagram: {
             count: ig.count ?? 0,
             image: (ig as any).image ?? null,
@@ -179,6 +231,12 @@ export async function POST(req: Request) {
             image: (pin as any).image ?? null,
             storage: (pin as any).storage ?? null,
             path: (pin as any).path ?? null,
+          },
+          facebook: {
+            count: ig.count ?? 0,
+            image: (ig as any).image ?? null,
+            storage: (ig as any).storage ?? null,
+            path: (ig as any).path ?? null,
           },
         });
       }
@@ -194,7 +252,7 @@ export async function POST(req: Request) {
           message: "Generation complete",
           platform,
           mode,
-          count: (ig.count ?? 0) + (pin.count ?? 0),
+          count: (ig.count ?? 0) + (pin.count ?? 0) + (ig.count ?? 0),
           instagram: {
             slug: (ig as any).slug ?? null,
             count: ig.count ?? 0,
@@ -208,6 +266,13 @@ export async function POST(req: Request) {
             image: (pin as any).image ?? null,
             storage: (pin as any).storage ?? null,
             path: (pin as any).path ?? null,
+          },
+          facebook: {
+            slug: (ig as any).slug ?? null,
+            count: ig.count ?? 0,
+            image: (ig as any).image ?? null,
+            storage: (ig as any).storage ?? null,
+            path: (ig as any).path ?? null,
           },
         });
       }

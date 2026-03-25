@@ -35,10 +35,15 @@ async function metaPostForm(
     body: form.toString(),
   });
 
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data?.error?.message || "Meta POST failed");
+    const metaMessage =
+      data?.error?.message ||
+      data?.message ||
+      `Meta POST failed for ${endpoint}`;
+
+    throw new Error(metaMessage);
   }
 
   return data;
@@ -68,7 +73,10 @@ export async function publishFacebook(input: PublishFacebookInput) {
 
   return {
     ok: true,
+    pageId,
     imageUrl,
+    photoId: published?.id || null,
+    postId: published?.post_id || null,
     published,
   };
 }
