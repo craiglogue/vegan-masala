@@ -1,28 +1,20 @@
+import path from "node:path";
 import { NextResponse } from "next/server";
 
 import {
-
-dueQueueItems,
-markQueueItemFailed,
-markQueueItemPosted
-
+  dueQueueItems,
+  markQueueItemFailed,
+  markQueueItemPosted,
 } from "@/lib/social/core/queue";
 
-import {
+import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
+import { postPinterestPin } from "@/lib/social/core/pinterestPost";
 
-generatePinterestBySlug
+import { publishInstagram } from "@/lib/social/publishers/publishInstagram";
+import { publishFacebook } from "@/lib/social/publishers/publishFacebook";
 
-} from "@/lib/social/generatePinterest";
+const ROOT = process.cwd();
 
-<<<<<<< HEAD
-import {
-
-postPinterestPin
-
-} from "@/lib/social/core/pinterestPost";
-
-import {
-=======
 export async function POST(req: Request) {
   try {
     const requiredSecret = process.env.SOCIAL_SCHEDULER_SECRET;
@@ -67,158 +59,16 @@ export async function POST(req: Request) {
           if (!item.board) {
             throw new Error("Pinterest board missing");
           }
->>>>>>> social-video-fix-from-clean-baseline
 
-publishInstagram
+          await generatePinterestBySlug(item.slug);
 
-} from "@/lib/social/publishers/publishInstagram";
+          const imagePath = path.join(
+            ROOT,
+            "generated",
+            "pinterest",
+            `${item.slug}.png`
+          );
 
-<<<<<<< HEAD
-import {
-
-publishFacebook
-
-} from "@/lib/social/publishers/publishFacebook";
-
-export async function POST(){
-
-try{
-
-const due=
-dueQueueItems();
-
-let count=0;
-
-for(const item of due){
-
-try{
-
-if(item.platform==="pinterest"){
-
-if(!item.board){
-
-throw new Error(
-"Board missing"
-);
-
-}
-
-const generated=
-await generatePinterestBySlug(
-item.slug
-);
-
-await postPinterestPin({
-
-title:
-item.title || item.slug,
-
-description:
-item.caption || "",
-
-link:
-item.url || "",
-
-imageUrl:
-generated.imageUrl,
-
-boardId:
-item.board
-
-});
-
-markQueueItemPosted(
-item.id
-);
-
-count++;
-
-continue;
-
-}
-
-if(item.platform==="instagram"){
-
-await publishInstagram({
-
-slug:item.slug,
-
-caption:
-item.caption||""
-
-});
-
-markQueueItemPosted(
-item.id);
-
-count++;
-
-continue;
-
-}
-
-if(item.platform==="facebook"){
-
-await publishFacebook({
-
-slug:item.slug,
-
-caption:
-item.caption||""
-
-});
-
-markQueueItemPosted(
-item.id);
-
-count++;
-
-continue;
-
-}
-
-markQueueItemFailed(
-
-item.id,
-
-"Unsupported platform"
-
-);
-
-}catch(err:any){
-
-markQueueItemFailed(
-
-item.id,
-
-err?.message||
-"Queue failed"
-
-);
-
-}
-
-}
-
-return NextResponse.json({
-
-ok:true,
-count
-
-});
-
-}catch(err:any){
-
-return NextResponse.json({
-
-ok:false,
-error:err?.message
-
-},{status:500});
-
-}
-
-=======
           const result = await postPinterestPin({
             title: item.title || item.slug,
             description: item.caption || "",
@@ -337,5 +187,4 @@ error:err?.message
       { status: 500 }
     );
   }
->>>>>>> social-video-fix-from-clean-baseline
 }

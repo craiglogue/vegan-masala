@@ -1,156 +1,80 @@
-import { getPinterestAccessToken } from "@/lib/social/core/pinterestToken";
+import fs from "node:fs";
 
-type PostPinterestPinInput={
-
-title:string;
-description:string;
-link:string;
-imageUrl:string;
-boardId:string;
-
+export type PostPinterestPinInput = {
+  title: string;
+  description: string;
+  link: string;
+  imagePath: string;
+  boardId: string;
 };
 
-export async function postPinterestPin(
-
-input:PostPinterestPinInput
-
-){
-
-const accessToken=
-await getPinterestAccessToken();
-
-if(!accessToken){
-
-throw new Error(
-"Pinterest not connected"
-);
-
+function getRequiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} missing`);
+  }
+  return value;
 }
 
-<<<<<<< HEAD
-const res=await fetch(
-=======
+export async function getPinterestAccessToken(): Promise<string> {
+  return (
+    process.env.PINTEREST_ACCESS_TOKEN ||
+    process.env.PINTEREST_TOKEN ||
+    ""
+  );
+}
+
 function describePinterestError(data: any, fallback: string) {
   if (!data) return fallback;
 
-  return (
-    data?.message ||
-    data?.error ||
-    data?.details?.message ||
-    JSON.stringify(data)
-  );
+  if (typeof data === "string") return data;
+  if (typeof data?.message === "string") return data.message;
+  if (typeof data?.error === "string") return data.error;
+  if (typeof data?.code === "string") return `${fallback} (${data.code})`;
+
+  return fallback;
 }
 
 export async function postPinterestPin(input: PostPinterestPinInput) {
   const accessToken = await getPinterestAccessToken();
->>>>>>> social-video-fix-from-clean-baseline
 
-"https://api.pinterest.com/v5/pins",
+  if (!accessToken) {
+    throw new Error("Pinterest access token missing");
+  }
 
-<<<<<<< HEAD
-{
+  if (!input.boardId) {
+    throw new Error("Pinterest board ID missing");
+  }
 
-method:"POST",
+  if (!fs.existsSync(input.imagePath)) {
+    throw new Error(`Pinterest image not found: ${input.imagePath}`);
+  }
 
-headers:{
+  const form = new FormData();
+  form.append("board_id", input.boardId);
+  form.append("title", input.title || "");
+  form.append("description", input.description || "");
+  form.append("link", input.link || "");
 
-Authorization:
-`Bearer ${accessToken}`,
-
-"Content-Type":
-"application/json"
-
-},
-
-body:JSON.stringify({
-
-board_id:input.boardId,
-
-title:input.title,
-
-description:input.description,
-
-link:input.link,
-
-media_source:{
-
-source_type:"image_url",
-
-url:input.imageUrl
-
-}
-
-})
-
-}
-
-);
-
-const data=
-await res.json();
-
-if(!res.ok){
-
-throw new Error(
-
-data?.message ||
-data?.error ||
-"Pinterest post failed"
-
-);
-
-}
-
-return data;
-
-=======
-  ensureFileExists(input.imagePath);
-
-  const imageBase64 = fs.readFileSync(input.imagePath).toString("base64");
-
-  const payload = {
-    board_id: input.boardId,
-    title: input.title,
-    description: input.description,
-    link: input.link,
-    media_source: {
-      source_type: "image_base64",
-      content_type: "image/png",
-      data: imageBase64,
-    },
-  };
+  const imageBuffer = fs.readFileSync(input.imagePath);
+  const imageBlob = new Blob([imageBuffer], { type: "image/png" });
+  form.append("media_source", imageBlob, "pin.png");
 
   const res = await fetch("https://api.pinterest.com/v5/pins", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: form,
   });
 
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    console.error("PINTEREST PIN ERROR:", {
-      status: res.status,
-      payload: {
-        ...payload,
-        media_source: {
-          ...payload.media_source,
-          data: "[base64 omitted]",
-        },
-      },
-      data,
-    });
-
     throw new Error(
       describePinterestError(data, "Pinterest pin creation failed")
     );
   }
 
-  console.log("PINTEREST PIN RESULT:", data);
-
   return data;
->>>>>>> social-video-fix-from-clean-baseline
 }

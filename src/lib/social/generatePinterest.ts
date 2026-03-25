@@ -3,82 +3,27 @@ import sharp from "sharp";
 import satori from "satori";
 
 import { BRAND, getBrandFont } from "./core/brand";
-
 import {
-allContent,
-detectContentTypeBySlug,
-ensureDir,
-latestContent,
-slugFromFile,
-titleFromSlug,
-type ContentType
+  allContent,
+  detectContentTypeBySlug,
+  ensureDir,
+  latestContent,
+  slugFromFile,
+  titleFromSlug,
+  type ContentType,
 } from "./core/content";
-
-import {
-backgroundBuffer,
-findContentImage,
-logoBuffer
-} from "./core/images";
-
-import {
-buildPinterestCaption,
-saveCaption
-} from "./core/captions";
-
+import { backgroundBuffer, findContentImage, logoBuffer } from "./core/images";
+import { buildPinterestCaption, saveCaption } from "./core/captions";
 import { updateManifest } from "./core/manifest";
 import { saveGeneratedPinterestImage } from "./core/generatedAssets";
 
-const ROOT =
-process.env.VERCEL
-? "/tmp"
-: process.cwd();
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
+const OUTPUT = path.join(ROOT, "generated", "pinterest");
 
-const OUTPUT =
-path.join(
-ROOT,
-"generated",
-"pinterest"
-);
+const WIDTH = 1000;
+const HEIGHT = 1500;
+const FONT = getBrandFont();
 
-const WIDTH=1000;
-const HEIGHT=1500;
-
-const FONT=getBrandFont();
-
-async function topGradient(){
-
-return sharp(
-
-Buffer.from(`
-
-<svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-
-<defs>
-
-<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-
-<stop offset="0%" stop-color="black" stop-opacity="0.95"/>
-
-<stop offset="30%" stop-color="black" stop-opacity="0.65"/>
-
-<stop offset="60%" stop-color="black" stop-opacity="0.25"/>
-
-<stop offset="100%" stop-color="black" stop-opacity="0"/>
-
-</linearGradient>
-
-</defs>
-
-<rect width="${WIDTH}" height="${HEIGHT}" fill="url(#g)"/>
-
-</svg>
-
-`)
-
-).png().toBuffer();
-
-<<<<<<< HEAD
-=======
 function getBaseUrl() {
   return (
     process.env.SOCIAL_ASSET_BASE_URL ||
@@ -154,40 +99,30 @@ async function bottomGradient() {
   )
     .png()
     .toBuffer();
->>>>>>> social-video-fix-from-clean-baseline
 }
 
-async function frameOverlay(){
-
-return sharp(
-
-Buffer.from(`
-
-<svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-
-<rect
-x="14"
-y="14"
-width="${WIDTH-28}"
-height="${HEIGHT-28}"
-rx="40"
-ry="40"
-fill="none"
-stroke="${BRAND.border}"
-stroke-width="2"
-/>
-
-</svg>
-
-`)
-
-).png().toBuffer();
-
+async function frameOverlay() {
+  return sharp(
+    Buffer.from(`
+      <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+        <rect
+          x="14"
+          y="14"
+          width="${WIDTH - 28}"
+          height="${HEIGHT - 28}"
+          rx="40"
+          ry="40"
+          fill="none"
+          stroke="${BRAND.border}"
+          stroke-width="2"
+        />
+      </svg>
+    `)
+  )
+    .png()
+    .toBuffer();
 }
 
-<<<<<<< HEAD
-function titleLines(text:string){
-=======
 async function imageFrameOverlay() {
   return sharp(
     Buffer.from(`
@@ -216,13 +151,10 @@ function titleLines(text: string) {
   const lines: string[] = [];
   let current = "";
   let maxLen = 17;
->>>>>>> social-video-fix-from-clean-baseline
 
-const words=text.split(/\s+/).filter(Boolean);
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
 
-<<<<<<< HEAD
-const lines:string[]=[];
-=======
     if (next.length <= maxLen) {
       current = next;
     } else {
@@ -233,30 +165,9 @@ const lines:string[]=[];
       if (lines.length === 2) maxLen = 24;
     }
   }
->>>>>>> social-video-fix-from-clean-baseline
 
-let current="";
+  if (current) lines.push(current);
 
-for(const word of words){
-
-const next=current
-? `${current} ${word}`
-: word;
-
-if(next.length<20){
-
-current=next;
-
-}else{
-
-if(current) lines.push(current);
-
-current=word;
-
-<<<<<<< HEAD
-}
-
-=======
   if (lines.length <= 3) return lines;
 
   return [lines[0], lines[1], lines.slice(2).join(" ")];
@@ -291,29 +202,10 @@ function buildSubtitle(type: ContentType, slug: string) {
     "Simple guidance you can use",
     "Easy help for home cooks",
   ]);
->>>>>>> social-video-fix-from-clean-baseline
 }
 
-if(current) lines.push(current);
-
-return lines.slice(0,3);
-
-}
-
-function buildSubtitle(type:ContentType){
-
-return type==="recipe"
-? "Vegan Indian Recipe"
-: "Indian Cooking Guide";
-
-}
-
-function buildBadge(type:ContentType){
-
-return type==="recipe"
-? "RECIPE"
-: "GUIDE";
-
+function buildBadge(type: ContentType) {
+  return type === "recipe" ? "RECIPE" : "GUIDE";
 }
 
 function buildHookLine(title: string, type: ContentType, slug: string) {
@@ -374,12 +266,6 @@ function buildHookLine(title: string, type: ContentType, slug: string) {
 }
 
 async function textOverlay(
-<<<<<<< HEAD
-
-title:string,
-subtitle:string,
-badge:string
-=======
   title: string,
   subtitle: string,
   badge: string,
@@ -510,73 +396,26 @@ badge:string
       ],
     },
   };
->>>>>>> social-video-fix-from-clean-baseline
 
-){
+  const svg = await satori(element as any, {
+    width: WIDTH,
+    height: HEIGHT,
+    fonts: [
+      {
+        name: "Rajdhani",
+        data: FONT,
+        weight: 700,
+        style: "normal",
+      },
+    ],
+  });
 
-const lines=titleLines(title);
-
-const element={
-
-type:"div",
-
-props:{
-
-style:{
-width:WIDTH,
-height:HEIGHT,
-display:"flex",
-flexDirection:"column",
-position:"relative",
-fontFamily:"Rajdhani"
-},
-
-children:[
-
-{
-
-type:"div",
-
-props:{
-
-style:{
-position:"absolute",
-top:70,
-left:60,
-width:760,
-display:"flex",
-flexDirection:"column",
-color:BRAND.gold,
-fontSize:90,
-fontWeight:700,
-lineHeight:0.94
-},
-
-children:lines
-
+  return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
-},
+async function createPost(slug: string, title: string, type: ContentType) {
+  ensureDir(OUTPUT);
 
-<<<<<<< HEAD
-{
-
-type:"div",
-
-props:{
-
-style:{display:"flex",
-position:"absolute",
-top:320,
-left:60,
-color:BRAND.soft,
-fontSize:48,
-fontWeight:600
-,
-
-children:subtitle
-
-=======
   const img = await resolveSourceImage(slug, type);
   const bg = await backgroundBuffer(WIDTH, HEIGHT, null, BRAND.bg);
 
@@ -708,33 +547,11 @@ children:subtitle
     path: saved.path,
     caption,
   };
->>>>>>> social-video-fix-from-clean-baseline
 }
 
-},
+export async function generateLatestPinterest() {
+  const chosen = latestContent();
 
-<<<<<<< HEAD
-{
-
-type:"div",
-
-props:{
-
-style:{display:"flex",
-position:"absolute",
-top:400,
-left:60,
-background:BRAND.red,
-color:"#fff",
-padding:12,
-borderRadius:20,
-fontSize:30,
-fontWeight:700
-,
-
-children:badge
-
-=======
   if (!chosen) {
     return {
       success: false,
@@ -755,283 +572,15 @@ children:badge
     path: result.path,
     message: "Pinterest asset generated",
   };
->>>>>>> social-video-fix-from-clean-baseline
 }
 
-},
+export async function generatePinterestBySlug(slug: string) {
+  const type = detectContentTypeBySlug(slug);
 
-{
+  if (!type) {
+    throw new Error("Slug not found");
+  }
 
-<<<<<<< HEAD
-type:"div",
-
-props:{
-
-style:{display:"flex",
-position:"absolute",
-bottom:60,
-left:60,
-color:BRAND.soft,
-fontSize:30,
-fontWeight:600
-,
-
-children:"vegan-masala.com"
-
-}
-
-}
-
-]
-
-}
-
-};
-
-const svg=await satori(
-
-element as any,
-
-{
-
-width:WIDTH,
-height:HEIGHT,
-
-fonts:[{
-
-name:"Rajdhani",
-data:FONT,
-weight:700,
-style:"normal"
-
-}]
-
-}
-
-);
-
-return sharp(
-Buffer.from(svg)
-).png().toBuffer();
-
-}
-
-async function createPost(
-
-slug:string,
-title:string,
-type:ContentType
-
-){
-
-ensureDir(OUTPUT);
-
-const img=
-findContentImage(slug,type);
-
-const bg=
-await backgroundBuffer(
-WIDTH,
-HEIGHT,
-img,
-BRAND.bg
-);
-
-const grad=
-await topGradient();
-
-const frame=
-await frameOverlay();
-
-const text=
-await textOverlay(
-
-title,
-buildSubtitle(type),
-buildBadge(type)
-
-);
-
-const logo=
-await logoBuffer(260);
-
-const out=
-path.join(
-OUTPUT,
-`${slug}.png`
-);
-
-const comp=[
-
-{input:bg,left:0,top:0},
-
-{input:grad,left:0,top:0},
-
-{input:text,left:0,top:0},
-
-{input:frame,left:0,top:0}
-
-];
-
-if(logo){
-
-comp.push({
-
-input:logo,
-
-top:HEIGHT-320,
-
-left:WIDTH-320
-
-});
-
-}
-
-await sharp({
-
-create:{
-width:WIDTH,
-height:HEIGHT,
-channels:4,
-background:BRAND.bg
-}
-
-})
-
-.composite(comp)
-.png()
-.toFile(out);
-
-const caption=
-buildPinterestCaption(
-slug,
-type
-);
-
-saveCaption(
-"pinterest",
-slug,
-caption
-);
-
-updateManifest(
-slug,
-"pinterest"
-);
-
-return{
-
-path:out,
-
-imageUrl:
-`https://vegan-masala.com/generated/pinterest/${slug}.png`
-
-};
-
-}
-
-export async function generatePinterestBySlug(slug:string){
-
-const type=
-detectContentTypeBySlug(slug);
-
-if(!type){
-
-throw new Error(
-"Slug not found"
-);
-
-}
-
-const result=
-await createPost(
-
-slug,
-titleFromSlug(slug),
-type
-
-);
-
-return{
-
-success:true,
-count:1,
-imageUrl:result.imageUrl
-
-};
-
-}
-
-export async function generateLatestPinterest(){
-
-const chosen=
-latestContent();
-
-if(!chosen){
-
-return{
-
-success:false,
-count:0
-
-};
-
-}
-
-const slug=
-slugFromFile(
-chosen.file
-);
-
-await createPost(
-
-slug,
-titleFromSlug(slug),
-chosen.type
-
-);
-
-return{
-
-success:true,
-count:1
-
-};
-
-}
-
-export async function generateAllPinterest(){
-
-const items=
-allContent();
-
-let count=0;
-
-for(const item of items){
-
-const slug=
-slugFromFile(item.file);
-
-await createPost(
-
-slug,
-titleFromSlug(slug),
-item.type
-
-);
-
-count++;
-
-}
-
-return{
-
-success:true,
-count
-
-};
-
-=======
   const result = await createPost(slug, titleFromSlug(slug), type);
 
   return {
@@ -1076,5 +625,4 @@ export async function generateAllPinterest() {
     generated,
     message: "Pinterest assets generated",
   };
->>>>>>> social-video-fix-from-clean-baseline
 }

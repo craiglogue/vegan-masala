@@ -1,110 +1,48 @@
 import { NextResponse } from "next/server";
-import { getPinterestAccessToken } from "@/lib/social/core/pinterestToken";
+import { getPinterestAccessToken } from "@/lib/social/core/pinterestPost";
 
-export async function GET(){
+export async function GET() {
+  const token = await getPinterestAccessToken();
 
-try{
+  if (!token) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Pinterest access token missing",
+        items: [],
+      },
+      { status: 500 }
+    );
+  }
 
-const token =
-await getPinterestAccessToken();
+  try {
+    const res = await fetch("https://api.pinterest.com/v5/boards?page_size=250", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
 
-if(!token){
+    const data = await res.json().catch(() => ({}));
 
-<<<<<<< HEAD
-return NextResponse.json({
-
-ok:false,
-items:[]
-
-});
-
-}
-
-const res = await fetch(
-
-"https://api.pinterest.com/v5/boards",
-
-{
-
-headers:{
-
-Authorization:`Bearer ${token}`
-
-}
-
-}
-
-);
-
-const data =
-await res.json();
-
-if(!res.ok){
-
-return NextResponse.json({
-
-ok:false,
-items:[]
-
-});
-
-}
-
-const boards =
-(data?.items || []).map(
-
-(b:any)=>({
-
-id:b.id,
-
-name:b.name
-
-})
-
-);
-
-return NextResponse.json({
-
-ok:true,
-
-items:boards
-
-});
-
-}catch{
-
-return NextResponse.json({
-
-ok:false,
-
-items:[]
-
-});
-
-}
-
-=======
     if (!res.ok) {
       return NextResponse.json(
         {
           ok: false,
-          error:
-            data?.message ||
-            data?.error ||
-            "Failed to fetch Pinterest boards",
-          details: data,
+          error: data?.message || data?.error || "Failed to fetch boards",
           items: [],
+          raw: data,
         },
-        { status: 500 }
+        { status: res.status || 500 }
       );
     }
 
-    const items = Array.isArray(data?.items)
-      ? data.items.map((board: any) => ({
-          id: board.id,
-          name: board.name,
-        }))
-      : [];
+    const rawItems = Array.isArray(data?.items) ? data.items : [];
+    const items = rawItems.map((board: any) => ({
+      id: board.id,
+      name: board.name,
+    }));
 
     return NextResponse.json({
       ok: true,
@@ -121,5 +59,4 @@ items:[]
       { status: 500 }
     );
   }
->>>>>>> social-video-fix-from-clean-baseline
 }
