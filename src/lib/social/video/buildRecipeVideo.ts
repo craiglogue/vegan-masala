@@ -40,6 +40,15 @@ function getBlobToken() {
   );
 }
 
+function getBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+    "https://www.vegan-masala.com"
+  ).replace(/\/+$/, "");
+}
+
 function getFfmpeg() {
   if (typeof ffmpegPath === "string") return ffmpegPath;
   throw new Error("ffmpeg missing");
@@ -69,7 +78,13 @@ function wrap(text: string) {
   return lines.slice(0, 3);
 }
 
-async function resolveImage(slug: string) {
+async function fetchBuffer(url: string) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) return null;
+  return Buffer.from(await res.arrayBuffer());
+}
+
+async function resolveImage(slug: string, logs: string[]) {
   const token = getBlobToken();
 
   if (!token) {
@@ -81,6 +96,8 @@ async function resolveImage(slug: string) {
   const candidates = [`instagram/${slug}.jpg`, `instagram/${slug}.png`];
 
   for (const file of candidates) {
+    logs.push(`Blob lookup: ${file}`);
+
     const { blobs } = await list({
       token,
       prefix: file,
@@ -89,6 +106,8 @@ async function resolveImage(slug: string) {
     const match = blobs.find((b) => b.pathname === file);
 
     if (match?.url) {
+      logs.push(`Blob match: ${match.url}`);
+
       const res = await fetch(match.url, { cache: "no-store" });
       if (!res.ok) continue;
 
@@ -96,11 +115,49 @@ async function resolveImage(slug: string) {
       const temp = path.join(TEMP_DIR, `${slug}.png`);
 
       await sharp(buffer).png().toFile(temp);
+      logs.push(`Using image: ${temp}`);
       return temp;
     }
   }
 
   throw new Error("No generated image");
+}
+
+async function resolveLogo(logs: string[]) {
+  const localCandidates = [
+    path.join(process.cwd(), "public", "brand", "logo-flat.png"),
+    path.join(process.cwd(), "public", "brand", "logo-primary.png"),
+    path.join(process.cwd(), "public", "brand", "logo-mark.png"),
+    path.join(process.cwd(), "public", "images", "logo.png"),
+  ];
+
+  for (const local of localCandidates) {
+    if (fs.existsSync(local)) {
+      logs.push(`Using local logo: ${local}`);
+      return local;
+    }
+  }
+
+  const baseUrl = getBaseUrl();
+  const remoteCandidates = [
+    `${baseUrl}/brand/logo-flat.png`,
+    `${baseUrl}/brand/logo-primary.png`,
+    `${baseUrl}/brand/logo-mark.png`,
+    `${baseUrl}/images/logo.png`,
+  ];
+
+  for (const url of remoteCandidates) {
+    const buffer = await fetchBuffer(url);
+    if (buffer) {
+      const out = path.join(TEMP_DIR, "video-logo.png");
+      await sharp(buffer).png().toFile(out);
+      logs.push(`Using remote logo: ${out}`);
+      return out;
+    }
+  }
+
+  logs.push("No logo found");
+  return null;
 }
 
 function loadFont() {
@@ -157,7 +214,12 @@ function textSvg(
   `;
 }
 
-async function renderCard(title: string, subtitle: string, out: string) {
+async function renderCard(
+  title: string,
+  subtitle: string,
+  out: string,
+  logoPath: string | null
+) {
   const font = loadFont();
   const lines = wrap(title);
 
@@ -166,6 +228,23 @@ async function renderCard(title: string, subtitle: string, out: string) {
     .join("");
 
   const subSvg = textSvg(subtitle, font, 42, BRAND.soft, 540, 1210);
+  const siteSvg = textSvg("vegan-masala.com", font, 30, "#ffffff", 540, 1828);
+
+  let logoSvg = "";
+  if (logoPath && fs.existsSync(logoPath)) {
+    const logoBuffer = fs.readFileSync(logoPath);
+    const logoHref = `data:image/png;base64,${logoBuffer.toString("base64")}`;
+
+    logoSvg = `
+      <image
+        href="${logoHref}"
+        x="410"
+        y="330"
+        width="260"
+        height="260"
+      />
+    `;
+  }
 
   const svg = `
     <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -181,8 +260,84 @@ async function renderCard(title: string, subtitle: string, out: string) {
         stroke="${BRAND.border}"
         stroke-width="3"
       />
+      ${logoSvg}
       ${titleSvg}
       ${subSvg}
+      ${siteSvg}
+    </svg>
+  `;
+
+  await sharp(Buffer.from(svg)).png().toFile(out);
+}
+
+async function renderMainOverlay(
+  title: string,
+  subtitle: string,
+  out: string,
+  logoPath: string | null
+) {
+  const font = loadFont();
+  const lines = wrap(title);
+
+  const titleSvg = lines
+    .map((l, i) => textSvg(l, font, 72, BRAND.gold, 540, 1360 + i * 84))
+    .join("");
+
+  const subSvg = textSvg(subtitle, font, 38, BRAND.soft, 540, 1680);
+  const siteSvg = textSvg("vegan-masala.com", font, 28, "#ffffff", 270, 1835);
+
+  let logoSvg = "";
+  if (logoPath && fs.existsSync(logoPath)) {
+    const logoBuffer = fs.readFileSync(logoPath);
+    const logoHref = `data:image/png;base64,${logoBuffer.toString("base64")}`;
+
+    logoSvg = `
+      <image
+        href="${logoHref}"
+        x="770"
+        y="1620"
+        width="180"
+        height="180"
+      />
+    `;
+  }
+
+  const svg = `
+    <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bottomShade" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stop-color="black" stop-opacity="0.88"/>
+          <stop offset="28%" stop-color="black" stop-opacity="0.45"/>
+          <stop offset="55%" stop-color="black" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+
+      <rect width="${WIDTH}" height="${HEIGHT}" fill="transparent" />
+
+      <rect
+        x="14"
+        y="14"
+        width="${WIDTH - 28}"
+        height="${HEIGHT - 28}"
+        rx="34"
+        ry="34"
+        fill="none"
+        stroke="${BRAND.border}"
+        stroke-width="3"
+      />
+
+      <rect
+        x="0"
+        y="${HEIGHT - 520}"
+        width="${WIDTH}"
+        height="520"
+        fill="url(#bottomShade)"
+      />
+
+      ${titleSvg}
+      ${subSvg}
+      ${siteSvg}
+      ${logoSvg}
     </svg>
   `;
 
@@ -210,33 +365,21 @@ async function still(image: string, out: string, duration: number) {
   ]);
 }
 
-async function mainClip(image: string, out: string) {
+async function mainClip(
+  image: string,
+  out: string,
+  title: string,
+  subtitle: string,
+  logoPath: string | null
+) {
   const card = path.join(TEMP_DIR, "card.png");
-  const frame = path.join(TEMP_DIR, "frame.png");
+  const overlay = path.join(TEMP_DIR, "main-overlay.png");
 
   const mask = Buffer.from(`
     <svg width="820" height="820" xmlns="http://www.w3.org/2000/svg">
       <rect width="820" height="820" rx="34" ry="34" fill="white" />
     </svg>
   `);
-
-  const frameSvg = `
-    <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-      <rect
-        x="14"
-        y="14"
-        width="${WIDTH - 28}"
-        height="${HEIGHT - 28}"
-        rx="34"
-        ry="34"
-        fill="none"
-        stroke="${BRAND.border}"
-        stroke-width="3"
-      />
-    </svg>
-  `;
-
-  await sharp(Buffer.from(frameSvg)).png().toFile(frame);
 
   await sharp(image)
     .resize(820, 820, {
@@ -252,12 +395,14 @@ async function mainClip(image: string, out: string) {
     .png()
     .toFile(card);
 
+  await renderMainOverlay(title, subtitle, overlay, logoPath);
+
   const filter = [
-    `[0:v]scale=1400:2488:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=30:12,zoompan=z='min(zoom+0.0012,1.18)':d=${MAIN_DURATION * FPS}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=${FPS}[bg]`,
+    `[0:v]scale=1480:2631:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=24:10,eq=saturation=1.28:contrast=1.10:brightness=-0.03,zoompan=z='min(zoom+0.0014,1.20)':d=${MAIN_DURATION * FPS}:x='iw/2-(iw/zoom/2)+sin(on/18)*22':y='ih/2-(ih/zoom/2)+cos(on/22)*10':s=1080x1920:fps=${FPS}[bg]`,
     `[1:v]format=rgba[card]`,
-    `[2:v]format=rgba[frame]`,
-    `[bg][card]overlay=(W-w)/2:420[tmp1]`,
-    `[tmp1][frame]overlay=0:0,format=yuv420p[outv]`,
+    `[2:v]format=rgba[ov]`,
+    `[bg][card]overlay=(W-w)/2:360[tmp1]`,
+    `[tmp1][ov]overlay=0:0,format=yuv420p[outv]`,
   ].join(";");
 
   await run([
@@ -273,7 +418,7 @@ async function mainClip(image: string, out: string) {
     "-loop",
     "1",
     "-i",
-    frame,
+    overlay,
     "-filter_complex",
     filter,
     "-map",
@@ -310,10 +455,13 @@ async function concat(intro: string, main: string, outro: string, final: string)
 }
 
 export async function buildRecipeVideo(slug: string) {
+  const logs: string[] = [];
+
   ensure(VIDEO_DIR);
   ensure(TEMP_DIR);
 
-  const image = await resolveImage(slug);
+  const image = await resolveImage(slug, logs);
+  const logoPath = await resolveLogo(logs);
 
   const introPng = path.join(TEMP_DIR, `${slug}-intro.png`);
   const outroPng = path.join(TEMP_DIR, `${slug}-outro.png`);
@@ -322,8 +470,8 @@ export async function buildRecipeVideo(slug: string) {
   const introSubtitle =
     type === "guide" ? "Vegan Indian Cooking Guide" : "Vegan Indian Recipe";
 
-  await renderCard(titleFromSlug(slug), introSubtitle, introPng);
-  await renderCard("Follow For More", "vegan-masala.com", outroPng);
+  await renderCard(titleFromSlug(slug), introSubtitle, introPng, logoPath);
+  await renderCard("Follow For More", "vegan-masala.com", outroPng, logoPath);
 
   const introMp4 = path.join(TEMP_DIR, "intro.mp4");
   const mainMp4 = path.join(TEMP_DIR, "main.mp4");
@@ -332,7 +480,13 @@ export async function buildRecipeVideo(slug: string) {
   const final = path.join(VIDEO_DIR, `${slug}.mp4`);
 
   await still(introPng, introMp4, INTRO_DURATION);
-  await mainClip(image, mainMp4);
+  await mainClip(
+    image,
+    mainMp4,
+    titleFromSlug(slug),
+    introSubtitle,
+    logoPath
+  );
   await still(outroPng, outroMp4, OUTRO_DURATION);
   await concat(introMp4, mainMp4, outroMp4, final);
 
@@ -356,5 +510,6 @@ export async function buildRecipeVideo(slug: string) {
   return {
     success: true,
     video: blob.url,
+    logs,
   };
 }
