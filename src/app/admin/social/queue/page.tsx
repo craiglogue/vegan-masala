@@ -59,18 +59,6 @@ function truncate(text: string, max = 140) {
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
-function cleanLabel(label: string) {
-  return label.replace(/\s*\((recipe|guide)\)\s*$/i, "").trim();
-}
-
-function normalizeSlugOption(item: SlugOption): SlugOption {
-  return {
-    ...item,
-    label: cleanLabel(item.label || item.title || item.slug),
-    type: item.type === "guide" ? "guide" : "recipe",
-  };
-}
-
 function statusClasses(status: QueueStatus) {
   if (status === "posted") {
     return "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
@@ -103,13 +91,22 @@ function assetClasses(assetType?: QueueAssetType) {
   return "border-sky-500/40 bg-sky-500/10 text-sky-300";
 }
 
+function normalizeSlugOption(item: SlugOption): SlugOption {
+  return {
+    ...item,
+    label: item.label || item.title || item.slug,
+    type: item.type || "recipe",
+  };
+}
+
 export default function SocialQueuePage() {
   const [queueSlug, setQueueSlug] = useState("");
-  const [queuePlatform, setQueuePlatform] = useState<QueuePlatform>("instagram");
-  const [queueAssetType, setQueueAssetType] = useState<QueueAssetType>("image");
+  const [queuePlatform, setQueuePlatform] =
+    useState<QueuePlatform>("instagram");
+  const [queueAssetType, setQueueAssetType] =
+    useState<QueueAssetType>("image");
   const [scheduledFor, setScheduledFor] = useState("");
   const [board, setBoard] = useState("");
-  const [queueFilter, setQueueFilter] = useState<"all" | "image" | "video">("all");
 
   const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
   const [availableSlugs, setAvailableSlugs] = useState<SlugOption[]>([]);
@@ -118,51 +115,33 @@ export default function SocialQueuePage() {
   const [queueLoading, setQueueLoading] = useState(false);
   const [slugsLoading, setSlugsLoading] = useState(false);
   const [boardsLoading, setBoardsLoading] = useState(false);
-  const [itemActionLoadingId, setItemActionLoadingId] = useState<string | null>(null);
+  const [autoQueueLoading, setAutoQueueLoading] = useState(false);
+  const [itemActionLoadingId, setItemActionLoadingId] = useState<string | null>(
+    null
+  );
 
   const [log, setLog] = useState("Waiting...");
   const [debugResponse, setDebugResponse] = useState("");
   const [showDebug, setShowDebug] = useState(false);
-
-  useEffect(() => {
-    if (queuePlatform === "pinterest") {
-      setQueueAssetType("image");
-    }
-  }, [queuePlatform]);
 
   const selectedSlugItem = useMemo(
     () => availableSlugs.find((item) => item.slug === queueSlug) ?? null,
     [availableSlugs, queueSlug]
   );
 
-  const recipeSlugs = useMemo(
-    () => availableSlugs.filter((item) => item.type !== "guide"),
-    [availableSlugs]
-  );
-
-  const guideSlugs = useMemo(
-    () => availableSlugs.filter((item) => item.type === "guide"),
-    [availableSlugs]
-  );
-
-  const filteredQueueItems = useMemo(() => {
-    if (queueFilter === "all") return queueItems;
-    return queueItems.filter((item) => (item.assetType || "image") === queueFilter);
-  }, [queueItems, queueFilter]);
-
   const queuedItems = useMemo(
-    () => filteredQueueItems.filter((item) => item.status === "queued"),
-    [filteredQueueItems]
+    () => queueItems.filter((item) => item.status === "queued"),
+    [queueItems]
   );
 
   const failedItems = useMemo(
-    () => filteredQueueItems.filter((item) => item.status === "failed"),
-    [filteredQueueItems]
+    () => queueItems.filter((item) => item.status === "failed"),
+    [queueItems]
   );
 
   const postedItems = useMemo(
-    () => filteredQueueItems.filter((item) => item.status === "posted"),
-    [filteredQueueItems]
+    () => queueItems.filter((item) => item.status === "posted"),
+    [queueItems]
   );
 
   async function loadQueue() {
@@ -186,17 +165,12 @@ export default function SocialQueuePage() {
       });
 
       const data = await res.json();
-      const items = Array.isArray(data.slugs) ? data.slugs : [];
-      const normalized = items
-        .map((item: SlugOption) => normalizeSlugOption(item))
-        .sort((a: SlugOption, b: SlugOption) => {
-          if ((a.type || "recipe") !== (b.type || "recipe")) {
-            return (a.type || "recipe") === "recipe" ? -1 : 1;
-          }
-          return a.label.localeCompare(b.label);
-        });
 
-      setAvailableSlugs(normalized);
+      setAvailableSlugs(
+        Array.isArray(data.slugs)
+          ? data.slugs.map(normalizeSlugOption)
+          : []
+      );
     } catch {
       setAvailableSlugs([]);
     } finally {
@@ -286,9 +260,9 @@ export default function SocialQueuePage() {
         body: JSON.stringify({
           slug: queueSlug,
           platform: queuePlatform,
-          assetType: queuePlatform === "pinterest" ? "image" : queueAssetType,
           scheduledFor,
           board: queuePlatform === "pinterest" ? board : null,
+          assetType: queueAssetType,
         }),
       });
 
@@ -380,6 +354,7 @@ export default function SocialQueuePage() {
 
       const data = await res.json().catch(() => ({}));
       setDebugResponse(JSON.stringify(data, null, 2));
+
       setLog("Queue cleared");
       await loadQueue();
     } catch {
@@ -442,79 +417,155 @@ export default function SocialQueuePage() {
     }
   }
 
-  async function itemAction(item: QueueItem, action: "post-now" | "retry" | "delete") {
-    setItemActionLoadingId(item.id);
+  async function queueNext7Days() {
+    if (!board) {
+      setLog("Select board first");
+      return;
+    }
+
+    setAutoQueueLoading(true);
+    setDebugResponse("");
+
+    try {
+      const res = await fetch("/api/admin/social/queue/auto-week", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pinterestBoardId: board,
+          startDate: scheduledFor ? scheduledFor.slice(0, 10) : undefined,
+          videoPlatform: "instagram",
+          dryRun: false,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      setDebugResponse(JSON.stringify(data, null, 2));
+
+      if (!res.ok || !data?.ok) {
+        setLog(data?.error || "Failed to queue 7-day plan");
+        setShowDebug(true);
+        return;
+      }
+
+      setLog(`Queued ${data.count || 0} items for the next 7 days`);
+      await loadQueue();
+    } catch (err: any) {
+      setLog(err?.message || "Failed to queue 7-day plan");
+      setDebugResponse(
+        JSON.stringify(
+          {
+            error:
+              err?.message || "Unknown client error while queueing weekly plan",
+          },
+          null,
+          2
+        )
+      );
+      setShowDebug(true);
+    } finally {
+      setAutoQueueLoading(false);
+    }
+  }
+
+  async function itemAction(
+    id: string,
+    action: "post-now" | "retry" | "delete"
+  ) {
+    setItemActionLoadingId(id);
     setDebugResponse("");
 
     try {
       if (action === "delete") {
         const res = await fetch("/api/admin/social/queue", {
-          method: "DELETE",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id: item.id }),
+          body: JSON.stringify({
+            id,
+            action: "delete",
+          }),
         });
 
         const data = await res.json().catch(() => ({}));
         setDebugResponse(JSON.stringify(data, null, 2));
-        setLog(data?.message || "Queue item removed");
+
+        if (!res.ok) {
+          setLog(data?.error || "Failed to remove queue item");
+          setShowDebug(true);
+          await loadQueue();
+          return;
+        }
+
+        setLog("Queue item removed");
         await loadQueue();
         return;
       }
 
       if (action === "retry") {
-        const res = await fetch("/api/admin/social/queue/retry", {
-          method: "POST",
+        const res = await fetch("/api/admin/social/queue", {
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id: item.id }),
+          body: JSON.stringify({
+            id,
+            action: "retry",
+          }),
         });
 
         const data = await res.json().catch(() => ({}));
         setDebugResponse(JSON.stringify(data, null, 2));
 
         if (!res.ok) {
-          setLog(data?.error || "Retry failed");
+          setLog(data?.error || "Failed to retry queue item");
           setShowDebug(true);
           await loadQueue();
           return;
         }
 
-        setLog(data?.message || "Failed item moved back to queued");
+        setLog("Failed item moved back to queued");
         await loadQueue();
         return;
       }
 
       if (action === "post-now") {
-        const res = await fetch("/api/admin/social/queue/post-now", {
+        const runRes = await fetch("/api/admin/social/queue/run-now", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: item.id }),
         });
 
-        const data = await res.json().catch(() => ({}));
-        setDebugResponse(JSON.stringify(data, null, 2));
+        const runData = await runRes.json().catch(() => ({}));
+        setDebugResponse(JSON.stringify(runData, null, 2));
 
-        if (!res.ok) {
-          setLog(data?.error || "Post now failed");
+        if (!runRes.ok) {
+          setLog(runData?.error || "Failed to run queue after post now");
           setShowDebug(true);
           await loadQueue();
           return;
         }
 
-        setLog(data?.message || "Queue item processed");
+        const failed = runData?.failed ?? 0;
+        const attempted = runData?.attempted ?? 0;
+        const count = runData?.count ?? 0;
+
+        setLog(`Processed ${attempted}\nPosted: ${count}\nFailed: ${failed}`);
+
+        if (failed > 0) {
+          setShowDebug(true);
+        }
+
         await loadQueue();
+        return;
       }
     } catch (err: any) {
       setLog(err?.message || "Action failed");
       setDebugResponse(
         JSON.stringify(
           {
-            error: err?.message || "Unknown client error while updating queue item",
+            error:
+              err?.message || "Unknown client error while updating queue item",
           },
           null,
           2
@@ -628,20 +679,24 @@ export default function SocialQueuePage() {
                 </span>
               ) : null}
 
-              <span
-                className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${assetClasses(
-                  item.assetType || "image"
-                )}`}
-              >
-                {item.assetType || "image"}
-              </span>
+              {item.assetType ? (
+                <span
+                  className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${assetClasses(
+                    item.assetType
+                  )}`}
+                >
+                  {item.assetType}
+                </span>
+              ) : null}
             </div>
 
             <div className="mt-3 text-lg font-bold text-[var(--brand-gold)]">
               {item.title || item.slug}
             </div>
 
-            <div className="mt-1 text-xs text-[var(--text-soft)]">{item.slug}</div>
+            <div className="mt-1 text-xs text-[var(--text-soft)]">
+              {item.slug}
+            </div>
 
             <div className="mt-3 grid gap-2 text-xs text-white/80 md:grid-cols-2">
               <div>
@@ -718,7 +773,7 @@ export default function SocialQueuePage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => itemAction(item, "post-now")}
+                  onClick={() => itemAction(item.id, "post-now")}
                   className="rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--brand-gold)] disabled:opacity-50"
                 >
                   {busy ? "Working..." : "Post now"}
@@ -729,7 +784,7 @@ export default function SocialQueuePage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => itemAction(item, "retry")}
+                  onClick={() => itemAction(item.id, "retry")}
                   className="rounded-lg border border-yellow-500/40 px-3 py-2 text-xs font-semibold text-yellow-300 disabled:opacity-50"
                 >
                   {busy ? "Working..." : "Retry failed"}
@@ -740,7 +795,7 @@ export default function SocialQueuePage() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => itemAction(item, "delete")}
+                  onClick={() => itemAction(item.id, "delete")}
                   className="rounded-lg border border-red-500/40 px-3 py-2 text-xs font-semibold text-red-300 disabled:opacity-50"
                 >
                   {busy ? "Working..." : "Delete"}
@@ -794,14 +849,19 @@ export default function SocialQueuePage() {
           <div className="flex flex-wrap gap-2">
             <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-white">
               Queued:{" "}
-              <span className="font-bold text-[var(--brand-gold)]">{queuedItems.length}</span>
+              <span className="font-bold text-[var(--brand-gold)]">
+                {queuedItems.length}
+              </span>
             </div>
             <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-white">
-              Failed: <span className="font-bold text-red-300">{failedItems.length}</span>
+              Failed:{" "}
+              <span className="font-bold text-red-300">{failedItems.length}</span>
             </div>
             <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-white">
               Posted:{" "}
-              <span className="font-bold text-emerald-300">{postedItems.length}</span>
+              <span className="font-bold text-emerald-300">
+                {postedItems.length}
+              </span>
             </div>
           </div>
         </div>
@@ -810,7 +870,9 @@ export default function SocialQueuePage() {
       <section className="mt-8 grid gap-8 xl:grid-cols-[420px_minmax(0,1fr)]">
         <div className="space-y-8">
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-            <h2 className="text-xl font-bold text-[var(--brand-gold)]">Schedule Post</h2>
+            <h2 className="text-xl font-bold text-[var(--brand-gold)]">
+              Schedule Post
+            </h2>
 
             <div className="mt-6 space-y-5">
               <div>
@@ -825,25 +887,11 @@ export default function SocialQueuePage() {
                 >
                   <option value="">{slugsLoading ? "Loading" : "Select"}</option>
 
-                  {recipeSlugs.length > 0 ? (
-                    <optgroup label="Recipes">
-                      {recipeSlugs.map((item) => (
-                        <option key={item.slug} value={item.slug}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ) : null}
-
-                  {guideSlugs.length > 0 ? (
-                    <optgroup label="Guides">
-                      {guideSlugs.map((item) => (
-                        <option key={item.slug} value={item.slug}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ) : null}
+                  {availableSlugs.map((item) => (
+                    <option key={item.slug} value={item.slug}>
+                      {item.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -853,20 +901,27 @@ export default function SocialQueuePage() {
                 </label>
 
                 <div className="mt-2 grid grid-cols-3 gap-2">
-                  {(["instagram", "pinterest", "facebook"] as const).map((platform) => (
-                    <button
-                      key={platform}
-                      type="button"
-                      onClick={() => setQueuePlatform(platform)}
-                      className={`rounded-xl px-4 py-3 text-sm font-bold capitalize ${
-                        queuePlatform === platform
-                          ? "bg-[var(--brand-gold)] text-black"
-                          : "border border-[var(--border)] bg-black/30 text-white"
-                      }`}
-                    >
-                      {platform}
-                    </button>
-                  ))}
+                  {(["instagram", "pinterest", "facebook"] as const).map(
+                    (platform) => (
+                      <button
+                        key={platform}
+                        type="button"
+                        onClick={() => {
+                          setQueuePlatform(platform);
+                          if (platform === "pinterest") {
+                            setQueueAssetType("image");
+                          }
+                        }}
+                        className={`rounded-xl px-4 py-3 text-sm font-bold capitalize ${
+                          queuePlatform === platform
+                            ? "bg-[var(--brand-gold)] text-black"
+                            : "border border-[var(--border)] bg-black/30 text-white"
+                        }`}
+                      >
+                        {platform}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -877,7 +932,8 @@ export default function SocialQueuePage() {
 
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   {(["image", "video"] as const).map((asset) => {
-                    const disabled = queuePlatform === "pinterest" && asset === "video";
+                    const disabled =
+                      queuePlatform === "pinterest" && asset === "video";
 
                     return (
                       <button
@@ -896,10 +952,6 @@ export default function SocialQueuePage() {
                     );
                   })}
                 </div>
-
-                <div className="mt-2 text-xs text-[var(--text-soft)]">
-                  Pinterest uses still images only. Instagram and Facebook can be queued as stills or videos.
-                </div>
               </div>
 
               {queuePlatform === "pinterest" ? (
@@ -913,7 +965,9 @@ export default function SocialQueuePage() {
                     onChange={(e) => setBoard(e.target.value)}
                     className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-white"
                   >
-                    <option value="">{boardsLoading ? "Loading" : "Select board"}</option>
+                    <option value="">
+                      {boardsLoading ? "Loading" : "Select board"}
+                    </option>
 
                     {boards.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -976,7 +1030,7 @@ export default function SocialQueuePage() {
                     Platform: {queuePlatform}
                   </div>
                   <div className="mt-1 text-xs text-[var(--text-soft)]">
-                    Asset: {queuePlatform === "pinterest" ? "image" : queueAssetType}
+                    Asset: {queueAssetType}
                   </div>
                 </div>
               ) : null}
@@ -1002,9 +1056,19 @@ export default function SocialQueuePage() {
           </div>
 
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-            <h2 className="text-xl font-bold text-[var(--brand-gold)]">Quick Actions</h2>
+            <h2 className="text-xl font-bold text-[var(--brand-gold)]">
+              Quick Actions
+            </h2>
 
             <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                onClick={() => queueNext7Days()}
+                disabled={queueLoading || autoQueueLoading || !board}
+                className="rounded-xl bg-[var(--brand-gold)] px-6 py-3 font-bold text-black disabled:opacity-50"
+              >
+                {autoQueueLoading ? "Queueing 7 days..." : "Queue next 7 days"}
+              </button>
+
               <button
                 onClick={() => build30()}
                 disabled={queueLoading || !board}
@@ -1037,7 +1101,9 @@ export default function SocialQueuePage() {
 
           {showDebug ? (
             <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-              <h2 className="text-xl font-bold text-[var(--brand-gold)]">Raw API Debug</h2>
+              <h2 className="text-xl font-bold text-[var(--brand-gold)]">
+                Raw API Debug
+              </h2>
 
               <pre className="mt-4 min-h-[240px] overflow-auto rounded-xl bg-black/30 p-5 text-xs whitespace-pre-wrap text-left">
                 {debugResponse || "No response captured yet."}
@@ -1048,25 +1114,13 @@ export default function SocialQueuePage() {
 
         <div className="space-y-8">
           <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-[var(--brand-gold)]">Queued</h2>
-
-              <div className="flex gap-2">
-                {(["all", "image", "video"] as const).map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setQueueFilter(value)}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
-                      queueFilter === value
-                        ? "border-[var(--brand-gold)] bg-[var(--brand-gold)] text-black"
-                        : "border-white/15 bg-white/5 text-white/80"
-                    }`}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-xl font-bold text-[var(--brand-gold)]">
+                Queued
+              </h2>
+              <span className="rounded-full border border-yellow-500/40 bg-yellow-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-yellow-300">
+                {queuedItems.length}
+              </span>
             </div>
 
             <div className="mt-5 space-y-4">
@@ -1082,7 +1136,9 @@ export default function SocialQueuePage() {
 
           <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-[var(--brand-gold)]">Failed</h2>
+              <h2 className="text-xl font-bold text-[var(--brand-gold)]">
+                Failed
+              </h2>
               <span className="rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-red-300">
                 {failedItems.length}
               </span>
@@ -1101,7 +1157,9 @@ export default function SocialQueuePage() {
 
           <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-[var(--brand-gold)]">Posted Recently</h2>
+              <h2 className="text-xl font-bold text-[var(--brand-gold)]">
+                Posted Recently
+              </h2>
               <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-300">
                 {postedItems.length}
               </span>
