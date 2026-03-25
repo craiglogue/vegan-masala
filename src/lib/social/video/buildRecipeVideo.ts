@@ -266,14 +266,6 @@ async function resolveFont(baseUrl: string, logs: string[]) {
   return null;
 }
 
-function loadFontOrThrow(fontPath: string | null) {
-  if (!fontPath || !fs.existsSync(fontPath)) {
-    throw new Error("Font missing");
-  }
-
-  return opentype.loadSync(fontPath);
-}
-
 function loadFontOrThrow(
 fontPath:string|null
 ){
@@ -715,31 +707,19 @@ TEMP_DIR,
 );
 
 await renderCard(
-
-titleFromSlug(slug),
-
-"Vegan Indian Recipe",
-
-introPng,
-
-null,
-
-null
-
+  titleFromSlug(slug),
+  "Vegan Indian Recipe",
+  introPng,
+  null,
+  fontPath
 );
 
 await renderCard(
-
-"Follow For More",
-
-"vegan-masala.com",
-
-outroPng,
-
-null,
-
-null
-
+  "Follow For More",
+  "vegan-masala.com",
+  outroPng,
+  null,
+  fontPath
 );
 
 const introMp4=
