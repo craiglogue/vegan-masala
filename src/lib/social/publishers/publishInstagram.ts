@@ -1,10 +1,11 @@
-import { generateInstagramBySlug } from "@/lib/social/generateInstagram";
-
 const GRAPH_BASE = "https://graph.facebook.com/v23.0";
 
 type PublishInstagramInput = {
   slug: string;
   caption: string;
+  assetType: "image" | "video";
+  imageUrl?: string;
+  videoUrl?: string;
 };
 
 function getRequiredEnv(name: string): string {
@@ -15,36 +16,22 @@ function getRequiredEnv(name: string): string {
   return value;
 }
 
-function describeMetaError(data: any, fallback: string) {
-  const err = data?.error ?? data ?? {};
-  const parts = [
-    err?.message || fallback,
-    err?.type ? `type=${err.type}` : "",
-    err?.code ? `code=${err.code}` : "",
-    err?.error_subcode ? `subcode=${err.error_subcode}` : "",
-    err?.error_user_title ? `title=${err.error_user_title}` : "",
-    err?.error_user_msg ? `user_msg=${err.error_user_msg}` : "",
-    err?.fbtrace_id ? `fbtrace_id=${err.fbtrace_id}` : "",
-  ].filter(Boolean);
+async function graphGet(url: string) {
+  const res = await fetch(url, { method: "GET" });
+  const data = await res.json().catch(() => ({}));
 
-  return parts.join(" | ");
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "Instagram GET failed");
+  }
+
+  return data;
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function metaPostForm(
-  endpoint: string,
-  body: Record<string, string>
-): Promise<any> {
-  const accessToken = getRequiredEnv("META_ACCESS_TOKEN");
-
+async function graphPost(endpoint: string, body: Record<string, string>) {
   const form = new URLSearchParams();
   Object.entries(body).forEach(([key, value]) => {
     form.set(key, value);
   });
-  form.set("access_token", accessToken);
 
   const res = await fetch(`${GRAPH_BASE}${endpoint}`, {
     method: "POST",
@@ -54,120 +41,35 @@ async function metaPostForm(
     body: form.toString(),
   });
 
-  const rawText = await res.text();
-
-  let data: any = null;
-  try {
-    data = rawText ? JSON.parse(rawText) : {};
-  } catch {
-    data = { raw: rawText };
-  }
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    console.error("META POST ERROR:", {
-      endpoint,
-      status: res.status,
-      body,
-      data,
-    });
-
-    throw new Error(
-      describeMetaError(data, `Meta POST failed (${res.status})`)
-    );
+    throw new Error(data?.error?.message || "Instagram POST failed");
   }
 
   return data;
 }
 
-async function metaGet(endpoint: string): Promise<any> {
-  const accessToken = getRequiredEnv("META_ACCESS_TOKEN");
-
-  const res = await fetch(
-    `${GRAPH_BASE}${endpoint}${endpoint.includes("?") ? "&" : "?"}access_token=${encodeURIComponent(accessToken)}`,
-    { cache: "no-store" }
-  );
-
-  const rawText = await res.text();
-
-  let data: any = null;
-  try {
-    data = rawText ? JSON.parse(rawText) : {};
-  } catch {
-    data = { raw: rawText };
-  }
-
-  if (!res.ok) {
-    console.error("META GET ERROR:", {
-      endpoint,
-      status: res.status,
-      data,
-    });
-
-    throw new Error(
-      describeMetaError(data, `Meta GET failed (${res.status})`)
+async function waitForVideoContainer(containerId: string, accessToken: string) {
+  for (let i = 0; i < 20; i++) {
+    const status = await graphGet(
+      `${GRAPH_BASE}/${containerId}?fields=status_code,status&access_token=${accessToken}`
     );
-  }
 
-  return data;
-}
+    const code = String(status?.status_code || status?.status || "").toUpperCase();
 
-async function verifyInstagramAccount(igUserId: string) {
-  return metaGet(`/${igUserId}?fields=id,username`);
-}
-
-async function checkInstagramPublishingLimitSoft(igUserId: string) {
-  try {
-    const data = await metaGet(`/${igUserId}?fields=content_publishing_limit`);
-    const usage = data?.content_publishing_limit?.quota_usage;
-
-    if (typeof usage === "number" && usage >= 25) {
-      throw new Error("Instagram publishing limit reached");
-    }
-  } catch (err: any) {
-    console.warn("INSTAGRAM LIMIT CHECK WARNING:", err?.message || err);
-  }
-}
-
-async function waitForContainerReady(creationId: string) {
-  const maxAttempts = 10;
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const data = await metaGet(
-        `/${creationId}?fields=id,status_code,status`
-      );
-
-      console.log("INSTAGRAM CONTAINER STATUS:", {
-        attempt,
-        data,
-      });
-
-      const statusCode = data?.status_code || data?.status;
-
-      if (
-        statusCode === "FINISHED" ||
-        statusCode === "PUBLISHED" ||
-        statusCode === "READY"
-      ) {
-        return data;
-      }
-
-      if (statusCode === "ERROR" || statusCode === "EXPIRED") {
-        throw new Error(
-          `Instagram media container not publishable: ${JSON.stringify(data)}`
-        );
-      }
-    } catch (err: any) {
-      console.warn(
-        `INSTAGRAM CONTAINER POLL WARNING attempt ${attempt}:`,
-        err?.message || err
-      );
+    if (code === "FINISHED" || code === "PUBLISHED") {
+      return;
     }
 
-    await sleep(3000);
+    if (code === "ERROR" || code === "EXPIRED") {
+      throw new Error("Instagram video container failed");
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
 
-  return null;
+  throw new Error("Instagram video container timed out");
 }
 
 export async function publishInstagram(input: PublishInstagramInput) {
@@ -177,62 +79,72 @@ export async function publishInstagram(input: PublishInstagramInput) {
     throw new Error("Instagram publish slug missing");
   }
 
-  const igUserId = getRequiredEnv("META_IG_USER_ID");
+  const accessToken = getRequiredEnv("META_ACCESS_TOKEN");
+  const igUserId =
+    process.env.META_IG_USER_ID ||
+    process.env.INSTAGRAM_BUSINESS_ID ||
+    "";
 
-  console.log("INSTAGRAM PUBLISH DEBUG:", {
-    slug,
-    igUserId,
-    hasAccessToken: Boolean(process.env.META_ACCESS_TOKEN),
-  });
-
-  const accountInfo = await verifyInstagramAccount(igUserId);
-
-  console.log("INSTAGRAM ACCOUNT DEBUG:", accountInfo);
-
-  const generated = await generateInstagramBySlug(slug);
-  const imageUrl = generated.image;
-
-  console.log("INSTAGRAM ASSET DEBUG:", {
-    slug,
-    imageUrl,
-    storage: generated.storage,
-    path: generated.path,
-  });
-
-  if (!imageUrl) {
-    throw new Error("Generated Instagram image URL missing");
+  if (!igUserId) {
+    throw new Error("META_IG_USER_ID missing");
   }
 
-  await checkInstagramPublishingLimitSoft(igUserId);
+  if (input.assetType === "video") {
+    if (!input.videoUrl) {
+      throw new Error("Instagram video URL missing");
+    }
 
-  const container = await metaPostForm(`/${igUserId}/media`, {
-    image_url: imageUrl,
+    const container = await graphPost(`/${igUserId}/media`, {
+      media_type: "REELS",
+      video_url: input.videoUrl,
+      caption: input.caption || "",
+      access_token: accessToken,
+    });
+
+    if (!container?.id) {
+      throw new Error("Instagram video container creation failed");
+    }
+
+    await waitForVideoContainer(container.id, accessToken);
+
+    const published = await graphPost(`/${igUserId}/media_publish`, {
+      creation_id: container.id,
+      access_token: accessToken,
+    });
+
+    return {
+      ok: true,
+      assetType: "video" as const,
+      videoUrl: input.videoUrl,
+      containerId: container.id,
+      published,
+    };
+  }
+
+  if (!input.imageUrl) {
+    throw new Error("Instagram image URL missing");
+  }
+
+  const container = await graphPost(`/${igUserId}/media`, {
+    image_url: input.imageUrl,
     caption: input.caption || "",
+    access_token: accessToken,
   });
 
-  console.log("INSTAGRAM CONTAINER DEBUG:", container);
-
-  const creationId = container?.id;
-
-  if (!creationId) {
-    throw new Error(
-      `Instagram media container ID missing: ${JSON.stringify(container)}`
-    );
+  if (!container?.id) {
+    throw new Error("Instagram image container creation failed");
   }
 
-  await waitForContainerReady(creationId);
-
-  const published = await metaPostForm(`/${igUserId}/media_publish`, {
-    creation_id: creationId,
+  const published = await graphPost(`/${igUserId}/media_publish`, {
+    creation_id: container.id,
+    access_token: accessToken,
   });
-
-  console.log("INSTAGRAM PUBLISH RESULT:", published);
 
   return {
     ok: true,
-    accountInfo,
-    imageUrl,
-    containerId: creationId,
+    assetType: "image" as const,
+    imageUrl: input.imageUrl,
+    containerId: container.id,
     published,
   };
 }

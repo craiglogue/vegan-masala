@@ -1,194 +1,102 @@
-import { generateInstagramBySlug } from "@/lib/social/generateInstagram";
-import { buildFacebookCaption } from "@/lib/social/core/captions";
-
 const GRAPH_BASE = "https://graph.facebook.com/v23.0";
 
 type PublishFacebookInput = {
   slug: string;
-  caption?: string;
-  videoUrl?: string;
+  caption: string;
+  assetType: "image" | "video";
   imageUrl?: string;
+  videoUrl?: string;
 };
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
-
   if (!value) {
     throw new Error(`${name} missing`);
   }
-
   return value;
 }
 
 async function metaPostForm(
   endpoint: string,
-  body: Record<string,string>
-){
-  const accessToken=getRequiredEnv("META_ACCESS_TOKEN");
+  body: Record<string, string>
+): Promise<any> {
+  const accessToken = getRequiredEnv("META_ACCESS_TOKEN");
 
-  const form=new URLSearchParams();
+  const form = new URLSearchParams();
+  Object.entries(body).forEach(([key, value]) => {
+    form.set(key, value);
+  });
+  form.set("access_token", accessToken);
 
-  Object.entries(body).forEach(([k,v])=>{
-    form.set(k,v);
+  const res = await fetch(`${GRAPH_BASE}${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: form.toString(),
   });
 
-  form.set("access_token",accessToken);
+  const data = await res.json().catch(() => ({}));
 
-  const res=await fetch(
-    `${GRAPH_BASE}${endpoint}`,
-    {
-      method:"POST",
-      headers:{
-        "Content-Type":
-        "application/x-www-form-urlencoded"
-      },
-      body:form.toString()
-    }
-  );
-
-  const data=await res.json().catch(()=>({}));
-
-  if(!res.ok){
-
-    throw new Error(
+  if (!res.ok) {
+    const metaMessage =
       data?.error?.message ||
-      "Facebook publish failed"
-    );
+      data?.message ||
+      `Meta POST failed for ${endpoint}`;
 
+    throw new Error(metaMessage);
   }
 
   return data;
 }
 
-async function publishPhoto(
-  pageId:string,
-  imageUrl:string,
-  caption:string
-){
+export async function publishFacebook(input: PublishFacebookInput) {
+  const slug = input.slug.trim();
 
-  return metaPostForm(
-    `/${pageId}/photos`,
-    {
-      url:imageUrl,
-      caption,
-      published:"true"
-    }
-  );
-
-}
-
-async function publishVideo(
-  pageId:string,
-  videoUrl:string,
-  caption:string
-){
-
-  return metaPostForm(
-    `/${pageId}/videos`,
-    {
-      file_url:videoUrl,
-      description:caption,
-      published:"true"
-    }
-  );
-
-}
-
-export async function publishFacebook(
-input:PublishFacebookInput
-){
-
-  const slug=input.slug.trim();
-
-  if(!slug){
-
-    throw new Error(
-      "Facebook publish slug missing"
-    );
-
+  if (!slug) {
+    throw new Error("Facebook publish slug missing");
   }
 
-  const pageId=
-  getRequiredEnv("META_PAGE_ID");
+  const pageId = getRequiredEnv("META_PAGE_ID");
 
-  const generated=
-  await generateInstagramBySlug(slug);
+  if (input.assetType === "video") {
+    if (!input.videoUrl) {
+      throw new Error("Facebook video URL missing");
+    }
 
-  const imageUrl=
-  input.imageUrl ||
-  generated.image;
+    const published = await metaPostForm(`/${pageId}/videos`, {
+      file_url: input.videoUrl,
+      description: input.caption || "",
+      published: "true",
+    });
 
-  const videoUrl=
-  input.videoUrl || null;
-
-  const caption=
-  input.caption ||
-  buildFacebookCaption(
-    slug,
-    "recipe"
-  );
-
-  // Prefer video if exists
-  if(videoUrl){
-
-    const published=
-    await publishVideo(
+    return {
+      ok: true,
+      assetType: "video" as const,
       pageId,
-      videoUrl,
-      caption
-    );
-
-    return{
-
-      ok:true,
-
-      type:"video",
-
-      pageId,
-
-      videoUrl,
-
-      id:published?.id||null,
-
-      published
-
+      videoUrl: input.videoUrl,
+      videoId: published?.id || null,
+      published,
     };
-
   }
 
-  // Fallback image
-  if(!imageUrl){
-
-    throw new Error(
-      "Facebook image missing"
-    );
-
+  if (!input.imageUrl) {
+    throw new Error("Facebook image URL missing");
   }
 
-  const published=
-  await publishPhoto(
+  const published = await metaPostForm(`/${pageId}/photos`, {
+    url: input.imageUrl,
+    caption: input.caption || "",
+    published: "true",
+  });
+
+  return {
+    ok: true,
+    assetType: "image" as const,
     pageId,
-    imageUrl,
-    caption
-  );
-
-  return{
-
-    ok:true,
-
-    type:"image",
-
-    pageId,
-
-    imageUrl,
-
-    id:published?.id||null,
-
-    postId:
-    published?.post_id||null,
-
-    published
-
+    imageUrl: input.imageUrl,
+    photoId: published?.id || null,
+    postId: published?.post_id || null,
+    published,
   };
-
 }

@@ -1,164 +1,84 @@
 import { NextResponse } from "next/server";
-import { list } from "@vercel/blob";
-
-import { generateInstagramBySlug } from "@/lib/social/generateInstagram";
-import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
 
 import {
   addQueueItem,
-  readQueue,
-  writeQueue,
+  allQueueItems,
+  deleteQueueItem,
   type QueueAssetType,
   type QueueContentType,
   type QueuePlatform,
 } from "@/lib/social/core/queue";
 
-import {
-  titleFromSlug,
-  detectContentTypeBySlug,
-} from "@/lib/social/core/content";
-
-import {
-  buildInstagramCaption,
-  buildPinterestCaption,
-} from "@/lib/social/core/captions";
-
-import { contentUrl } from "@/lib/social/core/urls";
-
-function buildCaptionForPlatform(
-  platform: QueuePlatform,
-  slug: string,
-  type: QueueContentType
-) {
-  if (platform === "pinterest") {
-    return buildPinterestCaption(slug, type);
-  }
-
-  if (platform === "instagram" || platform === "facebook") {
-    return buildInstagramCaption(slug, type);
-  }
-
-  throw new Error(`Unsupported platform: ${platform}`);
+function slugToTitle(slug: string) {
+  return slug
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function getBlobToken() {
-  return (
-    process.env.BLOB_READ_WRITE_TOKEN ||
-    process.env.PUBLIC_VIDEO_BLOB_READ_WRITE_TOKEN ||
-    ""
-  );
+function detectContentTypeBySlug(slug: string): QueueContentType {
+  if (slug.includes("guide") || slug.includes("spice") || slug.includes("dairy")) {
+    return "guide";
+  }
+
+  return "recipe";
 }
 
-function getSiteBaseUrl() {
+function getSiteBase() {
   return (
-    process.env.SOCIAL_ASSET_BASE_URL ||
-    process.env.SITE_URL ||
     process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
     "https://www.vegan-masala.com"
   ).replace(/\/+$/, "");
 }
 
-async function findBlobUrl(pathname: string): Promise<string | null> {
-  const token = getBlobToken();
-  if (!token) return null;
-
-  try {
-    const result = await list({
-      token,
-      prefix: pathname,
-    });
-
-    const exact = result.blobs.find((blob) => blob.pathname === pathname);
-    return exact?.url ?? null;
-  } catch {
-    return null;
-  }
+function buildContentUrl(slug: string, type: QueueContentType) {
+  const base = getSiteBase();
+  return type === "guide" ? `${base}/guides/${slug}` : `${base}/recipes/${slug}`;
 }
 
-async function resolveAssetUrls(
-  slug: string,
-  type: QueueContentType,
-  platform: QueuePlatform
-) {
-  const siteBase = getSiteBaseUrl();
+function buildCaption(slug: string, type: QueueContentType) {
+  const title = slugToTitle(slug);
 
-  let generatedInstagramImageUrl: string | null = null;
-  let generatedPinterestImageUrl: string | null = null;
+  if (type === "guide") {
+    return `${title}
 
-  if (platform === "instagram" || platform === "facebook") {
-    try {
-      const generated = await generateInstagramBySlug(slug);
-      generatedInstagramImageUrl = generated.image ?? null;
-    } catch (err) {
-      console.warn(
-        "Failed to pre-generate Instagram asset for queue:",
-        slug,
-        err
-      );
-    }
+Learn ${title} with this Vegan Masala guide.
+
+Read more:
+${buildContentUrl(slug, type)}
+
+#veganmasala #guide #vegancooking`;
   }
 
-  if (platform === "pinterest") {
-    try {
-      const generated = await generatePinterestBySlug(slug);
-      generatedPinterestImageUrl = generated.image ?? null;
-    } catch (err) {
-      console.warn(
-        "Failed to pre-generate Pinterest asset for queue:",
-        slug,
-        err
-      );
-    }
-  }
+  return `${title}
 
-  const instagramImageUrl =
-    generatedInstagramImageUrl ||
-    (await findBlobUrl(`instagram/${slug}.jpg`)) ||
-    `${siteBase}/generated/instagram/${slug}.jpg`;
+Learn how to make ${title} with this Vegan Masala recipe.
 
-  const pinterestImageUrl =
-    generatedPinterestImageUrl ||
-    (await findBlobUrl(`pinterest/${slug}.png`)) ||
-    `${siteBase}/generated/pinterest/${slug}.png`;
+Read more:
+${buildContentUrl(slug, type)}
 
-  const videoUrl = await findBlobUrl(`videos/${slug}.mp4`);
+#veganmasala #recipe #veganfood`;
+}
 
-  let assetType: QueueAssetType = "image";
-  let imageUrl = instagramImageUrl;
+function buildImageUrl(slug: string) {
+  return `${getSiteBase()}/generated/instagram/${slug}.jpg`;
+}
 
-  if (platform === "pinterest") {
-    assetType = "image";
-    imageUrl = pinterestImageUrl;
-  }
-
-  if (platform === "instagram" || platform === "facebook") {
-    if (videoUrl) {
-      assetType = "video";
-    } else {
-      assetType = "image";
-      imageUrl = instagramImageUrl;
-    }
-  }
-
-  return {
-    assetType,
-    imageUrl,
-    videoUrl: videoUrl ?? undefined,
-  };
+function buildVideoUrl(slug: string) {
+  return `${getSiteBase()}/generated/video/${slug}.mp4`;
 }
 
 export async function GET() {
   try {
     return NextResponse.json({
       ok: true,
-      items: await readQueue(),
+      items: allQueueItems(),
     });
   } catch (err: any) {
     return NextResponse.json(
       {
         ok: false,
-        items: [],
-        error: err?.message || "Failed to read queue",
+        error: err?.message || "Failed to load queue",
       },
       { status: 500 }
     );
@@ -171,34 +91,26 @@ export async function POST(req: Request) {
 
     const slug = typeof body.slug === "string" ? body.slug.trim() : "";
     const platform = body.platform as QueuePlatform | undefined;
+    const assetType = (body.assetType as QueueAssetType | undefined) || "image";
     const scheduledFor =
-      typeof body.scheduledFor === "string" ? body.scheduledFor : "";
+      typeof body.scheduledFor === "string" ? body.scheduledFor.trim() : "";
     const board =
-      typeof body.board === "string" && body.board.trim()
-        ? body.board.trim()
-        : null;
+      typeof body.board === "string" && body.board.trim() ? body.board.trim() : null;
 
     if (!slug) {
+      return NextResponse.json({ ok: false, error: "Slug required" }, { status: 400 });
+    }
+
+    if (!platform) {
       return NextResponse.json(
-        { ok: false, error: "Slug required" },
+        { ok: false, error: "Platform required" },
         { status: 400 }
       );
     }
 
-    if (
-      platform !== "instagram" &&
-      platform !== "pinterest" &&
-      platform !== "facebook"
-    ) {
+    if (!scheduledFor) {
       return NextResponse.json(
-        { ok: false, error: "Valid platform required" },
-        { status: 400 }
-      );
-    }
-
-    if (!scheduledFor || Number.isNaN(new Date(scheduledFor).getTime())) {
-      return NextResponse.json(
-        { ok: false, error: "Valid scheduled time required" },
+        { ok: false, error: "Schedule time required" },
         { status: 400 }
       );
     }
@@ -210,32 +122,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const type = detectContentTypeBySlug(slug);
-
-    if (!type) {
+    if (platform === "pinterest" && assetType === "video") {
       return NextResponse.json(
-        { ok: false, error: "Slug not found" },
+        { ok: false, error: "Pinterest queue only supports still images" },
         { status: 400 }
       );
     }
 
-    const title = titleFromSlug(slug);
-    const caption = buildCaptionForPlatform(platform, slug, type);
-    const url = contentUrl(slug, type);
-    const assets = await resolveAssetUrls(slug, type, platform);
+    const contentType = detectContentTypeBySlug(slug);
+    const title = slugToTitle(slug);
+    const url = buildContentUrl(slug, contentType);
 
-    const item = await addQueueItem({
+    const item = addQueueItem({
       slug,
       title,
       platform,
-      caption,
+      caption: buildCaption(slug, contentType),
       url,
       board,
       scheduledFor: new Date(scheduledFor).toISOString(),
-      contentType: type,
-      assetType: assets.assetType,
-      imageUrl: assets.imageUrl,
-      videoUrl: assets.videoUrl,
+      contentType,
+      assetType,
+      imageUrl: buildImageUrl(slug),
+      videoUrl: assetType === "video" ? buildVideoUrl(slug) : undefined,
     });
 
     return NextResponse.json({
@@ -254,9 +163,30 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
   try {
-    await writeQueue([]);
+    let id = "";
+
+    try {
+      const body = await req.json();
+      id = typeof body.id === "string" ? body.id.trim() : "";
+    } catch {
+      id = "";
+    }
+
+    if (id) {
+      deleteQueueItem(id);
+
+      return NextResponse.json({
+        ok: true,
+        message: "Queue item removed",
+      });
+    }
+
+    const items = allQueueItems();
+    for (const item of items) {
+      deleteQueueItem(item.id);
+    }
 
     return NextResponse.json({
       ok: true,

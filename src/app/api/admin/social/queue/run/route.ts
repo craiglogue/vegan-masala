@@ -1,3 +1,4 @@
+import path from "node:path";
 import { NextResponse } from "next/server";
 
 import {
@@ -6,9 +7,13 @@ import {
   markQueueItemPosted,
 } from "@/lib/social/core/queue";
 
-import { publishPinterest } from "@/lib/social/publishers/publishPinterest";
+import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
+import { postPinterestPin } from "@/lib/social/core/pinterestPost";
+
 import { publishInstagram } from "@/lib/social/publishers/publishInstagram";
 import { publishFacebook } from "@/lib/social/publishers/publishFacebook";
+
+const ROOT = process.cwd();
 
 export async function POST(req: Request) {
   try {
@@ -39,6 +44,7 @@ export async function POST(req: Request) {
       id: string;
       slug: string;
       platform: string;
+      assetType?: string;
       status: "posted" | "failed";
       error?: string;
     }> = [];
@@ -46,16 +52,29 @@ export async function POST(req: Request) {
     for (const item of due) {
       try {
         if (item.platform === "pinterest") {
+          if ((item.assetType || "image") === "video") {
+            throw new Error("Pinterest only supports image posts in this workflow");
+          }
+
           if (!item.board) {
             throw new Error("Pinterest board missing");
           }
 
-          const result = await publishPinterest({
-            slug: item.slug,
+          await generatePinterestBySlug(item.slug);
+
+          const imagePath = path.join(
+            ROOT,
+            "generated",
+            "pinterest",
+            `${item.slug}.png`
+          );
+
+          const result = await postPinterestPin({
             title: item.title || item.slug,
-            caption: item.caption || "",
-            url: item.url || "",
-            board: item.board,
+            description: item.caption || "",
+            link: item.url || "",
+            imagePath,
+            boardId: item.board,
           });
 
           console.log("QUEUE PINTEREST RESULT:", result);
@@ -66,6 +85,7 @@ export async function POST(req: Request) {
             id: item.id,
             slug: item.slug,
             platform: item.platform,
+            assetType: item.assetType,
             status: "posted",
           });
           continue;
@@ -75,6 +95,9 @@ export async function POST(req: Request) {
           const result = await publishInstagram({
             slug: item.slug,
             caption: item.caption || "",
+            assetType: item.assetType || "image",
+            imageUrl: item.imageUrl,
+            videoUrl: item.videoUrl,
           });
 
           console.log("QUEUE INSTAGRAM RESULT:", result);
@@ -85,24 +108,20 @@ export async function POST(req: Request) {
             id: item.id,
             slug: item.slug,
             platform: item.platform,
+            assetType: item.assetType,
             status: "posted",
           });
           continue;
         }
 
         if (item.platform === "facebook") {
-
-const result = await publishFacebook({
-
-slug:item.slug,
-
-caption:item.caption||"",
-
-videoUrl:item.videoUrl||undefined,
-
-imageUrl:item.imageUrl||undefined
-
-});
+          const result = await publishFacebook({
+            slug: item.slug,
+            caption: item.caption || "",
+            assetType: item.assetType || "image",
+            imageUrl: item.imageUrl,
+            videoUrl: item.videoUrl,
+          });
 
           console.log("QUEUE FACEBOOK RESULT:", result);
 
@@ -112,6 +131,7 @@ imageUrl:item.imageUrl||undefined
             id: item.id,
             slug: item.slug,
             platform: item.platform,
+            assetType: item.assetType,
             status: "posted",
           });
           continue;
@@ -123,6 +143,7 @@ imageUrl:item.imageUrl||undefined
           id: item.id,
           slug: item.slug,
           platform: item.platform,
+          assetType: item.assetType,
           status: "failed",
           error: unsupported,
         });
@@ -133,6 +154,7 @@ imageUrl:item.imageUrl||undefined
           id: item.id,
           slug: item.slug,
           platform: item.platform,
+          assetType: item.assetType,
           error: message,
         });
 
@@ -141,6 +163,7 @@ imageUrl:item.imageUrl||undefined
           id: item.id,
           slug: item.slug,
           platform: item.platform,
+          assetType: item.assetType,
           status: "failed",
           error: message,
         });

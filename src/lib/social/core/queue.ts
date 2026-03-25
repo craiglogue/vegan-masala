@@ -1,10 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Redis } from "@upstash/redis";
-
-const ROOT = process.cwd();
-const FILE = path.join(ROOT, "generated", "queue.json");
-const QUEUE_KEY = "social_queue_v1";
 
 export type QueuePlatform = "instagram" | "pinterest" | "facebook";
 export type QueueStatus = "queued" | "posted" | "failed";
@@ -18,7 +13,7 @@ export type QueueItem = {
   platform: QueuePlatform;
   caption: string;
   url: string;
-  board?: string;
+  board?: string | null;
   scheduledFor: string;
   status: QueueStatus;
   createdAt: string;
@@ -30,176 +25,78 @@ export type QueueItem = {
   videoUrl?: string;
 };
 
-function getRedis() {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
+const QUEUE_DIR = path.join(ROOT, "generated");
+const QUEUE_FILE = path.join(QUEUE_DIR, "social-queue.json");
 
-  if (!url || !token) {
-    return null;
-  }
-
-  return new Redis({ url, token });
+function ensureDir() {
+  fs.mkdirSync(QUEUE_DIR, { recursive: true });
 }
 
-function ensureFile() {
-  const dir = path.dirname(FILE);
-  fs.mkdirSync(dir, { recursive: true });
-
-  if (!fs.existsSync(FILE)) {
-    fs.writeFileSync(FILE, JSON.stringify([], null, 2), "utf8");
-  }
-}
-
-function readQueueFromFile(): QueueItem[] {
-  ensureFile();
-
+function readQueueFile(): QueueItem[] {
   try {
-    return JSON.parse(fs.readFileSync(FILE, "utf8")) as QueueItem[];
+    ensureDir();
+
+    if (!fs.existsSync(QUEUE_FILE)) {
+      return [];
+    }
+
+    const raw = fs.readFileSync(QUEUE_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
-function writeQueueToFile(items: QueueItem[]) {
-  ensureFile();
-  fs.writeFileSync(FILE, JSON.stringify(items, null, 2), "utf8");
+function writeQueueFile(items: QueueItem[]) {
+  ensureDir();
+  fs.writeFileSync(QUEUE_FILE, JSON.stringify(items, null, 2), "utf8");
 }
 
-export async function readQueue(): Promise<QueueItem[]> {
-  const redis = getRedis();
-
-  if (redis) {
-    try {
-      const items = await redis.get<QueueItem[]>(QUEUE_KEY);
-      return Array.isArray(items) ? items : [];
-    } catch (err) {
-      console.warn("KV readQueue failed, falling back to file:", err);
-    }
-  }
-
-  return readQueueFromFile();
+export function allQueueItems() {
+  return readQueueFile().sort((a, b) => {
+    const aTime = new Date(a.scheduledFor).getTime();
+    const bTime = new Date(b.scheduledFor).getTime();
+    return aTime - bTime;
+  });
 }
 
-export async function writeQueue(items: QueueItem[]) {
-  const redis = getRedis();
+export function addQueueItem(
+  item: Omit<QueueItem, "id" | "createdAt" | "status">
+): QueueItem {
+  const items = readQueueFile();
 
-  if (redis) {
-    try {
-      await redis.set(QUEUE_KEY, items);
-      return;
-    } catch (err) {
-      console.warn("KV writeQueue failed, falling back to file:", err);
-    }
-  }
-
-  writeQueueToFile(items);
-}
-
-export async function addQueueItem(input: {
-  slug: string;
-  title: string;
-  platform: QueuePlatform;
-  caption: string;
-  url: string;
-  board?: string | null;
-  scheduledFor: string;
-  contentType?: QueueContentType;
-  assetType?: QueueAssetType;
-  imageUrl?: string;
-  videoUrl?: string;
-}): Promise<QueueItem> {
-  const items = await readQueue();
-
-  const item: QueueItem = {
+  const next: QueueItem = {
+    ...item,
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    slug: input.slug,
-    title: input.title,
-    platform: input.platform,
-    caption: input.caption,
-    url: input.url,
-    board: input.board || undefined,
-    scheduledFor: input.scheduledFor,
-    status: "queued",
     createdAt: new Date().toISOString(),
-    contentType: input.contentType,
-    assetType: input.assetType,
-    imageUrl: input.imageUrl,
-    videoUrl: input.videoUrl,
+    status: "queued",
   };
 
-  items.unshift(item);
-  await writeQueue(items);
+  items.push(next);
+  writeQueueFile(items);
 
-  return item;
+  return next;
 }
 
-export async function getQueueItem(id: string): Promise<QueueItem | null> {
-  const items = await readQueue();
-  return items.find((item) => item.id === id) ?? null;
-}
+export function dueQueueItems() {
+  const now = Date.now();
 
-export async function deleteQueueItem(id: string): Promise<boolean> {
-  const items = await readQueue();
-  const next = items.filter((item) => item.id !== id);
-
-  if (next.length === items.length) {
-    return false;
-  }
-
-  await writeQueue(next);
-  return true;
-}
-
-export async function retryQueueItem(id: string): Promise<QueueItem | null> {
-  const items = await readQueue();
-  let found: QueueItem | null = null;
-
-  const next = items.map((item) => {
-    if (item.id !== id) return item;
-
-    found = {
-      ...item,
-      status: "queued",
-      error: undefined,
-      postedAt: undefined,
-      scheduledFor: new Date(Date.now() - 60_000).toISOString(),
-    };
-
-    return found;
+  return readQueueFile().filter((item) => {
+    if (item.status !== "queued") return false;
+    return new Date(item.scheduledFor).getTime() <= now;
   });
-
-  if (!found) return null;
-
-  await writeQueue(next);
-  return found;
 }
 
-export async function postNowQueueItem(id: string): Promise<QueueItem | null> {
-  const items = await readQueue();
-  let found: QueueItem | null = null;
-
-  const next = items.map((item) => {
-    if (item.id !== id) return item;
-
-    found = {
-      ...item,
-      status: "queued",
-      error: undefined,
-      postedAt: undefined,
-      scheduledFor: new Date(Date.now() - 60_000).toISOString(),
-    };
-
-    return found;
-  });
-
-  if (!found) return null;
-
-  await writeQueue(next);
-  return found;
+export function findQueueItemById(id: string) {
+  return readQueueFile().find((item) => item.id === id) || null;
 }
 
-export async function markQueueItemPosted(id: string) {
-  const items = (await readQueue()).map((item) =>
+export function markQueueItemPosted(id: string) {
+  const items = readQueueFile();
+  const next = items.map((item) =>
     item.id === id
       ? {
           ...item,
@@ -210,11 +107,12 @@ export async function markQueueItemPosted(id: string) {
       : item
   );
 
-  await writeQueue(items);
+  writeQueueFile(next);
 }
 
-export async function markQueueItemFailed(id: string, error: string) {
-  const items = (await readQueue()).map((item) =>
+export function markQueueItemFailed(id: string, error: string) {
+  const items = readQueueFile();
+  const next = items.map((item) =>
     item.id === id
       ? {
           ...item,
@@ -224,15 +122,42 @@ export async function markQueueItemFailed(id: string, error: string) {
       : item
   );
 
-  await writeQueue(items);
+  writeQueueFile(next);
 }
 
-export async function dueQueueItems(now = new Date()): Promise<QueueItem[]> {
-  const items = await readQueue();
-
-  return items.filter(
-    (item) =>
-      item.status === "queued" &&
-      new Date(item.scheduledFor).getTime() <= now.getTime()
+export function retryQueueItem(id: string) {
+  const items = readQueueFile();
+  const next = items.map((item) =>
+    item.id === id
+      ? {
+          ...item,
+          status: "queued" as const,
+          error: undefined,
+        }
+      : item
   );
+
+  writeQueueFile(next);
+}
+
+export function rescheduleQueueItemNow(id: string) {
+  const items = readQueueFile();
+  const next = items.map((item) =>
+    item.id === id
+      ? {
+          ...item,
+          status: "queued" as const,
+          scheduledFor: new Date().toISOString(),
+          error: undefined,
+        }
+      : item
+  );
+
+  writeQueueFile(next);
+}
+
+export function deleteQueueItem(id: string) {
+  const items = readQueueFile();
+  const next = items.filter((item) => item.id !== id);
+  writeQueueFile(next);
 }
