@@ -228,6 +228,51 @@ return temp;
 return null;
 
 }
+async function resolveFont(baseUrl: string, logs: string[]) {
+  if (!process.env.VERCEL) {
+    const localCandidates = [
+      path.join(process.cwd(), "public", "fonts", "Rajdhani-Bold.ttf"),
+      path.join(process.cwd(), "public", "fonts", "Rajdhani-Regular.ttf"),
+      path.join(process.cwd(), "Rajdhani", "Rajdhani-Bold.ttf"),
+      path.join(process.cwd(), "Rajdhani", "Rajdhani-Regular.ttf"),
+    ];
+
+    for (const candidate of localCandidates) {
+      if (fs.existsSync(candidate)) {
+        logs.push(`Using local font: ${candidate}`);
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  const remoteCandidates = [
+    `${baseUrl}/fonts/Rajdhani-Bold.ttf`,
+    `${baseUrl}/fonts/Rajdhani-Regular.ttf`,
+  ];
+
+  for (const url of remoteCandidates) {
+    const buffer = await fetchBuffer(url, logs);
+    if (buffer) {
+      const out = path.join(TEMP_DIR, path.basename(url));
+      fs.writeFileSync(out, buffer);
+      logs.push(`Using remote font: ${out}`);
+      return out;
+    }
+  }
+
+  logs.push("No font found");
+  return null;
+}
+
+function loadFontOrThrow(fontPath: string | null) {
+  if (!fontPath || !fs.existsSync(fontPath)) {
+    throw new Error("Font missing");
+  }
+
+  return opentype.loadSync(fontPath);
+}
 
 function loadFontOrThrow(
 fontPath:string|null
@@ -655,6 +700,7 @@ throw new Error(
 );
 
 }
+const fontPath = await resolveFont(base, logs);
 
 const introPng=
 path.join(
