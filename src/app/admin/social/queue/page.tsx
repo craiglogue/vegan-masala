@@ -59,6 +59,18 @@ function truncate(text: string, max = 140) {
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
+function cleanLabel(label: string) {
+  return label.replace(/\s*\((recipe|guide)\)\s*$/i, "").trim();
+}
+
+function normalizeSlugOption(item: SlugOption): SlugOption {
+  return {
+    ...item,
+    label: cleanLabel(item.label || item.title || item.slug),
+    type: item.type === "guide" ? "guide" : "recipe",
+  };
+}
+
 function statusClasses(status: QueueStatus) {
   if (status === "posted") {
     return "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
@@ -83,12 +95,21 @@ function platformClasses(platform: QueuePlatform) {
   return "border-blue-500/40 bg-blue-500/10 text-blue-300";
 }
 
+function assetClasses(assetType?: QueueAssetType) {
+  if (assetType === "video") {
+    return "border-purple-500/40 bg-purple-500/10 text-purple-300";
+  }
+
+  return "border-sky-500/40 bg-sky-500/10 text-sky-300";
+}
+
 export default function SocialQueuePage() {
   const [queueSlug, setQueueSlug] = useState("");
-  const [queuePlatform, setQueuePlatform] =
-    useState<QueuePlatform>("instagram");
+  const [queuePlatform, setQueuePlatform] = useState<QueuePlatform>("instagram");
+  const [queueAssetType, setQueueAssetType] = useState<QueueAssetType>("image");
   const [scheduledFor, setScheduledFor] = useState("");
   const [board, setBoard] = useState("");
+  const [queueFilter, setQueueFilter] = useState<"all" | "image" | "video">("all");
 
   const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
   const [availableSlugs, setAvailableSlugs] = useState<SlugOption[]>([]);
@@ -97,32 +118,51 @@ export default function SocialQueuePage() {
   const [queueLoading, setQueueLoading] = useState(false);
   const [slugsLoading, setSlugsLoading] = useState(false);
   const [boardsLoading, setBoardsLoading] = useState(false);
-  const [itemActionLoadingId, setItemActionLoadingId] = useState<string | null>(
-    null
-  );
+  const [itemActionLoadingId, setItemActionLoadingId] = useState<string | null>(null);
 
   const [log, setLog] = useState("Waiting...");
   const [debugResponse, setDebugResponse] = useState("");
   const [showDebug, setShowDebug] = useState(false);
+
+  useEffect(() => {
+    if (queuePlatform === "pinterest") {
+      setQueueAssetType("image");
+    }
+  }, [queuePlatform]);
 
   const selectedSlugItem = useMemo(
     () => availableSlugs.find((item) => item.slug === queueSlug) ?? null,
     [availableSlugs, queueSlug]
   );
 
+  const recipeSlugs = useMemo(
+    () => availableSlugs.filter((item) => item.type !== "guide"),
+    [availableSlugs]
+  );
+
+  const guideSlugs = useMemo(
+    () => availableSlugs.filter((item) => item.type === "guide"),
+    [availableSlugs]
+  );
+
+  const filteredQueueItems = useMemo(() => {
+    if (queueFilter === "all") return queueItems;
+    return queueItems.filter((item) => (item.assetType || "image") === queueFilter);
+  }, [queueItems, queueFilter]);
+
   const queuedItems = useMemo(
-    () => queueItems.filter((item) => item.status === "queued"),
-    [queueItems]
+    () => filteredQueueItems.filter((item) => item.status === "queued"),
+    [filteredQueueItems]
   );
 
   const failedItems = useMemo(
-    () => queueItems.filter((item) => item.status === "failed"),
-    [queueItems]
+    () => filteredQueueItems.filter((item) => item.status === "failed"),
+    [filteredQueueItems]
   );
 
   const postedItems = useMemo(
-    () => queueItems.filter((item) => item.status === "posted"),
-    [queueItems]
+    () => filteredQueueItems.filter((item) => item.status === "posted"),
+    [filteredQueueItems]
   );
 
   async function loadQueue() {
@@ -146,7 +186,17 @@ export default function SocialQueuePage() {
       });
 
       const data = await res.json();
-      setAvailableSlugs(Array.isArray(data.slugs) ? data.slugs : []);
+      const items = Array.isArray(data.slugs) ? data.slugs : [];
+      const normalized = items
+        .map((item: SlugOption) => normalizeSlugOption(item))
+        .sort((a: SlugOption, b: SlugOption) => {
+          if ((a.type || "recipe") !== (b.type || "recipe")) {
+            return (a.type || "recipe") === "recipe" ? -1 : 1;
+          }
+          return a.label.localeCompare(b.label);
+        });
+
+      setAvailableSlugs(normalized);
     } catch {
       setAvailableSlugs([]);
     } finally {
@@ -236,6 +286,7 @@ export default function SocialQueuePage() {
         body: JSON.stringify({
           slug: queueSlug,
           platform: queuePlatform,
+          assetType: queuePlatform === "pinterest" ? "image" : queueAssetType,
           scheduledFor,
           board: queuePlatform === "pinterest" ? board : null,
         }),
@@ -274,9 +325,9 @@ export default function SocialQueuePage() {
     setDebugResponse("");
 
     try {
-     const res = await fetch("/api/admin/social/queue/run-now", {
-  method: "POST",
-});
+      const res = await fetch("/api/admin/social/queue/run-now", {
+        method: "POST",
+      });
 
       const data = await res.json();
       setDebugResponse(JSON.stringify(data, null, 2));
@@ -329,7 +380,6 @@ export default function SocialQueuePage() {
 
       const data = await res.json().catch(() => ({}));
       setDebugResponse(JSON.stringify(data, null, 2));
-
       setLog("Queue cleared");
       await loadQueue();
     } catch {
@@ -392,94 +442,73 @@ export default function SocialQueuePage() {
     }
   }
 
-  async function itemAction(id: string, action: "post-now" | "retry" | "delete") {
-    setItemActionLoadingId(id);
+  async function itemAction(item: QueueItem, action: "post-now" | "retry" | "delete") {
+    setItemActionLoadingId(item.id);
     setDebugResponse("");
 
     try {
-      let res: Response;
-
       if (action === "delete") {
-  setLog("Queue item removed");
-  await loadQueue();
-  return;
-}
+        const res = await fetch("/api/admin/social/queue", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: item.id }),
+        });
 
-if (action === "retry") {
-  setLog("Failed item moved back to queued");
-  await loadQueue();
-  return;
-}
+        const data = await res.json().catch(() => ({}));
+        setDebugResponse(JSON.stringify(data, null, 2));
+        setLog(data?.message || "Queue item removed");
+        await loadQueue();
+        return;
+      }
 
-if (action === "post-now") {
-  const runRes = await fetch("/api/admin/social/queue/run-now", {
-    method: "POST",
-  });
+      if (action === "retry") {
+        const res = await fetch("/api/admin/social/queue/retry", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: item.id }),
+        });
 
-  const runData = await runRes.json().catch(() => ({}));
-  setDebugResponse(JSON.stringify(runData, null, 2));
+        const data = await res.json().catch(() => ({}));
+        setDebugResponse(JSON.stringify(data, null, 2));
 
-  if (!runRes.ok) {
-    setLog(runData?.error || "Failed to run queue after post now");
-    setShowDebug(true);
-    await loadQueue();
-    return;
-  }
+        if (!res.ok) {
+          setLog(data?.error || "Retry failed");
+          setShowDebug(true);
+          await loadQueue();
+          return;
+        }
 
-  const failed = runData?.failed ?? 0;
-  const attempted = runData?.attempted ?? 0;
-  const count = runData?.count ?? 0;
+        setLog(data?.message || "Failed item moved back to queued");
+        await loadQueue();
+        return;
+      }
 
-  setLog(`Processed ${attempted}\nPosted: ${count}\nFailed: ${failed}`);
+      if (action === "post-now") {
+        const res = await fetch("/api/admin/social/queue/post-now", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: item.id }),
+        });
 
-  if (failed > 0) {
-    setShowDebug(true);
-  }
+        const data = await res.json().catch(() => ({}));
+        setDebugResponse(JSON.stringify(data, null, 2));
 
-  await loadQueue();
-  return;
-}
+        if (!res.ok) {
+          setLog(data?.error || "Post now failed");
+          setShowDebug(true);
+          await loadQueue();
+          return;
+        }
 
-      if (action === "delete") {
-  setLog("Queue item removed");
-  await loadQueue();
-  return;
-}
-
-if (action === "retry") {
-  setLog("Failed item moved back to queued");
-  await loadQueue();
-  return;
-}
-
-if (action === "post-now") {
-  const runRes = await fetch("/api/admin/social/queue/run-now", {
-    method: "POST",
-  });
-
-  const runData = await runRes.json().catch(() => ({}));
-  setDebugResponse(JSON.stringify(runData, null, 2));
-
-  if (!runRes.ok) {
-    setLog(runData?.error || "Failed to run queue after post now");
-    setShowDebug(true);
-    await loadQueue();
-    return;
-  }
-
-  const failed = runData?.failed ?? 0;
-  const attempted = runData?.attempted ?? 0;
-  const count = runData?.count ?? 0;
-
-  setLog(`Processed ${attempted}\nPosted: ${count}\nFailed: ${failed}`);
-
-  if (failed > 0) {
-    setShowDebug(true);
-  }
-
-  await loadQueue();
-  return;
-}
+        setLog(data?.message || "Queue item processed");
+        await loadQueue();
+      }
     } catch (err: any) {
       setLog(err?.message || "Action failed");
       setDebugResponse(
@@ -599,20 +628,20 @@ if (action === "post-now") {
                 </span>
               ) : null}
 
-              {item.assetType ? (
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80">
-                  {item.assetType}
-                </span>
-              ) : null}
+              <span
+                className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${assetClasses(
+                  item.assetType || "image"
+                )}`}
+              >
+                {item.assetType || "image"}
+              </span>
             </div>
 
             <div className="mt-3 text-lg font-bold text-[var(--brand-gold)]">
               {item.title || item.slug}
             </div>
 
-            <div className="mt-1 text-xs text-[var(--text-soft)]">
-              {item.slug}
-            </div>
+            <div className="mt-1 text-xs text-[var(--text-soft)]">{item.slug}</div>
 
             <div className="mt-3 grid gap-2 text-xs text-white/80 md:grid-cols-2">
               <div>
@@ -689,7 +718,7 @@ if (action === "post-now") {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => itemAction(item.id, "post-now")}
+                  onClick={() => itemAction(item, "post-now")}
                   className="rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--brand-gold)] disabled:opacity-50"
                 >
                   {busy ? "Working..." : "Post now"}
@@ -700,7 +729,7 @@ if (action === "post-now") {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => itemAction(item.id, "retry")}
+                  onClick={() => itemAction(item, "retry")}
                   className="rounded-lg border border-yellow-500/40 px-3 py-2 text-xs font-semibold text-yellow-300 disabled:opacity-50"
                 >
                   {busy ? "Working..." : "Retry failed"}
@@ -711,7 +740,7 @@ if (action === "post-now") {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => itemAction(item.id, "delete")}
+                  onClick={() => itemAction(item, "delete")}
                   className="rounded-lg border border-red-500/40 px-3 py-2 text-xs font-semibold text-red-300 disabled:opacity-50"
                 >
                   {busy ? "Working..." : "Delete"}
@@ -765,19 +794,14 @@ if (action === "post-now") {
           <div className="flex flex-wrap gap-2">
             <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-white">
               Queued:{" "}
-              <span className="font-bold text-[var(--brand-gold)]">
-                {queuedItems.length}
-              </span>
+              <span className="font-bold text-[var(--brand-gold)]">{queuedItems.length}</span>
             </div>
             <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-white">
-              Failed:{" "}
-              <span className="font-bold text-red-300">{failedItems.length}</span>
+              Failed: <span className="font-bold text-red-300">{failedItems.length}</span>
             </div>
             <div className="rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-white">
               Posted:{" "}
-              <span className="font-bold text-emerald-300">
-                {postedItems.length}
-              </span>
+              <span className="font-bold text-emerald-300">{postedItems.length}</span>
             </div>
           </div>
         </div>
@@ -786,9 +810,7 @@ if (action === "post-now") {
       <section className="mt-8 grid gap-8 xl:grid-cols-[420px_minmax(0,1fr)]">
         <div className="space-y-8">
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-            <h2 className="text-xl font-bold text-[var(--brand-gold)]">
-              Schedule Post
-            </h2>
+            <h2 className="text-xl font-bold text-[var(--brand-gold)]">Schedule Post</h2>
 
             <div className="mt-6 space-y-5">
               <div>
@@ -803,11 +825,25 @@ if (action === "post-now") {
                 >
                   <option value="">{slugsLoading ? "Loading" : "Select"}</option>
 
-                  {availableSlugs.map((item) => (
-                    <option key={item.slug} value={item.slug}>
-                      {item.label}
-                    </option>
-                  ))}
+                  {recipeSlugs.length > 0 ? (
+                    <optgroup label="Recipes">
+                      {recipeSlugs.map((item) => (
+                        <option key={item.slug} value={item.slug}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null}
+
+                  {guideSlugs.length > 0 ? (
+                    <optgroup label="Guides">
+                      {guideSlugs.map((item) => (
+                        <option key={item.slug} value={item.slug}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null}
                 </select>
               </div>
 
@@ -817,22 +853,52 @@ if (action === "post-now") {
                 </label>
 
                 <div className="mt-2 grid grid-cols-3 gap-2">
-                  {(["instagram", "pinterest", "facebook"] as const).map(
-                    (platform) => (
+                  {(["instagram", "pinterest", "facebook"] as const).map((platform) => (
+                    <button
+                      key={platform}
+                      type="button"
+                      onClick={() => setQueuePlatform(platform)}
+                      className={`rounded-xl px-4 py-3 text-sm font-bold capitalize ${
+                        queuePlatform === platform
+                          ? "bg-[var(--brand-gold)] text-black"
+                          : "border border-[var(--border)] bg-black/30 text-white"
+                      }`}
+                    >
+                      {platform}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-[var(--brand-gold)]">
+                  Asset Type
+                </label>
+
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {(["image", "video"] as const).map((asset) => {
+                    const disabled = queuePlatform === "pinterest" && asset === "video";
+
+                    return (
                       <button
-                        key={platform}
+                        key={asset}
                         type="button"
-                        onClick={() => setQueuePlatform(platform)}
+                        disabled={disabled}
+                        onClick={() => setQueueAssetType(asset)}
                         className={`rounded-xl px-4 py-3 text-sm font-bold capitalize ${
-                          queuePlatform === platform
+                          queueAssetType === asset
                             ? "bg-[var(--brand-gold)] text-black"
                             : "border border-[var(--border)] bg-black/30 text-white"
-                        }`}
+                        } disabled:cursor-not-allowed disabled:opacity-40`}
                       >
-                        {platform}
+                        {asset}
                       </button>
-                    )
-                  )}
+                    );
+                  })}
+                </div>
+
+                <div className="mt-2 text-xs text-[var(--text-soft)]">
+                  Pinterest uses still images only. Instagram and Facebook can be queued as stills or videos.
                 </div>
               </div>
 
@@ -847,9 +913,7 @@ if (action === "post-now") {
                     onChange={(e) => setBoard(e.target.value)}
                     className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-white"
                   >
-                    <option value="">
-                      {boardsLoading ? "Loading" : "Select board"}
-                    </option>
+                    <option value="">{boardsLoading ? "Loading" : "Select board"}</option>
 
                     {boards.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -911,6 +975,9 @@ if (action === "post-now") {
                   <div className="mt-1 text-xs text-[var(--text-soft)]">
                     Platform: {queuePlatform}
                   </div>
+                  <div className="mt-1 text-xs text-[var(--text-soft)]">
+                    Asset: {queuePlatform === "pinterest" ? "image" : queueAssetType}
+                  </div>
                 </div>
               ) : null}
 
@@ -935,9 +1002,7 @@ if (action === "post-now") {
           </div>
 
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-            <h2 className="text-xl font-bold text-[var(--brand-gold)]">
-              Quick Actions
-            </h2>
+            <h2 className="text-xl font-bold text-[var(--brand-gold)]">Quick Actions</h2>
 
             <div className="mt-5 flex flex-wrap gap-3">
               <button
@@ -972,9 +1037,7 @@ if (action === "post-now") {
 
           {showDebug ? (
             <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-              <h2 className="text-xl font-bold text-[var(--brand-gold)]">
-                Raw API Debug
-              </h2>
+              <h2 className="text-xl font-bold text-[var(--brand-gold)]">Raw API Debug</h2>
 
               <pre className="mt-4 min-h-[240px] overflow-auto rounded-xl bg-black/30 p-5 text-xs whitespace-pre-wrap text-left">
                 {debugResponse || "No response captured yet."}
@@ -985,13 +1048,25 @@ if (action === "post-now") {
 
         <div className="space-y-8">
           <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-[var(--brand-gold)]">
-                Queued
-              </h2>
-              <span className="rounded-full border border-yellow-500/40 bg-yellow-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-yellow-300">
-                {queuedItems.length}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2 className="text-xl font-bold text-[var(--brand-gold)]">Queued</h2>
+
+              <div className="flex gap-2">
+                {(["all", "image", "video"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setQueueFilter(value)}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
+                      queueFilter === value
+                        ? "border-[var(--brand-gold)] bg-[var(--brand-gold)] text-black"
+                        : "border-white/15 bg-white/5 text-white/80"
+                    }`}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="mt-5 space-y-4">
@@ -1007,9 +1082,7 @@ if (action === "post-now") {
 
           <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-[var(--brand-gold)]">
-                Failed
-              </h2>
+              <h2 className="text-xl font-bold text-[var(--brand-gold)]">Failed</h2>
               <span className="rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-red-300">
                 {failedItems.length}
               </span>
@@ -1028,9 +1101,7 @@ if (action === "post-now") {
 
           <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-[var(--brand-gold)]">
-                Posted Recently
-              </h2>
+              <h2 className="text-xl font-bold text-[var(--brand-gold)]">Posted Recently</h2>
               <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-300">
                 {postedItems.length}
               </span>
