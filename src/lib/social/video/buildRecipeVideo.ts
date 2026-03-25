@@ -4,12 +4,9 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import sharp from "sharp";
-<<<<<<< HEAD
-=======
 import { put, list } from "@vercel/blob";
 import ffmpegPath from "ffmpeg-static";
 import opentype from "opentype.js";
->>>>>>> social-video-fix-from-clean-baseline
 
 import {
   detectContentTypeBySlug,
@@ -576,51 +573,22 @@ async function concat(
 }
 
 export async function buildRecipeVideo(slug: string) {
-<<<<<<< HEAD
-  const logs: string[] = [];
-
-  try {
-    ensureDir(VIDEO_DIR);
-    ensureDir(TEMP_DIR);
-
-    logs.push(`Build start: ${slug}`);
-
-    const type = detectContentTypeBySlug(slug) || "recipe";
-    logs.push(`Detected type: ${type}`);
-    logs.push(`process.cwd(): ${process.cwd()}`);
-    logs.push(`ROOT: ${ROOT}`);
-
-    const candidatePaths = [
-      path.join(process.cwd(), "public", "images", "recipes", `${slug}.png`),
-      path.join(process.cwd(), "public", "images", "recipes", `${slug}.jpg`),
-      path.join(process.cwd(), "public", "images", "recipes", `${slug}.jpeg`),
-      path.join(process.cwd(), "public", "images", "recipes", `${slug}.webp`),
-      path.join(process.cwd(), "public", "images", "guides", `${slug}.png`),
-      path.join(process.cwd(), "public", "images", "guides", `${slug}.jpg`),
-      path.join(process.cwd(), "public", "images", "guides", `${slug}.jpeg`),
-      path.join(process.cwd(), "public", "images", "guides", `${slug}.webp`),
-      path.join(process.cwd(), "public", "generated", "instagram", `${slug}.png`),
-      path.join(ROOT, "generated", "instagram", `${slug}.png`),
-    ];
-=======
   ensure(VIDEO_DIR);
   ensure(TEMP_DIR);
 
   const image = await resolveImage(slug);
   const logoPath = await resolveLogo();
   const musicFile = await resolveMusic();
->>>>>>> social-video-fix-from-clean-baseline
 
-    for (const candidate of candidatePaths) {
-      logs.push(
-        `Check: ${candidate} => ${fs.existsSync(candidate) ? "FOUND" : "missing"}`
-      );
-    }
+  const introPng = path.join(TEMP_DIR, `${slug}-intro.png`);
+  const outroPng = path.join(TEMP_DIR, `${slug}-outro.png`);
 
-<<<<<<< HEAD
-    const generated = findGeneratedInstagramImage(slug);
-    logs.push(`Generated instagram image: ${generated ?? "none"}`);
-=======
+  const introMp4 = path.join(TEMP_DIR, "intro.mp4");
+  const mainMp4 = path.join(TEMP_DIR, "main.mp4");
+  const outroMp4 = path.join(TEMP_DIR, "outro.mp4");
+
+  const final = path.join(VIDEO_DIR, `${slug}.mp4`);
+
   const type = detectContentTypeBySlug(slug) || "recipe";
   const title = titleFromSlug(slug);
 
@@ -633,69 +601,6 @@ export async function buildRecipeVideo(slug: string) {
   await renderCard(title, introSubtitle, introPng, logoPath);
   await renderCard(outroTitle, outroSubtitle, outroPng, logoPath);
 
-  const introMp4 = path.join(TEMP_DIR, "intro.mp4");
-  const mainMp4 = path.join(TEMP_DIR, "main.mp4");
-  const outroMp4 = path.join(TEMP_DIR, "outro.mp4");
->>>>>>> social-video-fix-from-clean-baseline
-
-    const resolvedByHelper = findContentImage(slug, type);
-    logs.push(`findContentImage(): ${resolvedByHelper ?? "none"}`);
-
-<<<<<<< HEAD
-    const image = resolveVideoSourceImage(slug, type);
-
-    if (!image) {
-      throw new Error(`No source image found for slug: ${slug}`);
-    }
-
-    logs.push(`Source image: ${image}`);
-
-    const introPng = path.join(TEMP_DIR, `${slug}-intro.png`);
-    const outroPng = path.join(TEMP_DIR, `${slug}-outro.png`);
-
-    const introMp4 = path.join(TEMP_DIR, `${slug}-intro.mp4`);
-    const mainMp4 = path.join(TEMP_DIR, `${slug}-main.mp4`);
-    const outroMp4 = path.join(TEMP_DIR, `${slug}-outro.mp4`);
-
-    const final = path.join(VIDEO_DIR, `${slug}.mp4`);
-
-    const introText =
-      type === "guide" ? "Indian Cooking Guide" : "Vegan Indian Recipe";
-
-    const outroText =
-      type === "guide" ? "Guides To Indian Cooking" : "Vegan Indian Recipes";
-
-    logs.push("Rendering intro card");
-    await renderCard(titleFromSlug(slug), introText, introPng);
-
-    logs.push("Rendering outro card");
-    await renderCard("Follow For More", outroText, outroPng);
-
-    logs.push("Creating intro clip");
-    await stillClip(introPng, introMp4, INTRO_DURATION);
-
-    logs.push("Creating main clip");
-    await mainClip(image, mainMp4);
-
-    logs.push("Creating outro clip");
-    await stillClip(outroPng, outroMp4, OUTRO_DURATION);
-
-    logs.push("Concatenating clips");
-    await concat(introMp4, mainMp4, outroMp4, final);
-
-    logs.push(`Final video path: ${final}`);
-    logs.push("Build complete");
-
-    return {
-      success: true,
-      video: final,
-      logs,
-    };
-  } catch (err: any) {
-    logs.push(`ERROR: ${err?.message || "Unknown error"}`);
-    throw new Error(logs.join("\n"));
-  }
-=======
   await still(introPng, introMp4, INTRO_DURATION);
   await mainClip(image, title, introSubtitle, mainMp4, logoPath);
   await still(outroPng, outroMp4, OUTRO_DURATION);
@@ -722,5 +627,4 @@ export async function buildRecipeVideo(slug: string) {
     success: true,
     video: blob.url,
   };
->>>>>>> social-video-fix-from-clean-baseline
 }
