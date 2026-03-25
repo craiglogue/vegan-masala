@@ -64,14 +64,14 @@ async function fetchBuffer(url: string) {
   return Buffer.from(await res.arrayBuffer());
 }
 
-function wrap(text: string) {
+function wrap(text: string, maxLength = 18, maxLines = 3) {
   const words = text.split(" ").filter(Boolean);
   const lines: string[] = [];
   let current = "";
 
   for (const w of words) {
     const next = current ? `${current} ${w}` : w;
-    if (next.length < 18) {
+    if (next.length < maxLength) {
       current = next;
     } else {
       if (current) lines.push(current);
@@ -80,7 +80,74 @@ function wrap(text: string) {
   }
 
   if (current) lines.push(current);
-  return lines.slice(0, 3);
+  return lines.slice(0, maxLines);
+}
+
+function pickFromSeed(slug: string, options: string[]) {
+  const sum = slug.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return options[sum % options.length];
+}
+
+function buildRecipeSubtitle(slug: string) {
+  return pickFromSeed(slug, [
+    "Rich, cosy and full of flavour",
+    "Easy vegan comfort food",
+    "A hearty homemade dinner idea",
+    "Simple ingredients, big flavour",
+    "Warm, satisfying and comforting",
+    "A flavour-packed vegan classic",
+    "Cosy, hearty and seriously tasty",
+    "Homemade comfort in every bite",
+  ]);
+}
+
+function buildGuideSubtitle(slug: string) {
+  return pickFromSeed(slug, [
+    "A simple beginner-friendly guide",
+    "Cook with more confidence",
+    "Make vegan Indian cooking easier",
+    "Learn the essentials clearly",
+    "Practical tips for better flavour",
+    "A clearer way to understand it",
+    "Simple guidance you can use",
+    "An easy guide for home cooks",
+  ]);
+}
+
+function buildOutroTitle(type: "recipe" | "guide", slug: string) {
+  if (type === "guide") {
+    return pickFromSeed(slug, [
+      "Cook With Confidence",
+      "Keep Learning",
+      "Make Cooking Easier",
+      "Build Kitchen Confidence",
+    ]);
+  }
+
+  return pickFromSeed(slug, [
+    "Get The Full Recipe",
+    "Cook This At Home",
+    "Save This For Later",
+    "Make This Tonight",
+  ]);
+}
+
+function buildOutroSubtitle(type: "recipe" | "guide", slug: string) {
+  if (type === "guide") {
+    return pickFromSeed(slug, [
+      "More vegan Indian guides on Vegan Masala",
+      "Simple cooking help on Vegan Masala",
+      "Learn more on Vegan Masala",
+      "More practical guides on Vegan Masala",
+    ]);
+  }
+
+  return pickFromSeed(slug, [
+    "More cosy vegan Indian cooking",
+    "Find the full recipe on Vegan Masala",
+    "More flavour-packed recipes on Vegan Masala",
+    "Discover more on Vegan Masala",
+  ]);
 }
 
 async function resolveImage(slug: string) {
@@ -257,14 +324,18 @@ async function renderCard(
   logoPath: string | null
 ) {
   const font = loadFont();
-  const lines = wrap(title);
+  const lines = wrap(title, 18, 3);
+  const subtitleLines = wrap(subtitle, 30, 2);
 
   const titleSvg = lines
-    .map((l, i) => textSvg(l, font, 84, BRAND.gold, 540, 860 + i * 100, "center"))
+    .map((l, i) => textSvg(l, font, 84, BRAND.gold, 540, 850 + i * 96, "center"))
     .join("");
 
-  const subSvg = textSvg(subtitle, font, 42, BRAND.soft, 540, 1210, "center");
+  const subSvg = subtitleLines
+    .map((l, i) => textSvg(l, font, 40, BRAND.soft, 540, 1190 + i * 56, "center"))
+    .join("");
 
+  const siteSvg = textSvg("vegan-masala.com", font, 28, "#ffffff", 540, 1818, "center");
   const logoSvg = logoImageSvg(logoPath, 390, 240, 300, 300);
 
   const svg = `
@@ -284,6 +355,7 @@ async function renderCard(
       ${logoSvg}
       ${titleSvg}
       ${subSvg}
+      ${siteSvg}
     </svg>
   `;
 
@@ -297,13 +369,17 @@ async function renderMainOverlay(
   logoPath: string | null
 ) {
   const font = loadFont();
-  const lines = wrap(title);
+  const lines = wrap(title, 20, 3);
+  const subtitleLines = wrap(subtitle, 28, 2);
 
   const titleSvg = lines
-    .map((l, i) => textSvg(l, font, 72, BRAND.gold, 74, 1440 + i * 84, "left"))
+    .map((l, i) => textSvg(l, font, 72, BRAND.gold, 74, 1425 + i * 82, "left"))
     .join("");
 
-  const subSvg = textSvg(subtitle, font, 38, BRAND.soft, 74, 1705, "left");
+  const subSvg = subtitleLines
+    .map((l, i) => textSvg(l, font, 38, BRAND.soft, 74, 1675 + i * 48, "left"))
+    .join("");
+
   const siteSvg = textSvg("vegan-masala.com", font, 30, "#ffffff", 74, 1810, "left");
   const logoSvg = logoImageSvg(logoPath, 760, 1480, 220, 220);
 
@@ -333,9 +409,9 @@ async function renderMainOverlay(
 
       <rect
         x="0"
-        y="${HEIGHT - 520}"
+        y="${HEIGHT - 560}"
         width="${WIDTH}"
-        height="520"
+        height="560"
         fill="url(#bottomShade)"
       />
 
@@ -403,10 +479,10 @@ async function mainClip(
   await renderMainOverlay(title, subtitle, overlay, logoPath);
 
   const filter = [
-    `[0:v]scale=1500:2667:force_original_aspect_ratio=increase,crop=1080:1920,eq=saturation=1.28:contrast=1.1:brightness=0.03,boxblur=22:10,zoompan=z='min(zoom+0.0015,1.20)':d=${MAIN_DURATION * FPS}:x='iw/2-(iw/zoom/2)+sin(on/12)*18':y='ih/2-(ih/zoom/2)+cos(on/15)*12':s=1080x1920:fps=${FPS}[bg]`,
+    `[0:v]scale=1500:2667:force_original_aspect_ratio=increase,crop=1080:1920,eq=saturation=1.30:contrast=1.12:brightness=0.03,boxblur=20:9,zoompan=z='min(zoom+0.0016,1.22)':d=${MAIN_DURATION * FPS}:x='iw/2-(iw/zoom/2)+sin(on/10)*22':y='ih/2-(ih/zoom/2)+cos(on/14)*14':s=1080x1920:fps=${FPS}[bg]`,
     `[1:v]format=rgba[card]`,
     `[2:v]format=rgba[overlay]`,
-    `[bg][card]overlay=(W-w)/2:410[tmp1]`,
+    `[bg][card]overlay=(W-w)/2:400[tmp1]`,
     `[tmp1][overlay]overlay=0:0,format=yuv420p[outv]`,
   ].join(";");
 
@@ -508,11 +584,16 @@ export async function buildRecipeVideo(slug: string) {
   const outroPng = path.join(TEMP_DIR, `${slug}-outro.png`);
 
   const type = detectContentTypeBySlug(slug) || "recipe";
-  const introSubtitle =
-    type === "guide" ? "Vegan Indian Cooking Guide" : "Vegan Indian Recipe";
+  const title = titleFromSlug(slug);
 
-  await renderCard(titleFromSlug(slug), introSubtitle, introPng, logoPath);
-  await renderCard("Follow For More", "vegan-masala.com", outroPng, logoPath);
+  const introSubtitle =
+    type === "guide" ? buildGuideSubtitle(slug) : buildRecipeSubtitle(slug);
+
+  const outroTitle = buildOutroTitle(type, slug);
+  const outroSubtitle = buildOutroSubtitle(type, slug);
+
+  await renderCard(title, introSubtitle, introPng, logoPath);
+  await renderCard(outroTitle, outroSubtitle, outroPng, logoPath);
 
   const introMp4 = path.join(TEMP_DIR, "intro.mp4");
   const mainMp4 = path.join(TEMP_DIR, "main.mp4");
@@ -521,7 +602,7 @@ export async function buildRecipeVideo(slug: string) {
   const final = path.join(VIDEO_DIR, `${slug}.mp4`);
 
   await still(introPng, introMp4, INTRO_DURATION);
-  await mainClip(image, titleFromSlug(slug), introSubtitle, mainMp4, logoPath);
+  await mainClip(image, title, introSubtitle, mainMp4, logoPath);
   await still(outroPng, outroMp4, OUTRO_DURATION);
   await concat(introMp4, mainMp4, outroMp4, final, musicFile);
 

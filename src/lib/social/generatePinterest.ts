@@ -173,48 +173,96 @@ function titleLines(text: string) {
   return [lines[0], lines[1], lines.slice(2).join(" ")];
 }
 
-function buildSubtitle(type: ContentType) {
-  return type === "recipe" ? "Vegan Indian Recipe" : "Beginner Guide";
+function pickFromSeed(slug: string, options: string[]) {
+  const sum = slug.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return options[sum % options.length];
+}
+
+function buildSubtitle(type: ContentType, slug: string) {
+  if (type === "recipe") {
+    return pickFromSeed(slug, [
+      "Rich, cosy and full of flavour",
+      "Easy vegan comfort food",
+      "A hearty homemade dinner idea",
+      "Simple ingredients, big flavour",
+      "Warm, satisfying and comforting",
+      "A flavour-packed vegan favourite",
+      "Cosy food worth saving",
+      "Homemade comfort, made simple",
+    ]);
+  }
+
+  return pickFromSeed(slug, [
+    "A simple beginner-friendly guide",
+    "Cook with more confidence",
+    "Make vegan Indian cooking easier",
+    "Learn the essentials clearly",
+    "Practical tips for better flavour",
+    "A clearer way to understand it",
+    "Simple guidance you can use",
+    "Easy help for home cooks",
+  ]);
 }
 
 function buildBadge(type: ContentType) {
   return type === "recipe" ? "RECIPE" : "GUIDE";
 }
 
-function buildHookLine(title: string, type: ContentType) {
+function buildHookLine(title: string, type: ContentType, slug: string) {
   const lower = title.toLowerCase();
 
   if (type === "guide") {
-    if (lower.includes("beginner")) return "Beginner Friendly Guide";
-    if (lower.includes("spice")) return "Essential Spice Guide";
-    return "Indian Cooking Guide";
+    if (lower.includes("beginner")) return "Start Here";
+    if (lower.includes("spice")) return "Better Flavour Starts Here";
+    if (lower.includes("dairy")) return "Simple Everyday Swaps";
+    return pickFromSeed(slug, [
+      "Cook With Confidence",
+      "Learn It Simply",
+      "Make Cooking Easier",
+      "Understand The Essentials",
+      "Practical Kitchen Help",
+    ]);
   }
 
   if (lower.includes("30 minute") || lower.includes("30-minute")) {
-    return "30 Minute Recipe";
+    return "Quick Weeknight Favourite";
   }
 
   if (lower.includes("easy")) {
-    return "Easy Weeknight Recipe";
+    return "Easy Comfort Food";
   }
 
   if (lower.includes("restaurant") || lower.includes("hotel style")) {
-    return "Restaurant Style";
+    return "Restaurant Style At Home";
   }
 
   if (lower.includes("creamy")) {
-    return "Creamy Vegan Curry";
+    return "Creamy Vegan Favourite";
   }
 
   if (lower.includes("spicy")) {
-    return "Bold Flavour Recipe";
+    return "Bold, Warming Flavour";
   }
 
   if (lower.includes("naan")) {
     return "Homemade Favourite";
   }
 
-  return "Vegan Indian Cooking";
+  if (lower.includes("pakora")) {
+    return "Crisp, Golden And Moreish";
+  }
+
+  if (lower.includes("curry")) {
+    return "A Cosy Curry Night Idea";
+  }
+
+  return pickFromSeed(slug, [
+    "Comfort Food Made Simple",
+    "Big Flavour, Easy To Love",
+    "Cosy Vegan Indian Cooking",
+    "Save This Dinner Idea",
+    "Warm, Hearty And Satisfying",
+  ]);
 }
 
 async function textOverlay(
@@ -317,7 +365,7 @@ async function textOverlay(
           props: {
             style: {
               position: "absolute",
-              bottom: 116,
+              bottom: 108,
               left: 60,
               width: 420,
               color: BRAND.soft,
@@ -369,7 +417,6 @@ async function createPost(slug: string, title: string, type: ContentType) {
   ensureDir(OUTPUT);
 
   const img = await resolveSourceImage(slug, type);
-
   const bg = await backgroundBuffer(WIDTH, HEIGHT, null, BRAND.bg);
 
   let contentImage: Buffer | null = null;
@@ -427,9 +474,9 @@ async function createPost(slug: string, title: string, type: ContentType) {
   const imageFrame = await imageFrameOverlay();
   const text = await textOverlay(
     title,
-    buildSubtitle(type),
+    buildSubtitle(type, slug),
     buildBadge(type),
-    buildHookLine(title, type)
+    buildHookLine(title, type, slug)
   );
   const logo = await logoBuffer(220);
 

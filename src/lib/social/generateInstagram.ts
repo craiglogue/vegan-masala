@@ -139,6 +139,11 @@ function loadFontOrThrow(fontPath: string | null) {
   return opentype.loadSync(fontPath);
 }
 
+function pickFromSeed(slug: string, options: string[]) {
+  const sum = slug.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return options[sum % options.length];
+}
+
 function makeTextPathSvg(
   text: string,
   font: opentype.Font,
@@ -265,8 +270,87 @@ function buildBadge(type: ContentType) {
   return type === "recipe" ? "RECIPE" : "GUIDE";
 }
 
-function buildSubtitle(type: ContentType) {
-  return type === "recipe" ? "Vegan Indian Recipe" : "Indian Cooking Guide";
+function buildSubtitle(type: ContentType, slug: string) {
+  if (type === "recipe") {
+    return pickFromSeed(slug, [
+      "Rich, cosy and full of flavour",
+      "Easy vegan comfort food",
+      "A hearty homemade dinner idea",
+      "Simple ingredients, big flavour",
+      "Warm, satisfying and comforting",
+      "A flavour-packed vegan favourite",
+      "Cosy food worth saving",
+      "Homemade comfort, made simple",
+    ]);
+  }
+
+  return pickFromSeed(slug, [
+    "A simple beginner-friendly guide",
+    "Cook with more confidence",
+    "Make vegan Indian cooking easier",
+    "Learn the essentials clearly",
+    "Practical tips for better flavour",
+    "A clearer way to understand it",
+    "Simple guidance you can use",
+    "Easy help for home cooks",
+  ]);
+}
+
+function buildHookLine(title: string, type: ContentType, slug: string) {
+  const lower = title.toLowerCase();
+
+  if (type === "guide") {
+    if (lower.includes("beginner")) return "Start Here";
+    if (lower.includes("spice")) return "Better Flavour Starts Here";
+    if (lower.includes("dairy")) return "Simple Everyday Swaps";
+    return pickFromSeed(slug, [
+      "Cook With Confidence",
+      "Learn It Simply",
+      "Make Cooking Easier",
+      "Understand The Essentials",
+      "Practical Kitchen Help",
+    ]);
+  }
+
+  if (lower.includes("30 minute") || lower.includes("30-minute")) {
+    return "Quick Weeknight Favourite";
+  }
+
+  if (lower.includes("easy")) {
+    return "Easy Comfort Food";
+  }
+
+  if (lower.includes("restaurant") || lower.includes("hotel style")) {
+    return "Restaurant Style At Home";
+  }
+
+  if (lower.includes("creamy")) {
+    return "Creamy Vegan Favourite";
+  }
+
+  if (lower.includes("spicy")) {
+    return "Bold, Warming Flavour";
+  }
+
+  if (lower.includes("naan")) {
+    return "Homemade Favourite";
+  }
+
+  if (lower.includes("pakora")) {
+    return "Crisp, Golden And Moreish";
+  }
+
+  if (lower.includes("curry")) {
+    return "A Cosy Curry Night Idea";
+  }
+
+  return pickFromSeed(slug, [
+    "Comfort Food Made Simple",
+    "Big Flavour, Easy To Love",
+    "Cosy Vegan Indian Cooking",
+    "Save This Dinner Idea",
+    "Warm, Hearty And Satisfying",
+  ]);
 }
 
 async function backgroundBufferFromSource(source: string | Buffer | null) {
@@ -313,9 +397,9 @@ async function bottomGradient() {
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bg" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0%" stop-color="black" stop-opacity="0.62"/>
-            <stop offset="18%" stop-color="black" stop-opacity="0.34"/>
-            <stop offset="38%" stop-color="black" stop-opacity="0.10"/>
+            <stop offset="0%" stop-color="black" stop-opacity="0.68"/>
+            <stop offset="18%" stop-color="black" stop-opacity="0.38"/>
+            <stop offset="38%" stop-color="black" stop-opacity="0.12"/>
             <stop offset="100%" stop-color="black" stop-opacity="0"/>
           </linearGradient>
         </defs>
@@ -394,14 +478,14 @@ async function textOverlay(
   title: string,
   subtitle: string,
   badge: string,
+  hook: string,
   font: opentype.Font
 ) {
   const lines = wrapTitle(title).slice(0, 3);
 
   const TEXT_LEFT = 88;
-  const TEXT_RIGHT_SAFE = 910;
-  const TITLE_START = 305;
-  const LINE_HEIGHT = 68;
+  const TITLE_START = 286;
+  const LINE_HEIGHT = 66;
 
   let titleFontSize = 72;
 
@@ -453,13 +537,26 @@ async function textOverlay(
     )
     .join("");
 
+  const hookPath = makeShadowedTextPathSvg(
+    hook,
+    font,
+    36,
+    BRAND.gold,
+    TEXT_LEFT,
+    TITLE_START + lines.length * LINE_HEIGHT + 42,
+    0.4,
+    0.2,
+    2,
+    "left"
+  );
+
   const subtitlePath = makeShadowedTextPathSvg(
     subtitle,
     font,
-    32,
+    30,
     "rgba(255,255,255,0.92)",
     TEXT_LEFT,
-    TITLE_START + lines.length * LINE_HEIGHT + 20,
+    TITLE_START + lines.length * LINE_HEIGHT + 92,
     0.35,
     0.18,
     2,
@@ -485,6 +582,7 @@ async function textOverlay(
       ${badgeRect}
       ${badgePath}
       ${titlePaths}
+      ${hookPath}
       ${subtitlePath}
       ${sitePath}
     </svg>
@@ -519,15 +617,16 @@ async function createPost(slug: string, title: string, type: ContentType) {
   const logo = await resolveLogo();
 
   const bg = await backgroundBufferFromSource(sourceImage);
-    const gradTop = await topGradient();
+  const gradTop = await topGradient();
   const gradBottom = await bottomGradient();
   const vignette = await vignetteOverlay();
   const cornerMask = await cornerSoftMask();
   const frame = await frameOverlay();
   const text = await textOverlay(
     title,
-    buildSubtitle(type),
+    buildSubtitle(type, slug),
     buildBadge(type),
+    buildHookLine(title, type, slug),
     font
   );
   const logoPng = await logoOverlay(logo);
@@ -542,13 +641,14 @@ async function createPost(slug: string, title: string, type: ContentType) {
     { input: frame, left: 0, top: 0 },
   ];
 
-    if (logoPng) {
+  if (logoPng) {
     comps.push({
       input: logoPng,
       top: HEIGHT - 210,
       left: WIDTH - 210,
     });
   }
+
   const finalPngBuffer = await sharp({
     create: {
       width: WIDTH,
