@@ -1,0 +1,51 @@
+[
+  {
+    "pin1": "chana-masala",
+    "insta1": "chana-masala",
+    "pin2": "chapati-recipe",
+    "video": "chana-masala",
+    "insta2": "creamy-tofu-korma-curry"
+  },
+  {
+    "pin1": "aloo-pakora",
+    "insta1": "aloo-pakora",
+    "pin2": "dum-tofu-recipe",
+    "video": "aloo-pakora",
+    "insta2": "chickpea-curry-recipe"
+  },
+  {
+    "pin1": "bombay-aloo",
+    "insta1": "bombay-aloo",
+    "pin2": "aloo-tofu-recipe",
+    "video": "bombay-aloo",
+    "insta2": "dal-makhani-recipe-authentic-punjabi-style"
+  },
+  {
+    "pin1": "aloo-baingan-recipe",
+    "insta1": "aloo-baingan-recipe",
+    "pin2": "dum-aloo-recipe-mughlai-style",
+    "video": "aloo-baingan-recipe",
+    "insta2": "aloo-tofu-recipe"
+  },
+  {
+    "pin1": "aloo-muttar",
+    "insta1": "aloo-muttar",
+    "pin2": "creamy-tofu-korma-curry",
+    "video": "aloo-muttar",
+    "insta2": "dum-tofu-recipe"
+  },
+  {
+    "pin1": "bengali-phulkopir-aloo-dalna",
+    "insta1": "bengali-phulkopir-aloo-dalna",
+    "pin2": "chickpea-curry-recipe",
+    "video": "bengali-phulkopir-aloo-dalna",
+    "insta2": "chapati-recipe"
+  },
+  {
+    "pin1": "aloo-methi-potato-and-fenugreek-leaves-curry",
+    "insta1": "aloo-methi-potato-and-fenugreek-leaves-curry",
+    "pin2": "dal-makhani-recipe-authentic-punjabi-style",
+    "video": "aloo-methi-potato-and-fenugreek-leaves-curry",
+    "insta2": "dum-aloo-recipe-mughlai-style"
+  }
+]

@@ -1,21 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  serverExternalPackages: ["ffmpeg-static", "sharp", "@vercel/blob"],
 
-export default nextConfig;
-
-module.exports = {
-  experimental: {
-    serverComponentsExternalPackages: ["sharp"]
+  outputFileTracingIncludes: {
+    "/api/admin/social/video": ["./node_modules/ffmpeg-static/**"],
+    "/api/admin/social/automation": ["./node_modules/ffmpeg-static/**"],
+    "/api/admin/social/automation/growth": ["./node_modules/ffmpeg-static/**"],
   },
 
   outputFileTracingExcludes: {
     "*": [
       "./public/images/**/*",
       "./public/generated/**/*",
-      "./public/audio/**/*"
-    ]
-  }
+      "./public/audio/**/*",
+    ],
+  },
 };
+
+export default nextConfig;

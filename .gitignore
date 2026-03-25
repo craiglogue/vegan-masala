@@ -52,3 +52,5 @@ generated/
 .env.local
 .next/
 node_modules/
+
+*.zip

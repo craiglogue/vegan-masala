@@ -1,14 +1,11 @@
-import fs from "node:fs";
-import path from "node:path";
-
-import { generateInstagramBySlug } from "@/lib/social/generateInstagram";
-
-const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const GRAPH_BASE = "https://graph.facebook.com/v23.0";
 
 type PublishFacebookInput = {
   slug: string;
   caption: string;
+  assetType: "image" | "video";
+  imageUrl?: string;
+  videoUrl?: string;
 };
 
 function getRequiredEnv(name: string): string {
@@ -17,31 +14,6 @@ function getRequiredEnv(name: string): string {
     throw new Error(`${name} missing`);
   }
   return value;
-}
-
-function getSiteUrl(): string {
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "";
-
-  if (!siteUrl) {
-    throw new Error("NEXT_PUBLIC_SITE_URL missing");
-  }
-
-  return siteUrl.replace(/\/$/, "");
-}
-
-function getFacebookImagePath(slug: string): string {
-  return path.join(ROOT, "public", "generated", "instagram", `${slug}.png`);
-}
-
-function ensureFileExists(filePath: string): void {
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`File not found: ${filePath}`);
-  }
-}
-
-function buildPublicImageUrl(slug: string): string {
-  return `${getSiteUrl()}/generated/instagram/${slug}.png`;
 }
 
 async function metaPostForm(
@@ -64,34 +36,67 @@ async function metaPostForm(
     body: form.toString(),
   });
 
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data?.error?.message || "Meta POST failed");
+    const metaMessage =
+      data?.error?.message ||
+      data?.message ||
+      `Meta POST failed for ${endpoint}`;
+
+    throw new Error(metaMessage);
   }
 
   return data;
 }
 
 export async function publishFacebook(input: PublishFacebookInput) {
-  if (!input.slug.trim()) {
+  const slug = input.slug.trim();
+
+  if (!slug) {
     throw new Error("Facebook publish slug missing");
   }
 
   const pageId = getRequiredEnv("META_PAGE_ID");
 
-  await generateInstagramBySlug(input.slug);
+  if (input.assetType === "video") {
+    if (!input.videoUrl) {
+      throw new Error("Facebook video URL missing");
+    }
 
-  const imagePath = getFacebookImagePath(input.slug);
-  ensureFileExists(imagePath);
+    const published = await metaPostForm(`/${pageId}/videos`, {
+      file_url: input.videoUrl,
+      description: input.caption || "",
+      published: "true",
+    });
 
-  const imageUrl = buildPublicImageUrl(input.slug);
+    return {
+      ok: true,
+      assetType: "video" as const,
+      pageId,
+      videoUrl: input.videoUrl,
+      videoId: published?.id || null,
+      published,
+    };
+  }
+
+  if (!input.imageUrl) {
+    throw new Error("Facebook image URL missing");
+  }
 
   const published = await metaPostForm(`/${pageId}/photos`, {
-    url: imageUrl,
+    url: input.imageUrl,
     caption: input.caption || "",
     published: "true",
   });
 
-  return published;
+  return {
+    ok: true,
+    assetType: "image" as const,
+    pageId,
+    imageUrl: input.imageUrl,
+    photoId: published?.id || null,
+    postId: published?.post_id || null,
+    published,
+  };
 }

@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { buildRecipeVideo } from "@/lib/social/video/buildRecipeVideo";
 
+type VideoBuildResult = {
+  success?: boolean;
+  video?: string;
+  logs?: string[];
+};
+
 export async function POST(req: Request) {
   const logs: string[] = [];
 
@@ -15,6 +21,7 @@ export async function POST(req: Request) {
         : "";
 
     logs.push("Video route called");
+    logs.push("ROUTE MARKER social-video-fix");
 
     if (!slug) {
       logs.push("No slug received");
@@ -32,13 +39,22 @@ export async function POST(req: Request) {
 
     logs.push(`Slug: ${slug}`);
 
-    const result = await buildRecipeVideo(slug);
+    const baseUrl =
+      process.env.WEBSITE_URL
+        ? process.env.WEBSITE_URL
+        : process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : req.headers.get("origin") || "";
+
+    logs.push(`Base URL: ${baseUrl || "none"}`);
+
+    const result = (await buildRecipeVideo(slug)) as VideoBuildResult;
 
     return NextResponse.json({
       ok: true,
       slug,
       video: result?.video ?? "",
-      logs: [...logs, ...((result as any)?.logs ?? [])],
+      logs: [...logs, ...(result?.logs ?? [])],
       rawResult: result,
     });
   } catch (err: any) {

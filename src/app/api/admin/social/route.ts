@@ -12,7 +12,7 @@ import {
   generateLatestPinterest,
 } from "@/lib/social/generatePinterest";
 
-type Platform = "instagram" | "pinterest" | "all";
+type Platform = "instagram" | "pinterest" | "facebook" | "all";
 type Mode = "all" | "single" | "latest";
 
 export async function POST(req: Request) {
@@ -35,18 +35,148 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Slug required" }, { status: 400 });
     }
 
-    let count = 0;
-
     if (platform === "instagram") {
-      if (mode === "all") count = (await generateAllInstagram()).count ?? 0;
-      if (mode === "single" && slug) count = (await generateInstagramBySlug(slug)).count ?? 0;
-      if (mode === "latest") count = (await generateLatestInstagram()).count ?? 0;
+      if (mode === "all") {
+        const result = await generateAllInstagram();
+        const generated = (result as any)?.generated ?? [];
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          count: result.count ?? 0,
+          generated,
+        });
+      }
+
+      if (mode === "single" && slug) {
+        const result = await generateInstagramBySlug(slug);
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          slug,
+          count: result.count ?? 0,
+          image: (result as any).image ?? null,
+          storage: (result as any).storage ?? null,
+          path: (result as any).path ?? null,
+        });
+      }
+
+      if (mode === "latest") {
+        const result = await generateLatestInstagram();
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          slug: (result as any).slug ?? null,
+          count: result.count ?? 0,
+          image: (result as any).image ?? null,
+          storage: (result as any).storage ?? null,
+          path: (result as any).path ?? null,
+        });
+      }
+    }
+
+    if (platform === "facebook") {
+      if (mode === "all") {
+        const result = await generateAllInstagram();
+        const generated = (result as any)?.generated ?? [];
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          count: result.count ?? 0,
+          generated,
+        });
+      }
+
+      if (mode === "single" && slug) {
+        const result = await generateInstagramBySlug(slug);
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          slug,
+          count: result.count ?? 0,
+          image: (result as any).image ?? null,
+          storage: (result as any).storage ?? null,
+          path: (result as any).path ?? null,
+        });
+      }
+
+      if (mode === "latest") {
+        const result = await generateLatestInstagram();
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          slug: (result as any).slug ?? null,
+          count: result.count ?? 0,
+          image: (result as any).image ?? null,
+          storage: (result as any).storage ?? null,
+          path: (result as any).path ?? null,
+        });
+      }
     }
 
     if (platform === "pinterest") {
-      if (mode === "all") count = (await generateAllPinterest()).count ?? 0;
-      if (mode === "single" && slug) count = (await generatePinterestBySlug(slug)).count ?? 0;
-      if (mode === "latest") count = (await generateLatestPinterest()).count ?? 0;
+      if (mode === "all") {
+        const result = await generateAllPinterest();
+        const generated = (result as any)?.generated ?? [];
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          count: result.count ?? 0,
+          generated,
+        });
+      }
+
+      if (mode === "single" && slug) {
+        const result = await generatePinterestBySlug(slug);
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          slug,
+          count: result.count ?? 0,
+          image: (result as any).image ?? null,
+          storage: (result as any).storage ?? null,
+          path: (result as any).path ?? null,
+        });
+      }
+
+      if (mode === "latest") {
+        const result = await generateLatestPinterest();
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          slug: (result as any).slug ?? null,
+          count: result.count ?? 0,
+          image: (result as any).image ?? null,
+          storage: (result as any).storage ?? null,
+          path: (result as any).path ?? null,
+        });
+      }
     }
 
     if (platform === "all") {
@@ -55,7 +185,26 @@ export async function POST(req: Request) {
           generateAllInstagram(),
           generateAllPinterest(),
         ]);
-        count = (ig.count ?? 0) + (pin.count ?? 0);
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          count: (ig.count ?? 0) + (pin.count ?? 0),
+          instagram: {
+            count: ig.count ?? 0,
+            generated: (ig as any).generated ?? [],
+          },
+          pinterest: {
+            count: pin.count ?? 0,
+            generated: (pin as any).generated ?? [],
+          },
+          facebook: {
+            count: ig.count ?? 0,
+            generated: (ig as any).generated ?? [],
+          },
+        });
       }
 
       if (mode === "single" && slug) {
@@ -63,7 +212,33 @@ export async function POST(req: Request) {
           generateInstagramBySlug(slug),
           generatePinterestBySlug(slug),
         ]);
-        count = (ig.count ?? 0) + (pin.count ?? 0);
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          slug,
+          count: (ig.count ?? 0) + (pin.count ?? 0) + (ig.count ?? 0),
+          instagram: {
+            count: ig.count ?? 0,
+            image: (ig as any).image ?? null,
+            storage: (ig as any).storage ?? null,
+            path: (ig as any).path ?? null,
+          },
+          pinterest: {
+            count: pin.count ?? 0,
+            image: (pin as any).image ?? null,
+            storage: (pin as any).storage ?? null,
+            path: (pin as any).path ?? null,
+          },
+          facebook: {
+            count: ig.count ?? 0,
+            image: (ig as any).image ?? null,
+            storage: (ig as any).storage ?? null,
+            path: (ig as any).path ?? null,
+          },
+        });
       }
 
       if (mode === "latest") {
@@ -71,18 +246,44 @@ export async function POST(req: Request) {
           generateLatestInstagram(),
           generateLatestPinterest(),
         ]);
-        count = (ig.count ?? 0) + (pin.count ?? 0);
+
+        return NextResponse.json({
+          success: true,
+          message: "Generation complete",
+          platform,
+          mode,
+          count: (ig.count ?? 0) + (pin.count ?? 0) + (ig.count ?? 0),
+          instagram: {
+            slug: (ig as any).slug ?? null,
+            count: ig.count ?? 0,
+            image: (ig as any).image ?? null,
+            storage: (ig as any).storage ?? null,
+            path: (ig as any).path ?? null,
+          },
+          pinterest: {
+            slug: (pin as any).slug ?? null,
+            count: pin.count ?? 0,
+            image: (pin as any).image ?? null,
+            storage: (pin as any).storage ?? null,
+            path: (pin as any).path ?? null,
+          },
+          facebook: {
+            slug: (ig as any).slug ?? null,
+            count: ig.count ?? 0,
+            image: (ig as any).image ?? null,
+            storage: (ig as any).storage ?? null,
+            path: (ig as any).path ?? null,
+          },
+        });
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Generation complete",
-      platform,
-      mode,
-      slug,
-      count,
-    });
+    return NextResponse.json(
+      {
+        error: "Invalid platform or mode",
+      },
+      { status: 400 }
+    );
   } catch (err: any) {
     return NextResponse.json(
       {

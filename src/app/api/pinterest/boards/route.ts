@@ -10,6 +10,7 @@ await getPinterestAccessToken();
 
 if(!token){
 
+<<<<<<< HEAD
 return NextResponse.json({
 
 ok:false,
@@ -82,4 +83,43 @@ items:[]
 
 }
 
+=======
+    if (!res.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            data?.message ||
+            data?.error ||
+            "Failed to fetch Pinterest boards",
+          details: data,
+          items: [],
+        },
+        { status: 500 }
+      );
+    }
+
+    const items = Array.isArray(data?.items)
+      ? data.items.map((board: any) => ({
+          id: board.id,
+          name: board.name,
+        }))
+      : [];
+
+    return NextResponse.json({
+      ok: true,
+      items,
+      raw: data,
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: err?.message || "Boards request failed",
+        items: [],
+      },
+      { status: 500 }
+    );
+  }
+>>>>>>> social-video-fix-from-clean-baseline
 }

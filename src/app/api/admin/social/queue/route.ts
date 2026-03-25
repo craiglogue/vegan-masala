@@ -2,56 +2,59 @@ import { NextResponse } from "next/server";
 
 import {
   addQueueItem,
-  readQueue,
-  writeQueue,
+  allQueueItems,
+  deleteQueueItem,
+  type QueueAssetType,
+  type QueueContentType,
   type QueuePlatform,
 } from "@/lib/social/core/queue";
 
-import {
-  titleFromSlug,
-  detectContentTypeBySlug,
-} from "@/lib/social/core/content";
+import { buildInstagramCaption, buildPinterestCaption, buildFacebookCaption } from "@/lib/social/core/captions";
+import { detectContentTypeBySlug, titleFromSlug } from "@/lib/social/core/content";
+import { generateInstagramBySlug } from "@/lib/social/generateInstagram";
+import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
+import { buildRecipeVideo } from "@/lib/social/video/buildRecipeVideo";
 
-import {
-  buildInstagramCaption,
-  buildPinterestCaption,
-} from "@/lib/social/core/captions";
+function getSiteBase() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    "https://www.vegan-masala.com"
+  ).replace(/\/+$/, "");
+}
 
-import { contentUrl } from "@/lib/social/core/urls";
+function buildContentUrl(slug: string, type: QueueContentType) {
+  const base = getSiteBase();
+  return type === "guide" ? `${base}/guides/${slug}` : `${base}/recipes/${slug}`;
+}
 
-function buildCaptionForPlatform(
+function buildCaption(
   platform: QueuePlatform,
   slug: string,
-  type: "recipe" | "guide"
+  type: QueueContentType
 ) {
   if (platform === "pinterest") {
     return buildPinterestCaption(slug, type);
   }
 
-  if (
-    platform === "instagram" ||
-    platform === "facebook"
-  ) {
-    return buildInstagramCaption(slug, type);
+  if (platform === "facebook") {
+    return buildFacebookCaption(slug, type);
   }
 
-  throw new Error(`Unsupported platform: ${platform}`);
+  return buildInstagramCaption(slug, type);
 }
 
 export async function GET() {
   try {
     return NextResponse.json({
       ok: true,
-      items: readQueue(),
+      items: allQueueItems(),
     });
   } catch (err: any) {
     return NextResponse.json(
       {
         ok: false,
-        items: [],
-        error:
-          err?.message ||
-          "Failed to read queue",
+        error: err?.message || "Failed to load queue",
       },
       { status: 500 }
     );
@@ -62,172 +65,144 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const slug =
-      typeof body.slug === "string"
-        ? body.slug.trim()
-        : "";
-
-    const platform =
-      body.platform as QueuePlatform | undefined;
-
+    const slug = typeof body.slug === "string" ? body.slug.trim() : "";
+    const platform = body.platform as QueuePlatform | undefined;
+    const assetType = (body.assetType as QueueAssetType | undefined) || "image";
     const scheduledFor =
-      typeof body.scheduledFor === "string"
-        ? body.scheduledFor
-        : "";
-
+      typeof body.scheduledFor === "string" ? body.scheduledFor.trim() : "";
     const board =
-      typeof body.board === "string" &&
-      body.board.trim()
-        ? body.board.trim()
-        : null;
+      typeof body.board === "string" && body.board.trim() ? body.board.trim() : null;
 
     if (!slug) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Slug required",
-        },
+        { ok: false, error: "Slug required" },
         { status: 400 }
       );
     }
 
-    if (
-      platform !== "instagram" &&
-      platform !== "pinterest" &&
-      platform !== "facebook"
-    ) {
+    if (!platform) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Valid platform required",
-        },
+        { ok: false, error: "Platform required" },
         { status: 400 }
       );
     }
 
-    if (
-      !scheduledFor ||
-      Number.isNaN(
-        new Date(scheduledFor).getTime()
-      )
-    ) {
+    if (!scheduledFor) {
       return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Valid scheduled time required",
-        },
+        { ok: false, error: "Schedule time required" },
         { status: 400 }
       );
     }
 
-    if (
-      platform === "pinterest" &&
-      !board
-    ) {
+    if (platform === "pinterest" && !board) {
       return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Pinterest board required",
-        },
+        { ok: false, error: "Pinterest board required" },
         { status: 400 }
       );
     }
 
-    const type =
-      detectContentTypeBySlug(slug);
-
-    if (!type) {
+    if (platform === "pinterest" && assetType === "video") {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Slug not found",
-        },
+        { ok: false, error: "Pinterest queue only supports still images" },
         { status: 400 }
       );
     }
 
-    const title =
-      titleFromSlug(slug);
+    const contentType = detectContentTypeBySlug(slug);
 
-    const caption =
-      buildCaptionForPlatform(
-        platform,
-        slug,
-        type
+    if (!contentType) {
+      return NextResponse.json(
+        { ok: false, error: "Slug not found" },
+        { status: 404 }
       );
+    }
 
-    const url =
-      contentUrl(
-        slug,
-        type
-      );
+    const title = titleFromSlug(slug);
+    const url = buildContentUrl(slug, contentType);
 
-    const item =
-      addQueueItem({
+    let imageUrl: string | undefined;
+    let videoUrl: string | undefined;
 
-        slug,
+    if (platform === "pinterest") {
+      const pin = await generatePinterestBySlug(slug);
+      imageUrl = pin.image;
+    } else if (assetType === "video") {
+      const video = await buildRecipeVideo(slug);
+      videoUrl = video.video;
 
-        title,
+      const igImage = await generateInstagramBySlug(slug);
+      imageUrl = igImage.image;
+    } else {
+      const igImage = await generateInstagramBySlug(slug);
+      imageUrl = igImage.image;
+    }
 
-        platform,
-
-        caption,
-
-        url,
-
-        board,
-
-        scheduledFor:
-          new Date(
-            scheduledFor
-          ).toISOString(),
-
-      });
+    const item = addQueueItem({
+      slug,
+      title,
+      platform,
+      caption: buildCaption(platform, slug, contentType),
+      url,
+      board,
+      scheduledFor: new Date(scheduledFor).toISOString(),
+      contentType,
+      assetType,
+      imageUrl,
+      videoUrl,
+    });
 
     return NextResponse.json({
       ok: true,
       item,
       message: "Post queued",
     });
-
   } catch (err: any) {
-
     return NextResponse.json(
       {
         ok: false,
-        error:
-          err?.message ||
-          "Failed to queue post",
+        error: err?.message || "Failed to queue post",
       },
       { status: 500 }
     );
-
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
   try {
+    let id = "";
 
-    writeQueue([]);
+    try {
+      const body = await req.json();
+      id = typeof body.id === "string" ? body.id.trim() : "";
+    } catch {
+      id = "";
+    }
+
+    if (id) {
+      deleteQueueItem(id);
+
+      return NextResponse.json({
+        ok: true,
+        message: "Queue item removed",
+      });
+    }
+
+    const items = allQueueItems();
+    for (const item of items) {
+      deleteQueueItem(item.id);
+    }
 
     return NextResponse.json({
       ok: true,
       message: "Queue cleared",
     });
-
   } catch (err: any) {
-
     return NextResponse.json(
       {
         ok: false,
-        error:
-          err?.message ||
-          "Failed to clear queue",
+        error: err?.message || "Failed to clear queue",
       },
       { status: 500 }
     );
-
   }
 }

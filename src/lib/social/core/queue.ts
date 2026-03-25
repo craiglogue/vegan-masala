@@ -1,11 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
-const FILE = path.join(ROOT, "generated", "queue.json");
-
 export type QueuePlatform = "instagram" | "pinterest" | "facebook";
 export type QueueStatus = "queued" | "posted" | "failed";
+export type QueueAssetType = "image" | "video";
+export type QueueContentType = "recipe" | "guide";
 
 export type QueueItem = {
   id: string;
@@ -14,70 +13,90 @@ export type QueueItem = {
   platform: QueuePlatform;
   caption: string;
   url: string;
-  board?: string;
+  board?: string | null;
   scheduledFor: string;
   status: QueueStatus;
   createdAt: string;
   postedAt?: string;
   error?: string;
+  contentType?: QueueContentType;
+  assetType?: QueueAssetType;
+  imageUrl?: string;
+  videoUrl?: string;
 };
 
-function ensureFile() {
-  const dir = path.dirname(FILE);
-  fs.mkdirSync(dir, { recursive: true });
+const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
+const QUEUE_DIR = path.join(ROOT, "generated");
+const QUEUE_FILE = path.join(QUEUE_DIR, "social-queue.json");
 
-  if (!fs.existsSync(FILE)) {
-    fs.writeFileSync(FILE, JSON.stringify([], null, 2), "utf8");
-  }
+function ensureDir() {
+  fs.mkdirSync(QUEUE_DIR, { recursive: true });
 }
 
-export function readQueue(): QueueItem[] {
-  ensureFile();
-
+function readQueueFile(): QueueItem[] {
   try {
-    return JSON.parse(fs.readFileSync(FILE, "utf8")) as QueueItem[];
+    ensureDir();
+
+    if (!fs.existsSync(QUEUE_FILE)) {
+      return [];
+    }
+
+    const raw = fs.readFileSync(QUEUE_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
-export function writeQueue(items: QueueItem[]) {
-  ensureFile();
-  fs.writeFileSync(FILE, JSON.stringify(items, null, 2), "utf8");
+function writeQueueFile(items: QueueItem[]) {
+  ensureDir();
+  fs.writeFileSync(QUEUE_FILE, JSON.stringify(items, null, 2), "utf8");
 }
 
-export function addQueueItem(input: {
-  slug: string;
-  title: string;
-  platform: QueuePlatform;
-  caption: string;
-  url: string;
-  board?: string | null;
-  scheduledFor: string;
-}): QueueItem {
-  const items = readQueue();
+export function allQueueItems() {
+  return readQueueFile().sort((a, b) => {
+    const aTime = new Date(a.scheduledFor).getTime();
+    const bTime = new Date(b.scheduledFor).getTime();
+    return aTime - bTime;
+  });
+}
 
-  const item: QueueItem = {
+export function addQueueItem(
+  item: Omit<QueueItem, "id" | "createdAt" | "status">
+): QueueItem {
+  const items = readQueueFile();
+
+  const next: QueueItem = {
+    ...item,
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    slug: input.slug,
-    title: input.title,
-    platform: input.platform,
-    caption: input.caption,
-    url: input.url,
-    board: input.board || undefined,
-    scheduledFor: input.scheduledFor,
-    status: "queued",
     createdAt: new Date().toISOString(),
+    status: "queued",
   };
 
-  items.unshift(item);
-  writeQueue(items);
+  items.push(next);
+  writeQueueFile(items);
 
-  return item;
+  return next;
+}
+
+export function dueQueueItems() {
+  const now = Date.now();
+
+  return readQueueFile().filter((item) => {
+    if (item.status !== "queued") return false;
+    return new Date(item.scheduledFor).getTime() <= now;
+  });
+}
+
+export function findQueueItemById(id: string) {
+  return readQueueFile().find((item) => item.id === id) || null;
 }
 
 export function markQueueItemPosted(id: string) {
-  const items = readQueue().map((item) =>
+  const items = readQueueFile();
+  const next = items.map((item) =>
     item.id === id
       ? {
           ...item,
@@ -88,11 +107,12 @@ export function markQueueItemPosted(id: string) {
       : item
   );
 
-  writeQueue(items);
+  writeQueueFile(next);
 }
 
 export function markQueueItemFailed(id: string, error: string) {
-  const items = readQueue().map((item) =>
+  const items = readQueueFile();
+  const next = items.map((item) =>
     item.id === id
       ? {
           ...item,
@@ -102,13 +122,42 @@ export function markQueueItemFailed(id: string, error: string) {
       : item
   );
 
-  writeQueue(items);
+  writeQueueFile(next);
 }
 
-export function dueQueueItems(now = new Date()): QueueItem[] {
-  return readQueue().filter(
-    (item) =>
-      item.status === "queued" &&
-      new Date(item.scheduledFor).getTime() <= now.getTime()
+export function retryQueueItem(id: string) {
+  const items = readQueueFile();
+  const next = items.map((item) =>
+    item.id === id
+      ? {
+          ...item,
+          status: "queued" as const,
+          error: undefined,
+        }
+      : item
   );
+
+  writeQueueFile(next);
+}
+
+export function rescheduleQueueItemNow(id: string) {
+  const items = readQueueFile();
+  const next = items.map((item) =>
+    item.id === id
+      ? {
+          ...item,
+          status: "queued" as const,
+          scheduledFor: new Date().toISOString(),
+          error: undefined,
+        }
+      : item
+  );
+
+  writeQueueFile(next);
+}
+
+export function deleteQueueItem(id: string) {
+  const items = readQueueFile();
+  const next = items.filter((item) => item.id !== id);
+  writeQueueFile(next);
 }

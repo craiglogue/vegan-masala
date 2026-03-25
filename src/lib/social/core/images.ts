@@ -48,6 +48,7 @@ export function findContentImage(
     if (fs.existsSync(candidate)) return candidate;
   }
 
+<<<<<<< HEAD
   const lowerSlug = slug.toLowerCase();
 
   const fallback = walk(PUBLIC_DIR).find((file) => {
@@ -59,6 +60,12 @@ export function findContentImage(
   });
 
   return fallback ?? null;
+=======
+  const generated = path.join(ROOT, "public", "generated", "instagram", `${slug}.png`);
+  if (fs.existsSync(generated)) return generated;
+
+  return null;
+>>>>>>> social-video-fix-from-clean-baseline
 }
 
 export async function backgroundBuffer(

@@ -1,50 +1,22 @@
+import path from "node:path";
 import { NextResponse } from "next/server";
 
 import {
-
-dueQueueItems,
-markQueueItemFailed,
-markQueueItemPosted
-
+  dueQueueItems,
+  markQueueItemFailed,
+  markQueueItemPosted,
 } from "@/lib/social/core/queue";
 
-import {
+import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
+import { postPinterestPin } from "@/lib/social/core/pinterestPost";
 
-generatePinterestBySlug
+import { publishInstagram } from "@/lib/social/publishers/publishInstagram";
+import { publishFacebook } from "@/lib/social/publishers/publishFacebook";
 
-} from "@/lib/social/generatePinterest";
+const ROOT = process.cwd();
 
-<<<<<<< HEAD
-import {
-
-postPinterestPin
-
-} from "@/lib/social/core/pinterestPost";
-
-import {
-=======
-export async function POST(req: Request) {
+export async function POST() {
   try {
-    const requiredSecret = process.env.SOCIAL_SCHEDULER_SECRET;
-
-    const providedSecret = req.headers.get("x-scheduler-secret");
-    const cronHeader = req.headers.get("x-vercel-cron");
-
-    const isManualAuthorized =
-      Boolean(requiredSecret) && providedSecret === requiredSecret;
-
-    const isVercelCron = Boolean(cronHeader);
-
-    if (requiredSecret && !isManualAuthorized && !isVercelCron) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Unauthorized scheduler request",
-        },
-        { status: 401 }
-      );
-    }
-
     const due = await dueQueueItems();
     let count = 0;
 
@@ -60,174 +32,26 @@ export async function POST(req: Request) {
     for (const item of due) {
       try {
         if (item.platform === "pinterest") {
-          if ((item.assetType || "image") === "video") {
-            throw new Error("Pinterest only supports image posts in this workflow");
-          }
-
           if (!item.board) {
             throw new Error("Pinterest board missing");
           }
->>>>>>> social-video-fix-from-clean-baseline
 
-publishInstagram
+          await generatePinterestBySlug(item.slug);
 
-} from "@/lib/social/publishers/publishInstagram";
+          const imagePath = path.join(
+            ROOT,
+            "generated",
+            "pinterest",
+            `${item.slug}.png`
+          );
 
-<<<<<<< HEAD
-import {
-
-publishFacebook
-
-} from "@/lib/social/publishers/publishFacebook";
-
-export async function POST(){
-
-try{
-
-const due=
-dueQueueItems();
-
-let count=0;
-
-for(const item of due){
-
-try{
-
-if(item.platform==="pinterest"){
-
-if(!item.board){
-
-throw new Error(
-"Board missing"
-);
-
-}
-
-const generated=
-await generatePinterestBySlug(
-item.slug
-);
-
-await postPinterestPin({
-
-title:
-item.title || item.slug,
-
-description:
-item.caption || "",
-
-link:
-item.url || "",
-
-imageUrl:
-generated.imageUrl,
-
-boardId:
-item.board
-
-});
-
-markQueueItemPosted(
-item.id
-);
-
-count++;
-
-continue;
-
-}
-
-if(item.platform==="instagram"){
-
-await publishInstagram({
-
-slug:item.slug,
-
-caption:
-item.caption||""
-
-});
-
-markQueueItemPosted(
-item.id);
-
-count++;
-
-continue;
-
-}
-
-if(item.platform==="facebook"){
-
-await publishFacebook({
-
-slug:item.slug,
-
-caption:
-item.caption||""
-
-});
-
-markQueueItemPosted(
-item.id);
-
-count++;
-
-continue;
-
-}
-
-markQueueItemFailed(
-
-item.id,
-
-"Unsupported platform"
-
-);
-
-}catch(err:any){
-
-markQueueItemFailed(
-
-item.id,
-
-err?.message||
-"Queue failed"
-
-);
-
-}
-
-}
-
-return NextResponse.json({
-
-ok:true,
-count
-
-});
-
-}catch(err:any){
-
-return NextResponse.json({
-
-ok:false,
-error:err?.message
-
-},{status:500});
-
-}
-
-=======
-          const result = await postPinterestPin({
+          await postPinterestPin({
             title: item.title || item.slug,
             description: item.caption || "",
             link: item.url || "",
             imagePath,
             boardId: item.board,
           });
-
-          console.log("QUEUE PINTEREST RESULT:", result);
 
           await markQueueItemPosted(item.id);
           count++;
@@ -242,15 +66,13 @@ error:err?.message
         }
 
         if (item.platform === "instagram") {
-          const result = await publishInstagram({
+          await publishInstagram({
             slug: item.slug,
             caption: item.caption || "",
             assetType: item.assetType || "image",
             imageUrl: item.imageUrl,
             videoUrl: item.videoUrl,
           });
-
-          console.log("QUEUE INSTAGRAM RESULT:", result);
 
           await markQueueItemPosted(item.id);
           count++;
@@ -265,15 +87,13 @@ error:err?.message
         }
 
         if (item.platform === "facebook") {
-          const result = await publishFacebook({
+          await publishFacebook({
             slug: item.slug,
             caption: item.caption || "",
             assetType: item.assetType || "image",
             imageUrl: item.imageUrl,
             videoUrl: item.videoUrl,
           });
-
-          console.log("QUEUE FACEBOOK RESULT:", result);
 
           await markQueueItemPosted(item.id);
           count++;
@@ -299,14 +119,6 @@ error:err?.message
         });
       } catch (err: any) {
         const message = err?.message || "Queue run failed";
-
-        console.error("QUEUE ITEM FAILED:", {
-          id: item.id,
-          slug: item.slug,
-          platform: item.platform,
-          assetType: item.assetType,
-          error: message,
-        });
 
         await markQueueItemFailed(item.id, message);
         results.push({
@@ -337,5 +149,4 @@ error:err?.message
       { status: 500 }
     );
   }
->>>>>>> social-video-fix-from-clean-baseline
 }
