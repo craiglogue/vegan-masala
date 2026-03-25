@@ -42,8 +42,8 @@ function getBlobToken() {
 
 function getBaseUrl() {
   return (
-    process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
     "https://www.vegan-masala.com"
   ).replace(/\/+$/, "");
@@ -58,6 +58,12 @@ async function run(args: string[]) {
   await execFileAsync(getFfmpeg(), args);
 }
 
+async function fetchBuffer(url: string) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) return null;
+  return Buffer.from(await res.arrayBuffer());
+}
+
 function wrap(text: string) {
   const words = text.split(" ").filter(Boolean);
   const lines: string[] = [];
@@ -65,7 +71,6 @@ function wrap(text: string) {
 
   for (const w of words) {
     const next = current ? `${current} ${w}` : w;
-
     if (next.length < 18) {
       current = next;
     } else {
@@ -78,13 +83,7 @@ function wrap(text: string) {
   return lines.slice(0, 3);
 }
 
-async function fetchBuffer(url: string) {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) return null;
-  return Buffer.from(await res.arrayBuffer());
-}
-
-async function resolveImage(slug: string, logs: string[]) {
+async function resolveImage(slug: string) {
   const token = getBlobToken();
 
   if (!token) {
@@ -96,8 +95,6 @@ async function resolveImage(slug: string, logs: string[]) {
   const candidates = [`instagram/${slug}.jpg`, `instagram/${slug}.png`];
 
   for (const file of candidates) {
-    logs.push(`Blob lookup: ${file}`);
-
     const { blobs } = await list({
       token,
       prefix: file,
@@ -106,8 +103,6 @@ async function resolveImage(slug: string, logs: string[]) {
     const match = blobs.find((b) => b.pathname === file);
 
     if (match?.url) {
-      logs.push(`Blob match: ${match.url}`);
-
       const res = await fetch(match.url, { cache: "no-store" });
       if (!res.ok) continue;
 
@@ -115,7 +110,6 @@ async function resolveImage(slug: string, logs: string[]) {
       const temp = path.join(TEMP_DIR, `${slug}.png`);
 
       await sharp(buffer).png().toFile(temp);
-      logs.push(`Using image: ${temp}`);
       return temp;
     }
   }
@@ -123,27 +117,28 @@ async function resolveImage(slug: string, logs: string[]) {
   throw new Error("No generated image");
 }
 
-async function resolveLogo(logs: string[]) {
+async function resolveLogo() {
   const localCandidates = [
     path.join(process.cwd(), "public", "brand", "logo-flat.png"),
     path.join(process.cwd(), "public", "brand", "logo-primary.png"),
     path.join(process.cwd(), "public", "brand", "logo-mark.png"),
     path.join(process.cwd(), "public", "images", "logo.png"),
+    path.join(process.cwd(), "public", "logo.png"),
   ];
 
-  for (const local of localCandidates) {
-    if (fs.existsSync(local)) {
-      logs.push(`Using local logo: ${local}`);
-      return local;
-    }
+  for (const candidate of localCandidates) {
+    if (fs.existsSync(candidate)) return candidate;
   }
 
   const baseUrl = getBaseUrl();
+  if (!baseUrl) return null;
+
   const remoteCandidates = [
     `${baseUrl}/brand/logo-flat.png`,
     `${baseUrl}/brand/logo-primary.png`,
     `${baseUrl}/brand/logo-mark.png`,
     `${baseUrl}/images/logo.png`,
+    `${baseUrl}/logo.png`,
   ];
 
   for (const url of remoteCandidates) {
@@ -151,12 +146,37 @@ async function resolveLogo(logs: string[]) {
     if (buffer) {
       const out = path.join(TEMP_DIR, "video-logo.png");
       await sharp(buffer).png().toFile(out);
-      logs.push(`Using remote logo: ${out}`);
       return out;
     }
   }
 
-  logs.push("No logo found");
+  return null;
+}
+
+async function resolveMusic() {
+  const localCandidates = [
+    path.join(process.cwd(), "public", "audio", "vegan-masala-bed.mp3"),
+    path.join(process.cwd(), "audio", "vegan-masala-bed.mp3"),
+  ];
+
+  for (const candidate of localCandidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  const baseUrl = getBaseUrl();
+  if (!baseUrl) return null;
+
+  const remoteCandidates = [`${baseUrl}/audio/vegan-masala-bed.mp3`];
+
+  for (const url of remoteCandidates) {
+    const buffer = await fetchBuffer(url);
+    if (buffer) {
+      const out = path.join(TEMP_DIR, "vegan-masala-bed.mp3");
+      fs.writeFileSync(out, buffer);
+      return out;
+    }
+  }
+
   return null;
 }
 
@@ -182,8 +202,9 @@ function textSvg(
   font: opentype.Font,
   size: number,
   color: string,
-  center: number,
-  y: number
+  x: number,
+  y: number,
+  align: "center" | "left" = "center"
 ) {
   let cursor = 0;
   const glyphs = font.stringToGlyphs(text);
@@ -205,13 +226,28 @@ function textSvg(
   }
 
   const width = max - min;
-  const tx = center - (min + width / 2);
+  const tx = align === "center" ? x - (min + width / 2) : x - min;
 
   return `
     <g transform="translate(${tx},0)">
       <path d="${parts.join(" ")}" fill="${color}" />
     </g>
   `;
+}
+
+function logoImageSvg(
+  logoPath: string | null,
+  x: number,
+  y: number,
+  w: number,
+  h: number
+) {
+  if (!logoPath || !fs.existsSync(logoPath)) return "";
+
+  const buf = fs.readFileSync(logoPath);
+  const b64 = buf.toString("base64");
+
+  return `<image href="data:image/png;base64,${b64}" x="${x}" y="${y}" width="${w}" height="${h}" />`;
 }
 
 async function renderCard(
@@ -224,27 +260,12 @@ async function renderCard(
   const lines = wrap(title);
 
   const titleSvg = lines
-    .map((l, i) => textSvg(l, font, 84, BRAND.gold, 540, 860 + i * 100))
+    .map((l, i) => textSvg(l, font, 84, BRAND.gold, 540, 860 + i * 100, "center"))
     .join("");
 
-  const subSvg = textSvg(subtitle, font, 42, BRAND.soft, 540, 1210);
-  const siteSvg = textSvg("vegan-masala.com", font, 30, "#ffffff", 540, 1828);
+  const subSvg = textSvg(subtitle, font, 42, BRAND.soft, 540, 1210, "center");
 
-  let logoSvg = "";
-  if (logoPath && fs.existsSync(logoPath)) {
-    const logoBuffer = fs.readFileSync(logoPath);
-    const logoHref = `data:image/png;base64,${logoBuffer.toString("base64")}`;
-
-    logoSvg = `
-      <image
-        href="${logoHref}"
-        x="410"
-        y="330"
-        width="260"
-        height="260"
-      />
-    `;
-  }
+  const logoSvg = logoImageSvg(logoPath, 390, 240, 300, 300);
 
   const svg = `
     <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -263,7 +284,6 @@ async function renderCard(
       ${logoSvg}
       ${titleSvg}
       ${subSvg}
-      ${siteSvg}
     </svg>
   `;
 
@@ -280,27 +300,12 @@ async function renderMainOverlay(
   const lines = wrap(title);
 
   const titleSvg = lines
-    .map((l, i) => textSvg(l, font, 72, BRAND.gold, 540, 1360 + i * 84))
+    .map((l, i) => textSvg(l, font, 72, BRAND.gold, 74, 1440 + i * 84, "left"))
     .join("");
 
-  const subSvg = textSvg(subtitle, font, 38, BRAND.soft, 540, 1680);
-  const siteSvg = textSvg("vegan-masala.com", font, 28, "#ffffff", 270, 1835);
-
-  let logoSvg = "";
-  if (logoPath && fs.existsSync(logoPath)) {
-    const logoBuffer = fs.readFileSync(logoPath);
-    const logoHref = `data:image/png;base64,${logoBuffer.toString("base64")}`;
-
-    logoSvg = `
-      <image
-        href="${logoHref}"
-        x="770"
-        y="1620"
-        width="180"
-        height="180"
-      />
-    `;
-  }
+  const subSvg = textSvg(subtitle, font, 38, BRAND.soft, 74, 1705, "left");
+  const siteSvg = textSvg("vegan-masala.com", font, 30, "#ffffff", 74, 1810, "left");
+  const logoSvg = logoImageSvg(logoPath, 760, 1480, 220, 220);
 
   const svg = `
     <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -367,9 +372,9 @@ async function still(image: string, out: string, duration: number) {
 
 async function mainClip(
   image: string,
-  out: string,
   title: string,
   subtitle: string,
+  out: string,
   logoPath: string | null
 ) {
   const card = path.join(TEMP_DIR, "card.png");
@@ -398,11 +403,11 @@ async function mainClip(
   await renderMainOverlay(title, subtitle, overlay, logoPath);
 
   const filter = [
-    `[0:v]scale=1480:2631:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=24:10,eq=saturation=1.28:contrast=1.10:brightness=-0.03,zoompan=z='min(zoom+0.0014,1.20)':d=${MAIN_DURATION * FPS}:x='iw/2-(iw/zoom/2)+sin(on/18)*22':y='ih/2-(ih/zoom/2)+cos(on/22)*10':s=1080x1920:fps=${FPS}[bg]`,
+    `[0:v]scale=1500:2667:force_original_aspect_ratio=increase,crop=1080:1920,eq=saturation=1.28:contrast=1.1:brightness=0.03,boxblur=22:10,zoompan=z='min(zoom+0.0015,1.20)':d=${MAIN_DURATION * FPS}:x='iw/2-(iw/zoom/2)+sin(on/12)*18':y='ih/2-(ih/zoom/2)+cos(on/15)*12':s=1080x1920:fps=${FPS}[bg]`,
     `[1:v]format=rgba[card]`,
-    `[2:v]format=rgba[ov]`,
-    `[bg][card]overlay=(W-w)/2:360[tmp1]`,
-    `[tmp1][ov]overlay=0:0,format=yuv420p[outv]`,
+    `[2:v]format=rgba[overlay]`,
+    `[bg][card]overlay=(W-w)/2:410[tmp1]`,
+    `[tmp1][overlay]overlay=0:0,format=yuv420p[outv]`,
   ].join(";");
 
   await run([
@@ -435,7 +440,15 @@ async function mainClip(
   ]);
 }
 
-async function concat(intro: string, main: string, outro: string, final: string) {
+async function concat(
+  intro: string,
+  main: string,
+  outro: string,
+  final: string,
+  musicFile: string | null
+) {
+  const temp = path.join(TEMP_DIR, "video-no-audio.mp4");
+
   await run([
     "-y",
     "-i",
@@ -450,18 +463,46 @@ async function concat(intro: string, main: string, outro: string, final: string)
     "[outv]",
     "-c:v",
     "libx264",
+    "-pix_fmt",
+    "yuv420p",
+    temp,
+  ]);
+
+  if (!musicFile || !fs.existsSync(musicFile)) {
+    fs.copyFileSync(temp, final);
+    return;
+  }
+
+  await run([
+    "-y",
+    "-i",
+    temp,
+    "-stream_loop",
+    "-1",
+    "-i",
+    musicFile,
+    "-shortest",
+    "-filter:a",
+    "volume=0.12",
+    "-map",
+    "0:v",
+    "-map",
+    "1:a",
+    "-c:v",
+    "copy",
+    "-c:a",
+    "aac",
     final,
   ]);
 }
 
 export async function buildRecipeVideo(slug: string) {
-  const logs: string[] = [];
-
   ensure(VIDEO_DIR);
   ensure(TEMP_DIR);
 
-  const image = await resolveImage(slug, logs);
-  const logoPath = await resolveLogo(logs);
+  const image = await resolveImage(slug);
+  const logoPath = await resolveLogo();
+  const musicFile = await resolveMusic();
 
   const introPng = path.join(TEMP_DIR, `${slug}-intro.png`);
   const outroPng = path.join(TEMP_DIR, `${slug}-outro.png`);
@@ -480,15 +521,9 @@ export async function buildRecipeVideo(slug: string) {
   const final = path.join(VIDEO_DIR, `${slug}.mp4`);
 
   await still(introPng, introMp4, INTRO_DURATION);
-  await mainClip(
-    image,
-    mainMp4,
-    titleFromSlug(slug),
-    introSubtitle,
-    logoPath
-  );
+  await mainClip(image, titleFromSlug(slug), introSubtitle, mainMp4, logoPath);
   await still(outroPng, outroMp4, OUTRO_DURATION);
-  await concat(introMp4, mainMp4, outroMp4, final);
+  await concat(introMp4, mainMp4, outroMp4, final, musicFile);
 
   const token = getBlobToken();
 
@@ -510,6 +545,5 @@ export async function buildRecipeVideo(slug: string) {
   return {
     success: true,
     video: blob.url,
-    logs,
   };
 }
