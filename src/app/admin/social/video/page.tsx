@@ -24,6 +24,15 @@ type VideoApiResponse = {
   rawResult?: unknown;
 };
 
+type VideoLibraryResponse = {
+  ok?: boolean;
+  error?: string;
+  items?: Array<{
+    slug: string;
+    video: string;
+  }>;
+};
+
 type NormalizedSlug = {
   slug: string;
   label: string;
@@ -50,6 +59,10 @@ async function safeJson(res: Response) {
   }
 }
 
+function cleanLabel(label: string) {
+  return label.replace(/\s*\((recipe|guide)\)\s*$/i, "").trim();
+}
+
 function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
   if (typeof item === "string") {
     const slug = item.trim();
@@ -57,7 +70,7 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
 
     return {
       slug,
-      label: slug,
+      label: cleanLabel(slug),
       type: "recipe",
     };
   }
@@ -69,7 +82,8 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
   const slug = typeof item.slug === "string" ? item.slug.trim() : "";
   if (!slug) return null;
 
-  const rawType = typeof item.type === "string" ? item.type.trim().toLowerCase() : "";
+  const rawType =
+    typeof item.type === "string" ? item.type.trim().toLowerCase() : "";
   const type: "recipe" | "guide" = rawType === "guide" ? "guide" : "recipe";
 
   const baseLabel =
@@ -81,7 +95,7 @@ function normalizeSlugItem(item: SlugItem): NormalizedSlug | null {
 
   return {
     slug,
-    label: `${baseLabel} (${type})`,
+    label: cleanLabel(baseLabel),
     type,
   };
 }
@@ -92,6 +106,7 @@ export default function AdminSocialVideoPage() {
   const [status, setStatus] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
   const [loadingSlugs, setLoadingSlugs] = useState(true);
+  const [loadingLibrary, setLoadingLibrary] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generatingAll, setGeneratingAll] = useState(false);
   const [filter, setFilter] = useState<"all" | "recipe" | "guide">("all");
@@ -120,7 +135,12 @@ export default function AdminSocialVideoPage() {
         const nextSlugs = (Array.isArray(data?.slugs) ? data.slugs : [])
           .map(normalizeSlugItem)
           .filter((item): item is NormalizedSlug => item !== null)
-          .sort((a, b) => a.label.localeCompare(b.label));
+          .sort((a, b) => {
+            if (a.type !== b.type) {
+              return a.type === "recipe" ? -1 : 1;
+            }
+            return a.label.localeCompare(b.label);
+          });
 
         setSlugs(nextSlugs);
 
@@ -135,6 +155,48 @@ export default function AdminSocialVideoPage() {
       }
     }
 
+    async function loadLibrary() {
+      try {
+        const res = await fetch("/api/admin/social/video/library", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = (await safeJson(res)) as VideoLibraryResponse;
+
+        if (!mounted) return;
+
+        if (!res.ok || !data?.ok) {
+          throw new Error(data?.error || "Failed to load video library");
+        }
+
+        const mapped = (Array.isArray(data.items) ? data.items : [])
+          .map((item) => {
+            const match = slugs.find((s) => s.slug === item.slug);
+
+            return {
+              slug: item.slug,
+              video: item.video,
+              label: match?.label || cleanLabel(item.slug),
+              type: match?.type || "recipe",
+            } satisfies GeneratedVideoItem;
+          })
+          .sort((a, b) => a.label.localeCompare(b.label));
+
+        setGeneratedVideos(mapped);
+
+        if (mapped.length > 0) {
+          setActiveVideoUrl(mapped[0].video);
+          setActiveVideoLabel(mapped[0].label);
+        }
+      } catch (err: any) {
+        if (!mounted) return;
+        setStatus((prev) => prev || err?.message || "Failed to load video library");
+      } finally {
+        if (mounted) setLoadingLibrary(false);
+      }
+    }
+
     loadSlugs();
 
     return () => {
@@ -142,10 +204,77 @@ export default function AdminSocialVideoPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadLibraryAfterSlugs() {
+      if (!slugs.length) {
+        setLoadingLibrary(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/admin/social/video/library", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = (await safeJson(res)) as VideoLibraryResponse;
+
+        if (!mounted) return;
+
+        if (!res.ok || !data?.ok) {
+          throw new Error(data?.error || "Failed to load video library");
+        }
+
+        const mapped = (Array.isArray(data.items) ? data.items : [])
+          .map((item) => {
+            const match = slugs.find((s) => s.slug === item.slug);
+
+            return {
+              slug: item.slug,
+              video: item.video,
+              label: match?.label || cleanLabel(item.slug),
+              type: match?.type || "recipe",
+            } satisfies GeneratedVideoItem;
+          })
+          .sort((a, b) => a.label.localeCompare(b.label));
+
+        setGeneratedVideos(mapped);
+
+        if (mapped.length > 0 && !activeVideoUrl) {
+          setActiveVideoUrl(mapped[0].video);
+          setActiveVideoLabel(mapped[0].label);
+        }
+      } catch (err: any) {
+        if (!mounted) return;
+        setStatus((prev) => prev || err?.message || "Failed to load video library");
+      } finally {
+        if (mounted) setLoadingLibrary(false);
+      }
+    }
+
+    void loadLibraryAfterSlugs();
+
+    return () => {
+      mounted = false;
+    };
+  }, [slugs]);
+
   const filteredSlugs = useMemo(() => {
     if (filter === "all") return slugs;
     return slugs.filter((item) => item.type === filter);
   }, [slugs, filter]);
+
+  const recipeSlugs = useMemo(
+    () => filteredSlugs.filter((item) => item.type === "recipe"),
+    [filteredSlugs]
+  );
+
+  const guideSlugs = useMemo(
+    () => filteredSlugs.filter((item) => item.type === "guide"),
+    [filteredSlugs]
+  );
 
   useEffect(() => {
     if (!filteredSlugs.some((item) => item.slug === selectedSlug)) {
@@ -181,7 +310,7 @@ export default function AdminSocialVideoPage() {
 
   async function handleGenerate() {
     if (!selectedSlug.trim() || !selectedItem) {
-      setStatus("Please select a slug first");
+      setStatus("Please select an item first");
       return;
     }
 
@@ -217,7 +346,7 @@ export default function AdminSocialVideoPage() {
 
   async function handleGenerateAll() {
     if (!filteredSlugs.length) {
-      setStatus("No slugs available to generate");
+      setStatus("No items available to generate");
       return;
     }
 
@@ -235,7 +364,6 @@ export default function AdminSocialVideoPage() {
         combinedLogs.push("========================================");
         combinedLogs.push(`Generating: ${item.slug} (${item.type})`);
         combinedLogs.push("========================================");
-
         setLogs([...combinedLogs]);
 
         const { res, data } = await generateOne(item.slug);
@@ -274,6 +402,11 @@ export default function AdminSocialVideoPage() {
     }
   }
 
+  const libraryVideos = useMemo(() => {
+    if (filter === "all") return generatedVideos;
+    return generatedVideos.filter((item) => item.type === filter);
+  }, [generatedVideos, filter]);
+
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 text-white">
       <div className="mb-8">
@@ -282,8 +415,8 @@ export default function AdminSocialVideoPage() {
         </p>
         <h1 className="text-3xl font-bold text-yellow-100">Video Generator</h1>
         <p className="mt-2 max-w-3xl text-sm text-neutral-300">
-          Generate branded short videos for recipes and guides. Use the filter to narrow
-          the list, generate one item, or bulk-generate everything currently shown.
+          Generate branded short videos for recipes and guides. The library below
+          keeps previously generated videos so they still appear after refresh.
         </p>
       </div>
 
@@ -331,11 +464,27 @@ export default function AdminSocialVideoPage() {
             ) : filteredSlugs.length === 0 ? (
               <option value="">No matching items found</option>
             ) : (
-              filteredSlugs.map((item) => (
-                <option key={item.slug} value={item.slug}>
-                  {item.label}
-                </option>
-              ))
+              <>
+                {recipeSlugs.length > 0 ? (
+                  <optgroup label="Recipes">
+                    {recipeSlugs.map((item) => (
+                      <option key={item.slug} value={item.slug}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+
+                {guideSlugs.length > 0 ? (
+                  <optgroup label="Guides">
+                    {guideSlugs.map((item) => (
+                      <option key={item.slug} value={item.slug}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+              </>
             )}
           </select>
 
@@ -343,6 +492,14 @@ export default function AdminSocialVideoPage() {
             <div className="flex justify-between gap-3">
               <span className="text-neutral-400">Visible items</span>
               <span className="font-semibold text-white">{filteredSlugs.length}</span>
+            </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Recipes</span>
+              <span className="font-semibold text-white">{recipeSlugs.length}</span>
+            </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Guides</span>
+              <span className="font-semibold text-white">{guideSlugs.length}</span>
             </div>
             <div className="mt-2 flex justify-between gap-3">
               <span className="text-neutral-400">Selected type</span>
@@ -354,6 +511,12 @@ export default function AdminSocialVideoPage() {
               <span className="text-neutral-400">Selected slug</span>
               <span className="truncate font-semibold text-white">
                 {selectedItem?.slug || "—"}
+              </span>
+            </div>
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="text-neutral-400">Library items</span>
+              <span className="font-semibold text-white">
+                {loadingLibrary ? "Loading..." : libraryVideos.length}
               </span>
             </div>
           </div>
@@ -416,6 +579,7 @@ export default function AdminSocialVideoPage() {
                     preload="metadata"
                     muted
                     playsInline
+                    controls
                     className="h-full w-full object-cover"
                     src={activeVideoUrl}
                   />
@@ -438,21 +602,19 @@ export default function AdminSocialVideoPage() {
           </div>
 
           <div className="rounded-2xl border border-yellow-700/40 bg-black/40 p-6">
-            <h2 className="mb-4 text-xl font-semibold text-yellow-200">Generated videos</h2>
+            <h2 className="mb-4 text-xl font-semibold text-yellow-200">Video library</h2>
 
-            {generatedVideos.length ? (
+            {libraryVideos.length ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {generatedVideos.map((item) => (
-                  <a
+                {libraryVideos.map((item) => (
+                  <button
                     key={item.slug}
-                    href={item.video}
-                    target="_blank"
-                    rel="noreferrer"
+                    type="button"
                     onClick={() => {
                       setActiveVideoUrl(item.video);
                       setActiveVideoLabel(item.label);
                     }}
-                    className="group overflow-hidden rounded-2xl border border-yellow-700/30 bg-neutral-950 transition hover:border-yellow-500/60"
+                    className="group overflow-hidden rounded-2xl border border-yellow-700/30 bg-neutral-950 text-left transition hover:border-yellow-500/60"
                   >
                     <div className="aspect-[9/16] bg-black">
                       <video
@@ -469,15 +631,17 @@ export default function AdminSocialVideoPage() {
                         {item.label}
                       </p>
                       <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400">
-                        Click to preview
+                        {item.type}
                       </p>
                     </div>
-                  </a>
+                  </button>
                 ))}
               </div>
             ) : (
               <div className="rounded-xl border border-yellow-700/20 bg-black px-4 py-10 text-center text-sm text-neutral-400">
-                Generated videos will appear here as clickable thumbnails.
+                {loadingLibrary
+                  ? "Loading library..."
+                  : "Generated videos will appear here and stay after refresh."}
               </div>
             )}
           </div>
