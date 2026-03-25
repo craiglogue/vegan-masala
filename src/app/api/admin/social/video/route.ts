@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
     logs.push(`Base URL: ${baseUrl || "none"}`);
 
-    const result = (await buildRecipeVideo(slug, baseUrl)) as VideoBuildResult;
+    const result = (await buildRecipeVideo(slug)) as VideoBuildResult;
 
     return NextResponse.json({
       ok: true,
