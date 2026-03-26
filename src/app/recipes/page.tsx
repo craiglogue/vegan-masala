@@ -280,16 +280,29 @@ export default async function RecipesPage({
       />
 
       <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
-        <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--brand-gold)]/70">
-          Vegan Masala
-        </p>
-        <h1 className="mt-2 text-3xl font-extrabold text-[var(--brand-gold)] sm:text-4xl">
-          Vegan Indian Recipes
-        </h1>
-        <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--text-soft)]">
-          Browse comforting curries, dals, rice dishes, flatbreads and practical vegan Indian
-          recipes written for real home cooking.
-        </p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--brand-gold)]/70">
+              Vegan Masala
+            </p>
+            <h1 className="mt-2 text-3xl font-extrabold text-[var(--brand-gold)] sm:text-4xl">
+              Vegan Indian Recipes
+            </h1>
+            <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--text-soft)]">
+              Browse comforting curries, dals, rice dishes, flatbreads and practical vegan Indian
+              recipes written for real home cooking.
+            </p>
+          </div>
+
+          <div className="inline-flex w-fit items-center gap-3 rounded-2xl border border-[var(--border)] bg-black/20 px-5 py-3 shadow-sm">
+            <span className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--brand-gold)]/70">
+              Recipe count
+            </span>
+            <span className="text-2xl font-extrabold text-[var(--brand-gold)]">
+              {recipes.length}
+            </span>
+          </div>
+        </div>
       </section>
 
       {filterTags.length ? (
