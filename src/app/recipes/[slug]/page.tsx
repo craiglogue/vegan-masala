@@ -398,10 +398,10 @@ export default async function RecipesPage({
           const time = minutesLabel(r.prepMinutes, r.cookMinutes);
 
           return (
-            <Link
+            <a
               key={r.slug}
               href={`/recipes/${r.slug}`}
-              className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm transition hover:bg-black/20"
+              className="group block overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm transition hover:bg-black/20"
             >
               <div className="relative h-52 w-full bg-black/25">
                 <Image
@@ -443,7 +443,7 @@ export default async function RecipesPage({
                   </div>
                 ) : null}
               </div>
-            </Link>
+            </a>
           );
         })}
       </section>
