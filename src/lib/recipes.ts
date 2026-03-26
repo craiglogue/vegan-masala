@@ -10,7 +10,7 @@ export type Recipe = {
   title: string;
   slug: string;
   description?: string;
-  image?: string;   // ✅ ADDED
+  image?: string;
   cuisine?: string;
   prepMinutes?: number;
   cookMinutes?: number;
@@ -23,6 +23,11 @@ export type Recipe = {
   servings?: number;
   spice?: string;
   spiceLevel?: string;
+
+  // new editorial/frontmatter fields
+  introNote?: string;
+  servingSuggestion?: string;
+  socialHook?: string;
 
   // arrays
   ingredients?: string[];
@@ -76,51 +81,36 @@ function readRecipeFile(filePath: string) {
  * Extract markdown between headings
  */
 function extractSection(body: string, headingNames: string[]) {
-
   const names = headingNames
     .map((h) => h.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
     .join("|");
 
   const startRe = new RegExp(`^#{2,3}\\s*(${names})\\s*$`, "im");
-
   const startMatch = startRe.exec(body);
 
   if (!startMatch) return undefined;
 
   const startIdx = startMatch.index + startMatch[0].length;
-
   const rest = body.slice(startIdx);
-
   const nextHeadingRe = /^#{1,3}\s+.+$/im;
-
   const nextMatch = nextHeadingRe.exec(rest);
 
-  const section = nextMatch
-    ? rest.slice(0, nextMatch.index)
-    : rest;
-
+  const section = nextMatch ? rest.slice(0, nextMatch.index) : rest;
   const cleaned = section.trim();
 
   return cleaned.length ? cleaned : undefined;
 }
 
 function buildRecipeFromFile(file: string): Recipe | null {
-
   const filePath = path.join(RECIPES_DIR, file);
 
   if (!fs.existsSync(filePath)) return null;
 
   const { raw, data, content } = readRecipeFile(filePath);
 
-  const title =
-    typeof data.title === "string"
-      ? data.title
-      : "";
-
+  const title = typeof data.title === "string" ? data.title : "";
   const slug =
-    typeof data.slug === "string"
-      ? data.slug
-      : file.replace(/\.mdx?$/i, "");
+    typeof data.slug === "string" ? data.slug : file.replace(/\.mdx?$/i, "");
 
   if (!title || !slug) return null;
 
@@ -128,29 +118,17 @@ function buildRecipeFromFile(file: string): Recipe | null {
   const cookMinutes = safeNumber(data.cookMinutes);
 
   const recipe: Recipe = {
-
     title,
-
     slug,
 
     description:
-      typeof data.description === "string"
-        ? data.description
-        : undefined,
+      typeof data.description === "string" ? data.description : undefined,
 
-    // ✅ IMAGE FIX
-    image:
-      typeof data.image === "string"
-        ? data.image
-        : undefined,
+    image: typeof data.image === "string" ? data.image : undefined,
 
-    cuisine:
-      typeof data.cuisine === "string"
-        ? data.cuisine
-        : undefined,
+    cuisine: typeof data.cuisine === "string" ? data.cuisine : undefined,
 
     prepMinutes,
-
     cookMinutes,
 
     diet: Array.isArray(data.diet)
@@ -162,155 +140,106 @@ function buildRecipeFromFile(file: string): Recipe | null {
       : undefined,
 
     publishedAt:
-      typeof data.publishedAt === "string"
-        ? data.publishedAt
-        : undefined,
+      typeof data.publishedAt === "string" ? data.publishedAt : undefined,
 
     serves: safeNumber(data.serves),
-
     servings: safeNumber(data.servings),
 
-    spice:
-      typeof data.spice === "string"
-        ? data.spice
-        : undefined,
+    spice: typeof data.spice === "string" ? data.spice : undefined,
 
     spiceLevel:
-      typeof data.spiceLevel === "string"
-        ? data.spiceLevel
+      typeof data.spiceLevel === "string" ? data.spiceLevel : undefined,
+
+    introNote:
+      typeof data.introNote === "string" ? data.introNote : undefined,
+
+    servingSuggestion:
+      typeof data.servingSuggestion === "string"
+        ? data.servingSuggestion
         : undefined,
 
-    // arrays
+    socialHook:
+      typeof data.socialHook === "string" ? data.socialHook : undefined,
+
     ingredients: safeStringArray((data as any).ingredients),
-
     instructions: safeStringArray((data as any).instructions),
-
     notes: safeStringArray((data as any).notes),
 
     raw,
-
     content,
   };
 
-  // markdown fallbacks
+  recipe.ingredientsMarkdown = extractSection(content, [
+    "Ingredients",
+    "ingredients",
+  ]);
 
-  recipe.ingredientsMarkdown =
-    extractSection(content, [
-      "Ingredients",
-      "ingredients",
-    ]);
+  recipe.methodMarkdown = extractSection(content, [
+    "Method",
+    "method",
+    "Instructions",
+    "instructions",
+  ]);
 
-  recipe.methodMarkdown =
-    extractSection(content, [
-      "Method",
-      "method",
-      "Instructions",
-      "instructions",
-    ]);
-
-  recipe.notesMarkdown =
-    extractSection(content, [
-      "Notes",
-      "notes",
-      "Tips",
-      "tips",
-    ]);
+  recipe.notesMarkdown = extractSection(content, [
+    "Notes",
+    "notes",
+    "Tips",
+    "tips",
+  ]);
 
   return recipe;
 }
 
 export function getAllRecipeSlugs() {
-
-  if (!fs.existsSync(RECIPES_DIR))
-    return [];
+  if (!fs.existsSync(RECIPES_DIR)) return [];
 
   return fs
     .readdirSync(RECIPES_DIR)
-    .filter(
-      (f) =>
-        f.endsWith(".mdx") ||
-        f.endsWith(".md")
-    )
+    .filter((f) => f.endsWith(".mdx") || f.endsWith(".md"))
     .map((f) => {
-
-      const filePath =
-        path.join(RECIPES_DIR, f);
-
-      const { data } =
-        readRecipeFile(filePath);
+      const filePath = path.join(RECIPES_DIR, f);
+      const { data } = readRecipeFile(filePath);
 
       const slug =
-        typeof data.slug === "string"
-          ? data.slug
-          : f.replace(/\.mdx?$/i, "");
+        typeof data.slug === "string" ? data.slug : f.replace(/\.mdx?$/i, "");
 
       return slug;
     });
 }
 
 export function getAllRecipes(): Recipe[] {
-
-  if (!fs.existsSync(RECIPES_DIR))
-    return [];
+  if (!fs.existsSync(RECIPES_DIR)) return [];
 
   const files = fs
     .readdirSync(RECIPES_DIR)
-    .filter(
-      (f) =>
-        f.endsWith(".mdx") ||
-        f.endsWith(".md")
-    );
+    .filter((f) => f.endsWith(".mdx") || f.endsWith(".md"));
 
-  const recipes =
-    files
-      .map((f) =>
-        buildRecipeFromFile(f)
-      )
-      .filter(Boolean) as Recipe[];
+  const recipes = files.map((f) => buildRecipeFromFile(f)).filter(Boolean) as Recipe[];
 
-  recipes.sort(
-    (a, b) =>
-      (b.publishedAt ?? "")
-        .localeCompare(
-          a.publishedAt ?? ""
-        )
-  );
+  recipes.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""));
 
   return recipes;
 }
 
-export function getRecipeBySlug(
-  slug: string
-): Recipe | null {
-
+export function getRecipeBySlug(slug: string): Recipe | null {
   if (!slug) return null;
-
-  if (!fs.existsSync(RECIPES_DIR))
-    return null;
+  if (!fs.existsSync(RECIPES_DIR)) return null;
 
   const files = fs
     .readdirSync(RECIPES_DIR)
-    .filter(
-      (f) =>
-        f.endsWith(".mdx") ||
-        f.endsWith(".md")
-    );
+    .filter((f) => f.endsWith(".mdx") || f.endsWith(".md"));
 
   for (const file of files) {
-
-    const filePath =
-      path.join(RECIPES_DIR, file);
-
-    const { data } =
-      readRecipeFile(filePath);
+    const filePath = path.join(RECIPES_DIR, file);
+    const { data } = readRecipeFile(filePath);
 
     const fmSlug =
-      typeof data.slug === "string"
-        ? data.slug
-        : file.replace(/\.mdx?$/i, "");
+      typeof data.slug === "string" ? data.slug : file.replace(/\.mdx?$/i, "");
 
-    if (fmSlug === slug)
+    if (fmSlug === slug) {
       return buildRecipeFromFile(file);
+    }
   }
 
   return null;

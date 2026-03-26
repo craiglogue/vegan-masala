@@ -38,10 +38,11 @@ USAGE
 WHAT IT DOES
   1) optionally imports a recipe
   2) runs AI rewrite
-  3) fixes ingredient quantities
-  4) normalises recipe structure
-  5) fixes recipe images/frontmatter
-  6) regenerates Midjourney prompt files
+  3) generates Recraft hero image
+  4) fixes ingredient quantities
+  5) normalises recipe structure
+  6) fixes recipe images/frontmatter
+  7) regenerates Midjourney prompt files
 
 OPTIONS
   Target:
@@ -53,6 +54,7 @@ OPTIONS
 
   Behaviour:
     --skip-rewrite
+    --skip-recraft-image
     --skip-quantities
     --skip-structure
     --skip-images
@@ -161,6 +163,7 @@ async function main() {
   const noBackup = args.includes("--no-backup");
 
   const skipRewrite = args.includes("--skip-rewrite");
+  const skipRecraftImage = args.includes("--skip-recraft-image");
   const skipQuantities = args.includes("--skip-quantities");
   const skipStructure = args.includes("--skip-structure");
   const skipImages = args.includes("--skip-images");
@@ -186,22 +189,20 @@ async function main() {
     die(`File not found: ${filePath}`);
   }
 
-  // Validate the scripts that will be used
   if (importUrl) requireScript("import-recipe.mjs");
   if (!skipRewrite) requireScript("ai-rewrite-recipe.mjs");
+  if (!skipRecraftImage) requireScript("generate-recraft-image.mjs");
   if (!skipQuantities) requireScript("fix-ingredient-quantities.mjs");
   if (!skipStructure) requireScript("fix-recipe-structure.mjs");
   if (!skipImages) requireScript("fix-recipe-images.mjs");
   if (!skipPrompts) requireScript("mj-prompts-batch.mjs");
 
-  // Optional import first
   if (importUrl) {
-    info(`Importing recipe from URL`);
+    info("Importing recipe from URL");
     await runNodeScript(scriptPath("import-recipe.mjs"), [importUrl]);
     ok("Import complete.");
   }
 
-  // Resolve targets
   let targets = [];
 
   if (all) {
@@ -233,7 +234,6 @@ async function main() {
     console.log(`   ...and ${targets.length - 5} more`);
   }
 
-  // 1) AI rewrite target recipe(s)
   if (!skipRewrite) {
     await runAiRewriteOnTargets(targets, { dryRun, noBackup });
     ok("AI rewrite stage complete.");
@@ -241,7 +241,23 @@ async function main() {
     warn("Skipping AI rewrite stage.");
   }
 
-  // 2) Ingredient quantities fixer (global script)
+  if (!skipRecraftImage) {
+    info("Generating Recraft recipe images");
+
+    const recraftScript = scriptPath("generate-recraft-image.mjs");
+
+    for (const file of targets) {
+      const recraftArgs = ["--file", file];
+      if (dryRun) recraftArgs.push("--dry-run");
+
+      await runNodeScript(recraftScript, recraftArgs);
+    }
+
+    ok("Recraft image stage complete.");
+  } else {
+    warn("Skipping Recraft image stage.");
+  }
+
   if (!skipQuantities) {
     info("Fixing ingredient quantities");
     const quantityArgs = dryRun ? ["--dry-run"] : [];
@@ -251,7 +267,6 @@ async function main() {
     warn("Skipping ingredient quantities stage.");
   }
 
-  // 3) Structure fixer (global script)
   if (!skipStructure) {
     info("Normalising recipe structure");
     const structureArgs = dryRun ? ["--dry-run"] : [];
@@ -261,7 +276,6 @@ async function main() {
     warn("Skipping recipe structure stage.");
   }
 
-  // 4) Image/frontmatter fixer (global script)
   if (!skipImages) {
     info("Fixing recipe image mappings");
     const imageArgs = [];
@@ -273,7 +287,6 @@ async function main() {
     warn("Skipping recipe image stage.");
   }
 
-  // 5) Midjourney prompt generation
   if (!skipPrompts) {
     info("Generating Midjourney prompt files");
     const promptArgs = ["--all"];

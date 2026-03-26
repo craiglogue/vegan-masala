@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
 import * as cheerio from "cheerio";
@@ -15,13 +16,10 @@ function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
 }
 
-function decodeHtmlText(s) {
-  return String(s || "")
-    .replace(/\s+/g, " ")
-    .trim();
+function cleanText(s) {
+  return String(s || "").replace(/\s+/g, " ").trim();
 }
 
-// Parses ISO 8601 duration like PT25M or PT1H10M into minutes
 function parseIsoDurationToMinutes(iso) {
   if (!iso || typeof iso !== "string") return undefined;
   const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
@@ -33,7 +31,9 @@ function parseIsoDurationToMinutes(iso) {
 }
 
 function pickFirst(obj, keys) {
-  for (const k of keys) if (obj && obj[k] != null) return obj[k];
+  for (const k of keys) {
+    if (obj && obj[k] != null) return obj[k];
+  }
   return undefined;
 }
 
@@ -43,10 +43,6 @@ function asArray(x) {
 }
 
 function normalizeHowToSteps(recipe) {
-  // recipeInstructions can be:
-  // - string
-  // - array of strings
-  // - array of HowToStep objects with "text"
   const ri = recipe.recipeInstructions;
   if (!ri) return [];
 
@@ -59,13 +55,13 @@ function normalizeHowToSteps(recipe) {
 
   const arr = asArray(ri);
   const steps = [];
+
   for (const item of arr) {
     if (typeof item === "string") {
       steps.push(item.trim());
     } else if (item && typeof item === "object") {
-      // HowToStep or HowToSection
       if (item.text) steps.push(String(item.text).trim());
-      // Some pages nest steps inside item.itemListElement
+
       if (item.itemListElement) {
         for (const nested of asArray(item.itemListElement)) {
           if (typeof nested === "string") steps.push(nested.trim());
@@ -74,6 +70,7 @@ function normalizeHowToSteps(recipe) {
       }
     }
   }
+
   return steps.filter(Boolean);
 }
 
@@ -87,8 +84,6 @@ function extractJsonLdRecipe($) {
     try {
       json = JSON.parse(raw);
     } catch {
-      // Sometimes JSON-LD contains multiple objects or invalid trailing commas.
-      // Skip in this simple version.
       continue;
     }
 
@@ -101,12 +96,10 @@ function extractJsonLdRecipe($) {
 
     pushCandidate(json);
 
-    // JSON-LD often uses @graph
     for (const c of [...candidates]) {
       if (c && c["@graph"]) pushCandidate(c["@graph"]);
     }
 
-    // Find first object with @type including Recipe
     for (const c of candidates) {
       const t = c?.["@type"];
       const types = Array.isArray(t) ? t : [t];
@@ -118,23 +111,22 @@ function extractJsonLdRecipe($) {
 }
 
 function fallbackExtractFromHtml($) {
-  // Very basic fallback: try common classnames/structures
   const title =
-    decodeHtmlText($("h1").first().text()) ||
-    decodeHtmlText($('meta[property="og:title"]').attr("content")) ||
+    cleanText($("h1").first().text()) ||
+    cleanText($('meta[property="og:title"]').attr("content")) ||
     "Imported Recipe";
 
-  // Ingredients: common patterns
   const ingredientSelectors = [
     '[itemprop="recipeIngredient"]',
     ".recipe-ingredients li",
     ".ingredients li",
     "li.ingredient",
   ];
+
   let ingredients = [];
   for (const sel of ingredientSelectors) {
     const list = $(sel)
-      .map((_, el) => decodeHtmlText($(el).text()))
+      .map((_, el) => cleanText($(el).text()))
       .get()
       .filter(Boolean);
     if (list.length >= 3) {
@@ -143,17 +135,17 @@ function fallbackExtractFromHtml($) {
     }
   }
 
-  // Instructions: common patterns
   const instructionSelectors = [
     '[itemprop="recipeInstructions"]',
     ".recipe-instructions li",
     ".instructions li",
     "li.instruction",
   ];
+
   let instructions = [];
   for (const sel of instructionSelectors) {
     const list = $(sel)
-      .map((_, el) => decodeHtmlText($(el).text()))
+      .map((_, el) => cleanText($(el).text()))
       .get()
       .filter(Boolean);
     if (list.length >= 2) {
@@ -169,14 +161,32 @@ function fallbackExtractFromHtml($) {
   };
 }
 
+function buildStarterDescription(title, cuisine) {
+  const lower = String(title).toLowerCase();
+
+  if (lower.includes("dal")) {
+    return "A vegan Indian dal imported for refinement. Rewrite this so it sounds confident, flavour-led and rooted in family-style cooking rather than generic food-blog language.";
+  }
+
+  if (lower.includes("chana") || lower.includes("chickpea")) {
+    return "A vegan chickpea curry imported for refinement. Rewrite this in a warmer, more authoritative Vegan Masala voice with clearer culinary detail.";
+  }
+
+  if (lower.includes("aloo") || lower.includes("potato")) {
+    return "A vegan Indian potato dish imported for refinement. Rewrite this in a more grounded, family-table style with stronger flavour and technique language.";
+  }
+
+  return "A vegan Indian recipe imported for refinement. Rewrite this in the Vegan Masala voice: warm, experienced, family-oriented and specific about flavour and method.";
+}
+
 function mdxFromRecipe(recipe) {
   const title = pickFirst(recipe, ["name", "headline"]) || "Imported Recipe";
   const slug = slugify(title);
 
   const description =
-    (Array.isArray(recipe.description) ? recipe.description[0] : recipe.description) ||
-    recipe.summary ||
-    "";
+    cleanText(
+      Array.isArray(recipe.description) ? recipe.description[0] : recipe.description
+    ) || buildStarterDescription(title, recipe.recipeCuisine);
 
   const prepMinutes = parseIsoDurationToMinutes(recipe.prepTime);
   const cookMinutes = parseIsoDurationToMinutes(recipe.cookTime);
@@ -185,35 +195,39 @@ function mdxFromRecipe(recipe) {
   const servingsRaw = pickFirst(recipe, ["recipeYield", "yield"]);
   const servings =
     typeof servingsRaw === "string"
-      ? (servingsRaw.match(/\d+/)?.[0] ? Number(servingsRaw.match(/\d+/)[0]) : undefined)
+      ? servingsRaw.match(/\d+/)?.[0]
+        ? Number(servingsRaw.match(/\d+/)[0])
+        : undefined
       : typeof servingsRaw === "number"
-        ? servingsRaw
-        : undefined;
+      ? servingsRaw
+      : undefined;
 
-  const ingredients = asArray(recipe.recipeIngredient).map((x) => decodeHtmlText(x)).filter(Boolean);
+  const ingredients = asArray(recipe.recipeIngredient)
+    .map((x) => cleanText(x))
+    .filter(Boolean);
+
   const steps = normalizeHowToSteps(recipe);
 
-  const cuisine = asArray(recipe.recipeCuisine).map(String).find(Boolean);
+  const cuisine = asArray(recipe.recipeCuisine).map(String).find(Boolean) || "Indian";
+
   const keywords = asArray(recipe.keywords)
     .flatMap((k) => String(k).split(","))
     .map((s) => s.trim())
     .filter(Boolean);
 
-  // Keep tags conservative — you can edit later
-  const tags = keywords.slice(0, 6);
+  const tags = Array.from(new Set(keywords)).slice(0, 6);
 
   const frontmatter = [
     `title: ${JSON.stringify(title)}`,
     `slug: ${JSON.stringify(slug)}`,
-    description ? `description: ${JSON.stringify(String(description).trim())}` : null,
-    cuisine ? `cuisine: ${JSON.stringify(cuisine)}` : null,
+    `description: ${JSON.stringify(description)}`,
+    `cuisine: ${JSON.stringify(cuisine)}`,
     prepMinutes ? `prepMinutes: ${prepMinutes}` : null,
-    // Prefer explicit cookMinutes, else approximate from total-prep if present
     cookMinutes
       ? `cookMinutes: ${cookMinutes}`
       : totalMinutes && prepMinutes && totalMinutes > prepMinutes
-        ? `cookMinutes: ${totalMinutes - prepMinutes}`
-        : null,
+      ? `cookMinutes: ${totalMinutes - prepMinutes}`
+      : null,
     servings ? `servings: ${servings}` : null,
     `diet: ["vegan"]`,
     tags.length ? `tags: ${JSON.stringify(tags)}` : null,
@@ -222,40 +236,36 @@ function mdxFromRecipe(recipe) {
     .filter(Boolean)
     .join("\n");
 
-  const ingredientsBlock =
-    ingredients.length
-      ? ingredients.map((i) => `- ${i}`).join("\n")
-      : `- (Add ingredients here)`;
+  const ingredientsBlock = ingredients.length
+    ? ingredients.map((i) => `- ${i}`).join("\n")
+    : "- (Add ingredients here)";
 
-  const stepsBlock =
-    steps.length
-      ? steps.map((s, idx) => `${idx + 1}. ${s}`).join("\n")
-      : `1. (Add instructions here)`;
+  const stepsBlock = steps.length
+    ? steps.map((s, idx) => `${idx + 1}. ${s}`).join("\n")
+    : "1. (Add instructions here)";
 
-  // Add anchor tags (safe MDX)
-  const mdx = `---
+  return {
+    slug,
+    mdx: `---
 ${frontmatter}
 ---
-
-<a id="ingredients"></a>
 
 ## Ingredients
 
 ${ingredientsBlock}
 
-<a id="instructions"></a>
-
-## Instructions
+## Method
 
 ${stepsBlock}
 
 ## Notes
 
-- Rewrite the instructions in your own words before publishing.
-- Consider testing the recipe and adding your own tips/substitutions.
-`;
-
-  return { slug, mdx };
+- Rewrite this recipe into the Vegan Masala voice before publishing.
+- Put ingredients in order of use.
+- Make sure the method mentions quantities when ingredients are first used.
+- Replace generic phrases with more specific flavour and technique language.
+`,
+  };
 }
 
 async function main() {
@@ -298,7 +308,7 @@ async function main() {
   fs.writeFileSync(outPath, mdx, "utf8");
 
   console.log(`Saved: ${outPath}`);
-  console.log("Next: open the file, rewrite instructions in your own voice, then refresh /recipes");
+  console.log("Next: run the AI rewrite so the recipe matches the Vegan Masala style.");
 }
 
 main().catch((e) => {

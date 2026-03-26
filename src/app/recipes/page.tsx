@@ -145,7 +145,6 @@ function recipeCanonicalTags(r: any): string[] {
     if (c) out.add(c);
   }
 
-  // extra heuristic scan
   const txt = recipeText(r);
   const heuristics: Array<[RegExp, string]> = [
     [/instant[-\s]*pot|pressure[-\s]*cooker/i, "instant-pot"],
@@ -270,165 +269,72 @@ export default async function RecipesPage({
     "curries",
   ];
 
-  const allTags = curatedOrder
-    .filter((k) => (tagCounts.get(k) ?? 0) > 0)
-    .map((k) => ({ key: k, label: TAG_LABELS[k] ?? k }));
+  const filterTags = curatedOrder.filter((t) => tagCounts.has(t));
 
-  const quickCollections = [
-    { label: "30-minute meals", key: "30-min" },
-    { label: "One-pot", key: "one-pot" },
-    { label: "Gluten-free", key: "gluten-free" },
-  ];
-
-  let filtered = recipes;
-
-  if (selectedTag) {
-    filtered = filtered.filter((r: any) => recipeCanonicalTags(r).includes(selectedTag));
-  }
-  if (selectedCollection) {
-    filtered = filtered.filter((r: any) => matchesCollection(r, selectedCollection));
-  }
-
-  const btnBase =
-    "flex-1 min-w-[150px] text-center rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-extrabold transition";
+  const filtered = recipes.filter((r: any) => {
+    if (selectedCollection && !matchesCollection(r, selectedCollection)) return false;
+    if (selectedTag && !recipeCanonicalTags(r).includes(selectedTag)) return false;
+    return true;
+  });
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto max-w-7xl px-6 py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-extrabold text-[var(--brand-gold)] sm:text-4xl">
-            Recipes
-          </h1>
-          <p className="mt-2 text-[var(--text-soft)]">
-            Browse curries, dals, sides and comfort food — all vegan.
-          </p>
-        </div>
-
-        <div className="text-sm font-bold text-[var(--text-soft)]">
-          Showing <span className="text-[var(--brand-gold)]">{filtered.length}</span>{" "}
-          {filtered.length === 1 ? "recipe" : "recipes"}
-        </div>
-      </div>
-
-      <section className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
-        <h2 className="text-lg font-extrabold text-[var(--brand-gold)]">
-          Browse by Ingredient
-        </h2>
-
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link
-            href="/recipes/hub/chickpea"
-            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
-          >
-            Chickpea Recipes
-          </Link>
-
-          <Link
-            href="/recipes/hub/tofu"
-            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
-          >
-            Tofu Recipes
-          </Link>
-
-          <Link
-            href="/recipes/hub/potato"
-            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
-          >
-            Potato Recipes
-          </Link>
-
-          <Link
-            href="/recipes/hub/lentil"
-            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
-          >
-            Lentil Recipes
-          </Link>
-
-          <Link
-            href="/recipes/hub/cauliflower"
-            className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/20 transition"
-          >
-            Cauliflower Recipes
-          </Link>
-        </div>
+      <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
+        <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--brand-gold)]/70">
+          Vegan Masala
+        </p>
+        <h1 className="mt-2 text-3xl font-extrabold text-[var(--brand-gold)] sm:text-4xl">
+          Vegan Indian Recipes
+        </h1>
+        <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--text-soft)]">
+          Browse comforting curries, dals, rice dishes, flatbreads and practical vegan Indian
+          recipes written for real home cooking.
+        </p>
       </section>
 
-      <section className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm space-y-5">
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/recipes"
-            className={
-              btnBase +
-              " " +
-              (!selectedTag && !selectedCollection
-                ? "bg-[var(--brand-red)] text-white"
-                : "bg-black/10 text-[var(--brand-gold)] hover:bg-black/20")
-            }
-          >
-            All
-          </Link>
+      {filterTags.length ? (
+        <section className="mt-6">
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={buildHref("/recipes", {
+                collection: selectedCollection,
+                tag: null,
+              })}
+              className={
+                !selectedTag
+                  ? "rounded-full bg-[var(--brand-red)] px-4 py-2 text-sm font-extrabold text-white"
+                  : "rounded-full border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] transition hover:bg-black/20"
+              }
+            >
+              All
+            </Link>
 
-          {quickCollections.map((c) => {
-            const active = selectedCollection === c.key;
-            return (
+            {filterTags.map((tag) => (
               <Link
-                key={c.key}
-                href={buildHref("/recipes", { collection: c.key, tag: selectedTag })}
+                key={tag}
+                href={buildHref("/recipes", {
+                  collection: selectedCollection,
+                  tag,
+                })}
                 className={
-                  btnBase +
-                  " " +
-                  (active
-                    ? "bg-[var(--brand-red)] text-white"
-                    : "bg-black/10 text-[var(--brand-gold)] hover:bg-black/20")
+                  selectedTag === tag
+                    ? "rounded-full bg-[var(--brand-red)] px-4 py-2 text-sm font-extrabold text-white"
+                    : "rounded-full border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] transition hover:bg-black/20"
                 }
               >
-                {c.label}
+                {TAG_LABELS[tag] ?? tag}
               </Link>
-            );
-          })}
-        </div>
-
-        {allTags.length ? (
-          <div className="flex flex-wrap gap-3">
-            {allTags.map((t) => {
-              const active = selectedTag === t.key;
-              return (
-                <Link
-                  key={t.key}
-                  href={buildHref("/recipes", { tag: t.key, collection: selectedCollection })}
-                  className={
-                    btnBase +
-                    " " +
-                    (active
-                      ? "bg-[var(--brand-red)] text-white"
-                      : "bg-black/10 text-[var(--brand-gold)] hover:bg-black/20")
-                  }
-                >
-                  {t.label}
-                </Link>
-              );
-            })}
+            ))}
           </div>
-        ) : null}
+        </section>
+      ) : null}
 
-        {(selectedTag || selectedCollection) && (
-          <div className="flex">
-            <Link
-              href="/recipes"
-              className="inline-flex rounded-xl bg-[var(--brand-red)] px-6 py-3 text-sm font-extrabold text-white hover:opacity-90 transition"
-            >
-              Clear filters
-            </Link>
-          </div>
-        )}
-      </section>
-
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((r: any) => {
           const img =
             typeof r.image === "string" && r.image.trim().length > 0
@@ -442,9 +348,9 @@ export default async function RecipesPage({
             <Link
               key={r.slug}
               href={`/recipes/${r.slug}`}
-              className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm hover:bg-black/20 transition"
+              className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm transition hover:bg-black/20"
             >
-              <div className="relative h-48 w-full overflow-hidden bg-black/25">
+              <div className="relative h-52 w-full bg-black/25">
                 <Image
                   src={img}
                   alt={r.title}
@@ -452,6 +358,7 @@ export default async function RecipesPage({
                   className={placeholder ? "object-contain p-10 opacity-90" : "object-cover"}
                   sizes="(max-width: 1024px) 100vw, 33vw"
                 />
+
                 {time && (
                   <div className="absolute right-3 top-3 rounded-xl bg-[var(--brand-red)] px-3 py-1 text-xs font-extrabold text-white shadow">
                     {time}
@@ -460,49 +367,38 @@ export default async function RecipesPage({
               </div>
 
               <div className="p-5">
-                <h3 className="text-base font-extrabold text-[var(--brand-gold)] group-hover:underline">
+                <h2 className="text-base font-extrabold text-[var(--brand-gold)] group-hover:underline">
                   {r.title}
-                </h3>
+                </h2>
 
-                {r.description && (
+                {r.description ? (
                   <p className="mt-2 line-clamp-2 text-sm text-[var(--text-soft)]">
                     {r.description}
                   </p>
-                )}
+                ) : null}
 
-                {!!r.tags?.length && (
+                {Array.isArray(r.tags) && r.tags.length ? (
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {(r.tags ?? []).slice(0, 3).map((t: string) => (
+                    {r.tags.slice(0, 3).map((t: string) => (
                       <span
                         key={t}
-                        className="rounded-xl border border-[var(--border)] bg-black/10 px-3 py-1 text-xs font-bold text-[var(--text-soft)]"
+                        className="rounded-full border border-[var(--border)] bg-black/10 px-3 py-1 text-xs font-bold text-[var(--brand-gold)]/90"
                       >
                         {t}
                       </span>
                     ))}
                   </div>
-                )}
+                ) : null}
               </div>
             </Link>
           );
         })}
-      </div>
+      </section>
 
-      {filtered.length === 0 ? (
-        <div className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
-          <h2 className="text-xl font-extrabold text-[var(--brand-gold)]">No recipes found</h2>
-          <p className="mt-3 text-[var(--text-soft)]">
-            Try clearing the filter or picking a different button.
-          </p>
-          <div className="mt-6">
-            <Link
-              href="/recipes"
-              className="inline-flex rounded-xl bg-[var(--brand-red)] px-6 py-3 text-sm font-extrabold text-white hover:opacity-90 transition"
-            >
-              View all recipes
-            </Link>
-          </div>
-        </div>
+      {!filtered.length ? (
+        <section className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
+          <p className="text-[var(--text-soft)]">No recipes matched those filters.</p>
+        </section>
       ) : null}
     </main>
   );

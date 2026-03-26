@@ -2,6 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ContentType } from "./content";
 
+import { getRecipeBySlug } from "@/lib/recipes";
+import { getGuideBySlug } from "@/lib/guides";
+
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const CAPTION_DIR = path.join(ROOT, "generated", "captions");
 
@@ -23,99 +26,160 @@ function hashtagify(slug: string) {
     .join(" ");
 }
 
-function recipeHooks(title: string) {
-  const hooks = [
-    `Comforting, flavour-packed, and far easier than it looks — ${title} is one of those dishes that always delivers.`,
-    `If you want something rich, cosy, and seriously satisfying, ${title} is a brilliant one to make.`,
-    `${title} is the kind of vegan Indian dish that tastes like it took hours, but is surprisingly approachable.`,
-    `Big flavour, simple ingredients, and proper comfort food energy — that’s exactly why ${title} is worth making.`,
-    `Craving something warm, hearty, and full of spice? ${title} hits the spot beautifully.`,
-  ];
-
-  return hooks[Math.floor(Math.random() * hooks.length)];
+function cleanSocialText(text?: string) {
+  return String(text || "")
+    .replace(/\bpacked with flavour\b/gi, "")
+    .replace(/\bperfect weeknight meal\b/gi, "")
+    .replace(/\brestaurant-quality\b/gi, "")
+    .replace(/\bcomes together beautifully\b/gi, "")
+    .replace(/\bwritten in the style of\b/gi, "")
+    .replace(/\bflavour-packed\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function guideHooks(title: string) {
-  const hooks = [
-    `Want to feel more confident in the kitchen? ${title} makes vegan Indian cooking much easier to understand.`,
-    `${title} is one of those small cooking lessons that can make a huge difference to flavour and confidence.`,
-    `If vegan Indian cooking feels intimidating, ${title} is a great place to start.`,
-    `${title} helps break things down in a simple, practical way so cooking feels less confusing.`,
-    `Learning ${title} can make everyday cooking easier, tastier, and much more enjoyable.`,
-  ];
-
-  return hooks[Math.floor(Math.random() * hooks.length)];
+function sentence(text?: string) {
+  const cleaned = cleanSocialText(text);
+  if (!cleaned) return "";
+  return cleaned.endsWith(".") ? cleaned : `${cleaned}.`;
 }
 
-function recipeBenefits(title: string) {
-  const options = [
-    `Expect bold spices, comforting textures, and the kind of homemade flavour that makes you want seconds.`,
-    `It is packed with warmth, depth, and proper home-cooked character.`,
-    `This is the kind of dish that feels nourishing, filling, and full of real flavour.`,
-    `You get a deeply satisfying meal with simple ingredients and a lot of reward for the effort.`,
-    `It brings together rich flavour, cosy texture, and that unmistakable homemade feel.`,
-  ];
-
-  return options[Math.floor(Math.random() * options.length)];
+function shorten(text: string, max = 180) {
+  const cleaned = cleanSocialText(text);
+  if (cleaned.length <= max) return cleaned;
+  return `${cleaned.slice(0, max).trimEnd()}…`;
 }
 
-function guideBenefits() {
-  const options = [
-    `It is designed to be clear, practical, and genuinely useful in real cooking.`,
-    `The aim is to make things feel simple, approachable, and easy to use straight away.`,
-    `It helps turn confusion into confidence with straightforward explanations.`,
-    `You can use it to build confidence quickly without overcomplicating things.`,
-    `It focuses on practical understanding, not jargon or guesswork.`,
-  ];
-
-  return options[Math.floor(Math.random() * options.length)];
-}
-
-function ctaByType(type: ContentType, title: string) {
+function getEditorialContent(slug: string, type: ContentType) {
   if (type === "recipe") {
-    const options = [
-      `Save this for your next cosy dinner and try the full recipe on Vegan Masala.`,
-      `Bookmark this one for later — the full step-by-step recipe is on Vegan Masala.`,
-      `If this looks like your kind of food, the full method is waiting on Vegan Masala.`,
-      `Ready to make it yourself? The full recipe is on Vegan Masala.`,
-      `Get the full step-by-step recipe now on Vegan Masala.`,
-    ];
+    const recipe: any = getRecipeBySlug(slug);
 
-    return options[Math.floor(Math.random() * options.length)];
+    if (recipe) {
+      return {
+        title: recipe.title || titleFromSlug(slug),
+        description: recipe.description || "",
+        introNote: recipe.introNote || "",
+        servingSuggestion: recipe.servingSuggestion || "",
+        socialHook: recipe.socialHook || "",
+      };
+    }
   }
 
-  const options = [
-    `Read the full guide now on Vegan Masala.`,
-    `You can find the full beginner-friendly guide on Vegan Masala.`,
-    `Explore the full guide now on Vegan Masala.`,
-    `See the full walkthrough on Vegan Masala.`,
-    `Read the full practical guide on Vegan Masala.`,
-  ];
+  const guide: any = getGuideBySlug(slug);
 
-  return options[Math.floor(Math.random() * options.length)];
-}
-
-function emojiByType(type: ContentType) {
-  if (type === "recipe") {
-    const options = ["✨", "🔥", "🍛", "🥘", "🌿"];
-    return options[Math.floor(Math.random() * options.length)];
+  if (guide) {
+    return {
+      title: guide.title || titleFromSlug(slug),
+      description: guide.description || "",
+      introNote: "",
+      servingSuggestion: "",
+      socialHook: "",
+    };
   }
 
-  const options = ["🌿", "✨", "📚", "🥄", "👩‍🍳"];
-  return options[Math.floor(Math.random() * options.length)];
+  return {
+    title: titleFromSlug(slug),
+    description: "",
+    introNote: "",
+    servingSuggestion: "",
+    socialHook: "",
+  };
+}
+
+function pickFromSeed(slug: string, options: string[]) {
+  const sum = slug.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return options[sum % options.length];
+}
+
+function emojiByType(type: ContentType, slug: string) {
+  if (type === "recipe") {
+    return pickFromSeed(slug, ["🍛", "🌿", "🥘", "✨", "🔥"]);
+  }
+
+  return pickFromSeed(slug, ["🌿", "📚", "✨", "🥄", "👩‍🍳"]);
+}
+
+function recipeHook(slug: string, content: ReturnType<typeof getEditorialContent>) {
+  if (content.socialHook) return sentence(shorten(content.socialHook, 150));
+  if (content.introNote) return sentence(shorten(content.introNote, 150));
+  if (content.description) return sentence(shorten(content.description, 150));
+
+  return sentence(
+    pickFromSeed(slug, [
+      "Vegan Indian cooking with depth, warmth and real flavour",
+      "The kind of dish that earns a regular place at the table",
+      "Proper masala, steady seasoning and a dish worth making well",
+      "Family-style vegan Indian food, served hot and simply",
+    ])
+  );
+}
+
+function recipeMiddle(slug: string, content: ReturnType<typeof getEditorialContent>) {
+  if (content.servingSuggestion) return sentence(shorten(content.servingSuggestion, 150));
+
+  return sentence(
+    pickFromSeed(slug, [
+      "Best served hot with rice, roti or naan and something sharp on the side",
+      "A good dish to bring to the table while the masala is still fragrant",
+      "The flavour lands best when the base is cooked properly and the seasoning is balanced at the end",
+      "Simple, generous cooking that feels at home at the centre of the table",
+    ])
+  );
+}
+
+function guideHook(slug: string, content: ReturnType<typeof getEditorialContent>) {
+  if (content.description) return sentence(shorten(content.description, 150));
+
+  return sentence(
+    pickFromSeed(slug, [
+      "A practical guide for better everyday cooking",
+      "Clear help for building confidence in the kitchen",
+      "Useful guidance for home cooks who want better flavour and technique",
+      "A simpler way to understand an essential part of Indian cooking",
+    ])
+  );
+}
+
+function guideMiddle(slug: string) {
+  return sentence(
+    pickFromSeed(slug, [
+      "Clear, useful cooking guidance is often what makes everyday meals easier and more consistent",
+      "The aim here is practical understanding you can actually use in the kitchen",
+      "A little clarity in the right place can make home cooking feel far more natural",
+      "Straightforward kitchen knowledge makes a big difference over time",
+    ])
+  );
+}
+
+function ctaByType(type: ContentType, slug: string) {
+  if (type === "recipe") {
+    return pickFromSeed(slug, [
+      "Find the full recipe on Vegan Masala.",
+      "Get the full method on Vegan Masala.",
+      "Read the full recipe on Vegan Masala.",
+      "See the full step-by-step recipe on Vegan Masala.",
+    ]);
+  }
+
+  return pickFromSeed(slug, [
+    "Read the full guide on Vegan Masala.",
+    "See the full guide on Vegan Masala.",
+    "Explore the full guide on Vegan Masala.",
+    "Read more on Vegan Masala.",
+  ]);
 }
 
 function recipeHashtags() {
   return [
     "#veganrecipes",
-    "#indianfood",
     "#veganindian",
+    "#indianfood",
     "#plantbased",
     "#vegancooking",
-    "#easyvegan",
-    "#comfortfood",
     "#homecooking",
+    "#comfortfood",
     "#veganuk",
+    "#veganmasala",
   ].join("\n");
 }
 
@@ -123,91 +187,81 @@ function guideHashtags() {
   return [
     "#cookingtips",
     "#cookingguide",
-    "#veganbeginner",
     "#vegancooking",
     "#plantbased",
+    "#homecooking",
     "#veganuk",
     "#kitchentips",
     "#learncooking",
-    "#veganlifestyle",
+    "#veganmasala",
   ].join("\n");
 }
 
-function pinterestRecipeTitle(title: string) {
-  const options = [
+function pinterestRecipeTitle(title: string, slug: string) {
+  return pickFromSeed(slug, [
     `${title} Recipe`,
-    `Easy ${title}`,
-    `${title} - Vegan Indian Recipe`,
     `How To Make ${title}`,
-    `${title} For A Cosy Dinner`,
-  ];
-
-  return options[Math.floor(Math.random() * options.length)];
+    `${title} - Vegan Indian Recipe`,
+    `${title} For A Family-Style Meal`,
+    `Save This ${title} Recipe`,
+  ]);
 }
 
-function pinterestGuideTitle(title: string) {
-  const options = [
+function pinterestGuideTitle(title: string, slug: string) {
+  return pickFromSeed(slug, [
     `${title} Guide`,
-    `Beginner's Guide To ${title}`,
-    `How To Use ${title}`,
     `${title} Explained Simply`,
-    `${title} For Beginners`,
-  ];
-
-  return options[Math.floor(Math.random() * options.length)];
+    `How To Use ${title}`,
+    `Beginner's Guide To ${title}`,
+    `${title} For Home Cooks`,
+  ]);
 }
 
-export function buildInstagramCaption(
-  slug: string,
-  type: ContentType
-) {
-  const title = titleFromSlug(slug);
-  const emoji = emojiByType(type);
+export function buildInstagramCaption(slug: string, type: ContentType) {
+  const content = getEditorialContent(slug, type);
+  const title = content.title || titleFromSlug(slug);
+  const emoji = emojiByType(type, slug);
   const tags = hashtagify(slug);
 
   if (type === "recipe") {
-    return `${emoji} ${recipeHooks(title)}
+    return `${emoji} ${recipeHook(slug, content)}
 
-${recipeBenefits(title)}
+${recipeMiddle(slug, content)}
 
-${ctaByType(type, title)}
+${ctaByType(type, slug)}
 
 Read more:
 https://vegan-masala.com
 
 ${tags}
 
-${recipeHashtags()}
-#veganmasala`;
+${recipeHashtags()}`;
   }
 
-  return `${emoji} ${guideHooks(title)}
+  return `${emoji} ${guideHook(slug, content)}
 
-${guideBenefits()}
+${guideMiddle(slug)}
 
-${ctaByType(type, title)}
+${ctaByType(type, slug)}
 
 Read more:
 https://vegan-masala.com
 
 ${tags}
 
-${guideHashtags()}
-#veganmasala`;
+${guideHashtags()}`;
 }
 
-export function buildFacebookCaption(
-  slug: string,
-  type: ContentType
-) {
-  const title = titleFromSlug(slug);
+export function buildFacebookCaption(slug: string, type: ContentType) {
+  const content = getEditorialContent(slug, type);
+  const title = content.title || titleFromSlug(slug);
 
   if (type === "recipe") {
-    return `${recipeHooks(title)}
+    return `${recipeHook(slug, content)}
 
-${recipeBenefits(title)}
+${recipeMiddle(slug, content)}
 
-${ctaByType(type, title)}
+${ctaByType(type, slug)}
 
 Read more:
 https://vegan-masala.com
@@ -216,11 +270,11 @@ ${hashtagify(slug)}
 #veganmasala #plantbased #indianfood`;
   }
 
-  return `${guideHooks(title)}
+  return `${guideHook(slug, content)}
 
-${guideBenefits()}
+${guideMiddle(slug)}
 
-${ctaByType(type, title)}
+${ctaByType(type, slug)}
 
 Read more:
 https://vegan-masala.com
@@ -229,44 +283,42 @@ ${hashtagify(slug)}
 #veganmasala #cookingtips #plantbased`;
 }
 
-export function buildPinterestCaption(
-  slug: string,
-  type: ContentType
-) {
-  const title = titleFromSlug(slug);
+export function buildPinterestCaption(slug: string, type: ContentType) {
+  const content = getEditorialContent(slug, type);
+  const title = content.title || titleFromSlug(slug);
 
   if (type === "recipe") {
-    return `${pinterestRecipeTitle(title)}
+    return `${pinterestRecipeTitle(title, slug)}
 
-A flavour-packed vegan Indian recipe that feels comforting, satisfying, and surprisingly achievable at home.
+${recipeHook(slug, content)}
 
-Perfect if you want:
-• bold flavour
-• cosy comfort food
-• simple ingredients
-• a beautiful homemade result
+Good for:
+• family-style cooking
+• balanced, flavour-led meals
+• vegan Indian food with real character
+• serving hot with rice, roti or naan
 
 Get the full recipe:
 https://vegan-masala.com
 
 #veganrecipes
-#indianrecipes
+#veganindian
+#indianfood
 #plantbased
-#easyrecipes
 #vegancooking
-#veganfood
-#comfortfood`;
+#comfortfood
+#veganmasala`;
   }
 
-  return `${pinterestGuideTitle(title)}
+  return `${pinterestGuideTitle(title, slug)}
 
-A simple, beginner-friendly Vegan Masala guide to help you cook with more confidence and understanding.
+${guideHook(slug, content)}
 
-Perfect for:
-• beginners
-• better flavour
-• practical cooking knowledge
-• everyday vegan cooking
+Useful for:
+• everyday home cooks
+• better flavour and technique
+• clearer kitchen confidence
+• practical vegan cooking help
 
 Read the full guide:
 https://vegan-masala.com
@@ -275,9 +327,9 @@ https://vegan-masala.com
 #cookingguide
 #vegancooking
 #plantbased
-#veganbeginner
 #kitchentips
-#veganfood`;
+#learncooking
+#veganmasala`;
 }
 
 export function saveCaption(
@@ -289,8 +341,5 @@ export function saveCaption(
 
   ensure(dir);
 
-  fs.writeFileSync(
-    path.join(dir, `${slug}.txt`),
-    text
-  );
+  fs.writeFileSync(path.join(dir, `${slug}.txt`), text);
 }

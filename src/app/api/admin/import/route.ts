@@ -113,7 +113,11 @@ export async function POST(req: Request) {
   // 2) Optional rewrite (AI)
   if (rewrite) {
     log += "\nRunning AI rewrite...\n";
-    const rewriteRes = await run("node", ["scripts/ai-rewrite-recipe.mjs", createdPath]);
+    const rewriteRes = await run("node", [
+  "scripts/ai-rewrite-recipe.mjs",
+  "--file",
+  createdPath,
+]);
     log += rewriteRes.out + "\n";
 
     if (rewriteRes.code !== 0) {

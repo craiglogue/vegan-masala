@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs";
 import sharp from "sharp";
 import satori from "satori";
 
@@ -16,6 +17,9 @@ import { backgroundBuffer, findContentImage, logoBuffer } from "./core/images";
 import { buildPinterestCaption, saveCaption } from "./core/captions";
 import { updateManifest } from "./core/manifest";
 import { saveGeneratedPinterestImage } from "./core/generatedAssets";
+
+import { getRecipeBySlug } from "@/lib/recipes";
+import { getGuideBySlug } from "@/lib/guides";
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const OUTPUT = path.join(ROOT, "generated", "pinterest");
@@ -59,6 +63,185 @@ async function resolveSourceImage(
   }
 
   return null;
+}
+
+function titleLines(text: string) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+  let maxLen = 17;
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+
+    if (next.length <= maxLen) {
+      current = next;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+
+      if (lines.length === 1) maxLen = 20;
+      if (lines.length === 2) maxLen = 24;
+    }
+  }
+
+  if (current) lines.push(current);
+
+  if (lines.length <= 3) return lines;
+
+  return [lines[0], lines[1], lines.slice(2).join(" ")];
+}
+
+function pickFromSeed(slug: string, options: string[]) {
+  const sum = slug.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return options[sum % options.length];
+}
+
+function cleanPromoText(text?: string) {
+  return String(text || "")
+    .replace(/\bpacked with flavour\b/gi, "")
+    .replace(/\bperfect weeknight meal\b/gi, "")
+    .replace(/\brestaurant-quality\b/gi, "")
+    .replace(/\bcomes together beautifully\b/gi, "")
+    .replace(/\bwritten in the style of\b/gi, "")
+    .replace(/\bflavour-packed\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function shortenLine(text: string, max = 58) {
+  const clean = cleanPromoText(text);
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max).trimEnd()}…`;
+}
+
+function getEditorialContent(slug: string, type: ContentType) {
+  if (type === "recipe") {
+    const recipe: any = getRecipeBySlug(slug);
+
+    if (recipe) {
+      return {
+        title: recipe.title || titleFromSlug(slug),
+        description: recipe.description || "",
+        introNote: recipe.introNote || "",
+        servingSuggestion: recipe.servingSuggestion || "",
+        socialHook: recipe.socialHook || "",
+      };
+    }
+  }
+
+  const guide: any = getGuideBySlug(slug);
+
+  if (guide) {
+    return {
+      title: guide.title || titleFromSlug(slug),
+      description: guide.description || "",
+      introNote: "",
+      servingSuggestion: "",
+      socialHook: "",
+    };
+  }
+
+  return {
+    title: titleFromSlug(slug),
+    description: "",
+    introNote: "",
+    servingSuggestion: "",
+    socialHook: "",
+  };
+}
+
+function buildNaturalHook(
+  content: {
+    title?: string;
+    description?: string;
+    introNote?: string;
+    servingSuggestion?: string;
+    socialHook?: string;
+  },
+  type: ContentType,
+  slug: string
+) {
+  if (content.socialHook) return shortenLine(content.socialHook, 34);
+  if (content.introNote) return shortenLine(content.introNote, 34);
+
+  if (type === "guide") {
+    return pickFromSeed(slug, [
+      "Cook With More Confidence",
+      "Simple, Practical Kitchen Help",
+      "A Better Way To Learn",
+      "Useful Guidance For Home Cooks",
+      "Start With The Essentials",
+    ]);
+  }
+
+  return pickFromSeed(slug, [
+    "Cooked Properly, Served Hot",
+    "Family-Style Vegan Indian Food",
+    "A Dish Worth Making Well",
+    "Warm, Grounded, Full Of Character",
+    "Made For The Centre Of The Table",
+  ]);
+}
+
+function buildNaturalSubtitle(
+  content: {
+    description?: string;
+    introNote?: string;
+    servingSuggestion?: string;
+  },
+  type: ContentType,
+  slug: string
+) {
+  if (content.description) return shortenLine(content.description, 52);
+  if (content.servingSuggestion) return shortenLine(content.servingSuggestion, 52);
+
+  if (type === "guide") {
+    return pickFromSeed(slug, [
+      "Practical guidance for better everyday cooking",
+      "Clear help for building confidence in the kitchen",
+      "A simple guide for stronger flavour and technique",
+    ]);
+  }
+
+  return pickFromSeed(slug, [
+    "Vegan Indian cooking with depth, warmth and real flavour",
+    "Built on proper masala, steady seasoning and patience",
+    "The kind of cooking that earns a place at the table",
+  ]);
+}
+
+function buildBadge(type: ContentType) {
+  return type === "recipe" ? "RECIPE" : "GUIDE";
+}
+
+async function brandedTextureOverlay() {
+  const texturePath = path.join(
+    process.cwd(),
+    "public",
+    "images",
+    "page-background.jpg"
+  );
+
+  if (!fs.existsSync(texturePath)) return null;
+
+  return sharp(texturePath)
+    .resize(WIDTH, HEIGHT, { fit: "cover" })
+    .modulate({ brightness: 0.88, saturation: 0.6 })
+    .png()
+    .toBuffer();
+}
+
+async function brandWashOverlay() {
+  return sharp(
+    Buffer.from(`
+      <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+        <rect width="${WIDTH}" height="${HEIGHT}" fill="#081318" fill-opacity="0.6"/>
+      </svg>
+    `)
+  )
+    .png()
+    .toBuffer();
 }
 
 async function topGradient() {
@@ -144,125 +327,6 @@ async function imageFrameOverlay() {
   )
     .png()
     .toBuffer();
-}
-
-function titleLines(text: string) {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
-  let maxLen = 17;
-
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-
-    if (next.length <= maxLen) {
-      current = next;
-    } else {
-      if (current) lines.push(current);
-      current = word;
-
-      if (lines.length === 1) maxLen = 20;
-      if (lines.length === 2) maxLen = 24;
-    }
-  }
-
-  if (current) lines.push(current);
-
-  if (lines.length <= 3) return lines;
-
-  return [lines[0], lines[1], lines.slice(2).join(" ")];
-}
-
-function pickFromSeed(slug: string, options: string[]) {
-  const sum = slug.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return options[sum % options.length];
-}
-
-function buildSubtitle(type: ContentType, slug: string) {
-  if (type === "recipe") {
-    return pickFromSeed(slug, [
-      "Rich, cosy and full of flavour",
-      "Easy vegan comfort food",
-      "A hearty homemade dinner idea",
-      "Simple ingredients, big flavour",
-      "Warm, satisfying and comforting",
-      "A flavour-packed vegan favourite",
-      "Cosy food worth saving",
-      "Homemade comfort, made simple",
-    ]);
-  }
-
-  return pickFromSeed(slug, [
-    "A simple beginner-friendly guide",
-    "Cook with more confidence",
-    "Make vegan Indian cooking easier",
-    "Learn the essentials clearly",
-    "Practical tips for better flavour",
-    "A clearer way to understand it",
-    "Simple guidance you can use",
-    "Easy help for home cooks",
-  ]);
-}
-
-function buildBadge(type: ContentType) {
-  return type === "recipe" ? "RECIPE" : "GUIDE";
-}
-
-function buildHookLine(title: string, type: ContentType, slug: string) {
-  const lower = title.toLowerCase();
-
-  if (type === "guide") {
-    if (lower.includes("beginner")) return "Start Here";
-    if (lower.includes("spice")) return "Better Flavour Starts Here";
-    if (lower.includes("dairy")) return "Simple Everyday Swaps";
-    return pickFromSeed(slug, [
-      "Cook With Confidence",
-      "Learn It Simply",
-      "Make Cooking Easier",
-      "Understand The Essentials",
-      "Practical Kitchen Help",
-    ]);
-  }
-
-  if (lower.includes("30 minute") || lower.includes("30-minute")) {
-    return "Quick Weeknight Favourite";
-  }
-
-  if (lower.includes("easy")) {
-    return "Easy Comfort Food";
-  }
-
-  if (lower.includes("restaurant") || lower.includes("hotel style")) {
-    return "Restaurant Style At Home";
-  }
-
-  if (lower.includes("creamy")) {
-    return "Creamy Vegan Favourite";
-  }
-
-  if (lower.includes("spicy")) {
-    return "Bold, Warming Flavour";
-  }
-
-  if (lower.includes("naan")) {
-    return "Homemade Favourite";
-  }
-
-  if (lower.includes("pakora")) {
-    return "Crisp, Golden And Moreish";
-  }
-
-  if (lower.includes("curry")) {
-    return "A Cosy Curry Night Idea";
-  }
-
-  return pickFromSeed(slug, [
-    "Comfort Food Made Simple",
-    "Big Flavour, Easy To Love",
-    "Cosy Vegan Indian Cooking",
-    "Save This Dinner Idea",
-    "Warm, Hearty And Satisfying",
-  ]);
 }
 
 async function textOverlay(
@@ -416,8 +480,12 @@ async function textOverlay(
 async function createPost(slug: string, title: string, type: ContentType) {
   ensureDir(OUTPUT);
 
+  const editorial = getEditorialContent(slug, type);
+
   const img = await resolveSourceImage(slug, type);
   const bg = await backgroundBuffer(WIDTH, HEIGHT, null, BRAND.bg);
+  const texture = await brandedTextureOverlay();
+  const wash = await brandWashOverlay();
 
   let contentImage: Buffer | null = null;
   let contentImageShadow: Buffer | null = null;
@@ -473,42 +541,46 @@ async function createPost(slug: string, title: string, type: ContentType) {
   const frame = await frameOverlay();
   const imageFrame = await imageFrameOverlay();
   const text = await textOverlay(
-    title,
-    buildSubtitle(type, slug),
+    editorial.title || title,
+    buildNaturalSubtitle(editorial, type, slug),
     buildBadge(type),
-    buildHookLine(title, type, slug)
+    buildNaturalHook(editorial, type, slug)
   );
   const logo = await logoBuffer(220);
 
-  const comp: sharp.OverlayOptions[] = [
-    { input: bg, left: 0, top: 0 },
+  const comp: sharp.OverlayOptions[] = [{ input: bg, left: 0, top: 0 }];
 
-    ...(contentImageShadow
-      ? [
-          {
-            input: contentImageShadow,
-            left: 70,
-            top: 260,
-          } as sharp.OverlayOptions,
-        ]
-      : []),
+  if (texture) {
+    comp.push({ input: texture, left: 0, top: 0, blend: "overlay" });
+  }
 
-    ...(contentImage
-      ? [
-          {
-            input: contentImage,
-            left: 84,
-            top: 274,
-          } as sharp.OverlayOptions,
-        ]
-      : []),
+  if (wash) {
+    comp.push({ input: wash, left: 0, top: 0 });
+  }
 
+  if (contentImageShadow) {
+    comp.push({
+      input: contentImageShadow,
+      left: 70,
+      top: 260,
+    });
+  }
+
+  if (contentImage) {
+    comp.push({
+      input: contentImage,
+      left: 84,
+      top: 274,
+    });
+  }
+
+  comp.push(
     { input: gradTop, left: 0, top: 0 },
     { input: gradBottom, left: 0, top: 0 },
     { input: text, left: 0, top: 0 },
     { input: imageFrame, left: 0, top: 0 },
-    { input: frame, left: 0, top: 0 },
-  ];
+    { input: frame, left: 0, top: 0 }
+  );
 
   if (logo) {
     comp.push({
@@ -561,7 +633,12 @@ export async function generateLatestPinterest() {
   }
 
   const slug = slugFromFile(chosen.file);
-  const result = await createPost(slug, titleFromSlug(slug), chosen.type);
+  const editorial = getEditorialContent(slug, chosen.type);
+  const result = await createPost(
+    slug,
+    editorial.title || titleFromSlug(slug),
+    chosen.type
+  );
 
   return {
     success: true,
@@ -581,7 +658,12 @@ export async function generatePinterestBySlug(slug: string) {
     throw new Error("Slug not found");
   }
 
-  const result = await createPost(slug, titleFromSlug(slug), type);
+  const editorial = getEditorialContent(slug, type);
+  const result = await createPost(
+    slug,
+    editorial.title || titleFromSlug(slug),
+    type
+  );
 
   return {
     success: true,
@@ -607,7 +689,12 @@ export async function generateAllPinterest() {
 
   for (const item of items) {
     const slug = slugFromFile(item.file);
-    const result = await createPost(slug, titleFromSlug(slug), item.type);
+    const editorial = getEditorialContent(slug, item.type);
+    const result = await createPost(
+      slug,
+      editorial.title || titleFromSlug(slug),
+      item.type
+    );
 
     generated.push({
       slug,

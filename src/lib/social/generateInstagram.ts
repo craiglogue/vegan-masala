@@ -13,13 +13,13 @@ import {
   titleFromSlug,
   type ContentType,
 } from "./core/content";
-
 import { findContentImage } from "./core/images";
-
 import { buildInstagramCaption, saveCaption } from "./core/captions";
-
 import { updateManifest } from "./core/manifest";
 import { saveGeneratedInstagramImage } from "./core/generatedAssets";
+
+import { getRecipeBySlug } from "@/lib/recipes";
+import { getGuideBySlug } from "@/lib/guides";
 
 const ROOT = process.env.VERCEL ? "/tmp" : process.cwd();
 const OUTPUT = path.join(ROOT, "generated", "instagram");
@@ -270,86 +270,116 @@ function buildBadge(type: ContentType) {
   return type === "recipe" ? "RECIPE" : "GUIDE";
 }
 
-function buildSubtitle(type: ContentType, slug: string) {
+function cleanPromoText(text?: string) {
+  return String(text || "")
+    .replace(/\bpacked with flavour\b/gi, "")
+    .replace(/\bperfect weeknight meal\b/gi, "")
+    .replace(/\brestaurant-quality\b/gi, "")
+    .replace(/\bcomes together beautifully\b/gi, "")
+    .replace(/\bwritten in the style of\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function shortenLine(text: string, max = 58) {
+  const clean = cleanPromoText(text);
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max).trimEnd()}…`;
+}
+
+function getEditorialContent(slug: string, type: ContentType) {
   if (type === "recipe") {
+    const recipe: any = getRecipeBySlug(slug);
+
+    if (recipe) {
+      return {
+        title: recipe.title || titleFromSlug(slug),
+        description: recipe.description || "",
+        introNote: recipe.introNote || "",
+        servingSuggestion: recipe.servingSuggestion || "",
+        socialHook: recipe.socialHook || "",
+      };
+    }
+  }
+
+  const guide: any = getGuideBySlug(slug);
+
+  if (guide) {
+    return {
+      title: guide.title || titleFromSlug(slug),
+      description: guide.description || "",
+      introNote: "",
+      servingSuggestion: "",
+      socialHook: "",
+    };
+  }
+
+  return {
+    title: titleFromSlug(slug),
+    description: "",
+    introNote: "",
+    servingSuggestion: "",
+    socialHook: "",
+  };
+}
+
+function buildNaturalHook(
+  content: {
+    title?: string;
+    description?: string;
+    introNote?: string;
+    servingSuggestion?: string;
+    socialHook?: string;
+  },
+  type: ContentType,
+  slug: string
+) {
+  if (content.socialHook) return shortenLine(content.socialHook, 44);
+  if (content.introNote) return shortenLine(content.introNote, 44);
+
+  if (type === "guide") {
     return pickFromSeed(slug, [
-      "Rich, cosy and full of flavour",
-      "Easy vegan comfort food",
-      "A hearty homemade dinner idea",
-      "Simple ingredients, big flavour",
-      "Warm, satisfying and comforting",
-      "A flavour-packed vegan favourite",
-      "Cosy food worth saving",
-      "Homemade comfort, made simple",
+      "Cook With More Confidence",
+      "Simple, Practical Kitchen Help",
+      "A Better Way To Learn",
+      "Useful Guidance For Home Cooks",
+      "Start With The Essentials",
     ]);
   }
 
   return pickFromSeed(slug, [
-    "A simple beginner-friendly guide",
-    "Cook with more confidence",
-    "Make vegan Indian cooking easier",
-    "Learn the essentials clearly",
-    "Practical tips for better flavour",
-    "A clearer way to understand it",
-    "Simple guidance you can use",
-    "Easy help for home cooks",
+    "Cooked Properly, Served Hot",
+    "Family-Style Vegan Indian Food",
+    "A Dish Worth Making Well",
+    "Warm, Grounded, Full Of Character",
+    "Made For The Centre Of The Table",
   ]);
 }
 
-function buildHookLine(title: string, type: ContentType, slug: string) {
-  const lower = title.toLowerCase();
+function buildNaturalSubtitle(
+  content: {
+    description?: string;
+    introNote?: string;
+    servingSuggestion?: string;
+  },
+  type: ContentType,
+  slug: string
+) {
+  if (content.description) return shortenLine(content.description, 66);
+  if (content.servingSuggestion) return shortenLine(content.servingSuggestion, 66);
 
   if (type === "guide") {
-    if (lower.includes("beginner")) return "Start Here";
-    if (lower.includes("spice")) return "Better Flavour Starts Here";
-    if (lower.includes("dairy")) return "Simple Everyday Swaps";
     return pickFromSeed(slug, [
-      "Cook With Confidence",
-      "Learn It Simply",
-      "Make Cooking Easier",
-      "Understand The Essentials",
-      "Practical Kitchen Help",
+      "Practical guidance for better everyday cooking",
+      "Clear help for building confidence in the kitchen",
+      "A simple guide for stronger flavour and technique",
     ]);
   }
 
-  if (lower.includes("30 minute") || lower.includes("30-minute")) {
-    return "Quick Weeknight Favourite";
-  }
-
-  if (lower.includes("easy")) {
-    return "Easy Comfort Food";
-  }
-
-  if (lower.includes("restaurant") || lower.includes("hotel style")) {
-    return "Restaurant Style At Home";
-  }
-
-  if (lower.includes("creamy")) {
-    return "Creamy Vegan Favourite";
-  }
-
-  if (lower.includes("spicy")) {
-    return "Bold, Warming Flavour";
-  }
-
-  if (lower.includes("naan")) {
-    return "Homemade Favourite";
-  }
-
-  if (lower.includes("pakora")) {
-    return "Crisp, Golden And Moreish";
-  }
-
-  if (lower.includes("curry")) {
-    return "A Cosy Curry Night Idea";
-  }
-
   return pickFromSeed(slug, [
-    "Comfort Food Made Simple",
-    "Big Flavour, Easy To Love",
-    "Cosy Vegan Indian Cooking",
-    "Save This Dinner Idea",
-    "Warm, Hearty And Satisfying",
+    "Vegan Indian cooking with depth, warmth and real flavour",
+    "Built on proper masala, steady seasoning and patience",
+    "The kind of cooking that earns a place at the table",
   ]);
 }
 
@@ -368,6 +398,35 @@ async function backgroundBufferFromSource(source: string | Buffer | null) {
   }
 
   return sharp(source).resize(WIDTH, HEIGHT, { fit: "cover" }).png().toBuffer();
+}
+
+async function brandedTextureOverlay() {
+  const texturePath = path.join(
+    process.cwd(),
+    "public",
+    "images",
+    "page-background.jpg"
+  );
+
+  if (!fs.existsSync(texturePath)) return null;
+
+  return sharp(texturePath)
+    .resize(WIDTH, HEIGHT, { fit: "cover" })
+    .modulate({ brightness: 0.85, saturation: 0.55 })
+    .png()
+    .toBuffer();
+}
+
+async function brandWashOverlay() {
+  return sharp(
+    Buffer.from(`
+      <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+        <rect width="${WIDTH}" height="${HEIGHT}" fill="#081318" fill-opacity="0.58"/>
+      </svg>
+    `)
+  )
+    .png()
+    .toBuffer();
 }
 
 async function topGradient() {
@@ -611,35 +670,48 @@ async function createPost(slug: string, title: string, type: ContentType) {
     ensureDir(PUBLIC_OUTPUT);
   }
 
+  const editorial = getEditorialContent(slug, type);
+
   const sourceImage = await resolveSourceImage(slug, type);
   const fontPath = await resolveFontPath();
   const font = loadFontOrThrow(fontPath);
   const logo = await resolveLogo();
 
   const bg = await backgroundBufferFromSource(sourceImage);
+  const texture = await brandedTextureOverlay();
+  const wash = await brandWashOverlay();
   const gradTop = await topGradient();
   const gradBottom = await bottomGradient();
   const vignette = await vignetteOverlay();
   const cornerMask = await cornerSoftMask();
   const frame = await frameOverlay();
   const text = await textOverlay(
-    title,
-    buildSubtitle(type, slug),
+    editorial.title || title,
+    buildNaturalSubtitle(editorial, type, slug),
     buildBadge(type),
-    buildHookLine(title, type, slug),
+    buildNaturalHook(editorial, type, slug),
     font
   );
   const logoPng = await logoOverlay(logo);
 
-  const comps: sharp.OverlayOptions[] = [
-    { input: bg, left: 0, top: 0 },
+  const comps: sharp.OverlayOptions[] = [{ input: bg, left: 0, top: 0 }];
+
+  if (texture) {
+    comps.push({ input: texture, left: 0, top: 0, blend: "overlay" });
+  }
+
+  if (wash) {
+    comps.push({ input: wash, left: 0, top: 0 });
+  }
+
+  comps.push(
     { input: gradTop, left: 0, top: 0 },
     { input: gradBottom, left: 0, top: 0 },
     { input: vignette, left: 0, top: 0 },
     { input: cornerMask, left: 0, top: 0 },
     { input: text, left: 0, top: 0 },
-    { input: frame, left: 0, top: 0 },
-  ];
+    { input: frame, left: 0, top: 0 }
+  );
 
   if (logoPng) {
     comps.push({
@@ -692,7 +764,12 @@ export async function generateInstagramBySlug(slug: string) {
     throw new Error("Slug not found");
   }
 
-  const result = await createPost(slug, titleFromSlug(slug), type);
+  const editorial = getEditorialContent(slug, type);
+  const result = await createPost(
+    slug,
+    editorial.title || titleFromSlug(slug),
+    type
+  );
 
   return {
     success: true,
@@ -717,7 +794,12 @@ export async function generateLatestInstagram() {
   }
 
   const slug = slugFromFile(chosen.file);
-  const result = await createPost(slug, titleFromSlug(slug), chosen.type);
+  const editorial = getEditorialContent(slug, chosen.type);
+  const result = await createPost(
+    slug,
+    editorial.title || titleFromSlug(slug),
+    chosen.type
+  );
 
   return {
     success: true,
@@ -742,7 +824,12 @@ export async function generateAllInstagram() {
 
   for (const item of items) {
     const slug = slugFromFile(item.file);
-    const result = await createPost(slug, titleFromSlug(slug), item.type);
+    const editorial = getEditorialContent(slug, item.type);
+    const result = await createPost(
+      slug,
+      editorial.title || titleFromSlug(slug),
+      item.type
+    );
 
     generated.push({
       slug,

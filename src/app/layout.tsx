@@ -17,12 +17,10 @@ export const metadata: Metadata = {
   },
   description: "Vegan Indian recipes made simple. Weeknight-friendly and tested.",
 
-  // ✅ Google Search Console verification
   verification: {
     google: "YpPgzdzyFcDfPTJ-m6ANwOVq0L1uH3pjr8LyE5RgSQ8",
   },
 
-  // ✅ Favicons + PWA manifest (cache-busted)
   icons: {
     icon: [
       { url: "/favicon.ico?v=3" },
@@ -184,10 +182,25 @@ function SiteFooter() {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${rajdhani.variable} scroll-pt-[140px]`}>
-      <body className="min-h-screen">
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+      <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+        <div className="relative min-h-screen">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.25]"
+            style={{
+              backgroundImage: "url('/images/page-background.jpg')",
+              backgroundSize: "900px",
+              backgroundRepeat: "repeat",
+              backgroundPosition: "top center",
+            }}
+          />
+
+          <div className="relative z-10">
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+          </div>
+        </div>
       </body>
     </html>
   );

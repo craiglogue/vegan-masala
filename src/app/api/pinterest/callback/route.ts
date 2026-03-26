@@ -65,11 +65,17 @@ export async function GET(req: Request) {
     await savePinterestToken(tokenData);
 
     return NextResponse.json({
-      ok: true,
-      saved: true,
-      hasAccessToken: !!tokenData?.access_token,
-      tokenKeys: Object.keys(tokenData || {}),
-    });
+  ok: true,
+  saved: true,
+  hasAccessToken: !!tokenData?.access_token,
+  hasRefreshToken: !!tokenData?.refresh_token,
+  refreshTokenPreview: tokenData?.refresh_token
+    ? `${tokenData.refresh_token.slice(0, 12)}...${tokenData.refresh_token.slice(-12)}`
+    : null,
+  refreshToken: tokenData?.refresh_token || null,
+  tokenKeys: Object.keys(tokenData || {}),
+});
+
   } catch (err: any) {
     return NextResponse.json(
       {
