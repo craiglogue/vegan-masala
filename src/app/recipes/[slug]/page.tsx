@@ -203,10 +203,15 @@ export async function generateMetadata({
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
-  const hero =
+  const heroBase =
     typeof recipe.image === "string" && recipe.image.trim().length > 0
       ? recipe.image
       : getRecipeImage(recipe.slug);
+
+  const hero =
+    recipe.imageVersion !== undefined && recipe.imageVersion !== null
+      ? `${heroBase}${heroBase.includes("?") ? "&" : "?"}v=${recipe.imageVersion}`
+      : heroBase;
 
   const heroAbs = absUrl(siteUrl, hero);
 
@@ -251,12 +256,17 @@ export default async function RecipePage({
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
-  const hero =
+  const heroBase =
     typeof recipe.image === "string" && recipe.image.trim().length > 0
       ? recipe.image
       : getRecipeImage(recipe.slug);
 
-  const placeholder = isPlaceholderImage(hero);
+  const hero =
+    recipe.imageVersion !== undefined && recipe.imageVersion !== null
+      ? `${heroBase}${heroBase.includes("?") ? "&" : "?"}v=${recipe.imageVersion}`
+      : heroBase;
+
+  const placeholder = isPlaceholderImage(heroBase);
 
   const rawBody: string =
     recipe.content ||
