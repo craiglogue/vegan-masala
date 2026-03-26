@@ -74,6 +74,24 @@ function buildPrompt(data) {
     .join(" ");
 }
 
+function getCurrentImagePath(recipeSlug, parsed) {
+  const fmImage = String(parsed?.data?.image || "").trim();
+
+  const directCandidates = [
+    fmImage.startsWith("/") ? path.join(ROOT, "public", fmImage.replace(/^\//, "")) : "",
+    path.join(OUT_DIR, `${recipeSlug}.png`),
+    path.join(OUT_DIR, `${recipeSlug}.jpg`),
+    path.join(OUT_DIR, `${recipeSlug}.jpeg`),
+    path.join(OUT_DIR, `${recipeSlug}.webp`),
+  ].filter(Boolean);
+
+  for (const candidate of directCandidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  return null;
+}
+
 async function generateImage({ prompt, model, styleId, token }) {
   const body = {
     prompt,
@@ -96,13 +114,51 @@ async function generateImage({ prompt, model, styleId, token }) {
     throw new Error(`Recraft image generation failed: ${JSON.stringify(json)}`);
   }
 
-  const url =
-    json?.data?.[0]?.url ||
-    json?.image?.url ||
-    null;
+  const url = json?.data?.[0]?.url || json?.image?.url || null;
 
   if (!url) {
     throw new Error(`Recraft returned no image URL: ${JSON.stringify(json)}`);
+  }
+
+  return url;
+}
+
+async function remixImage({ imagePath, prompt, strength, model, styleId, token }) {
+  const form = new FormData();
+  const imageBuffer = fs.readFileSync(imagePath);
+  const imageName = path.basename(imagePath);
+
+  form.set(
+    "image",
+    new Blob([imageBuffer], { type: "image/png" }),
+    imageName
+  );
+  form.set("prompt", prompt);
+  form.set("strength", String(strength));
+  form.set("model", model);
+
+  if (styleId) {
+    form.set("style_id", styleId);
+  }
+
+  const res = await fetch("https://external.api.recraft.ai/v1/images/imageToImage", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: form,
+  });
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(`Recraft remix failed: ${JSON.stringify(json)}`);
+  }
+
+  const url = json?.data?.[0]?.url || json?.image?.url || null;
+
+  if (!url) {
+    throw new Error(`Recraft returned no remixed image URL: ${JSON.stringify(json)}`);
   }
 
   return url;
@@ -122,9 +178,17 @@ async function main() {
 
   const slugIdx = args.indexOf("--slug");
   const fileIdx = args.indexOf("--file");
+  const remixPromptIdx = args.indexOf("--remix-prompt");
+  const strengthIdx = args.indexOf("--strength");
+  const remixModelIdx = args.indexOf("--remix-model");
 
   let filePath = fileIdx !== -1 ? args[fileIdx + 1] : null;
   const slug = slugIdx !== -1 ? args[slugIdx + 1] : null;
+  const remixPrompt = remixPromptIdx !== -1 ? String(args[remixPromptIdx + 1] || "").trim() : "";
+  const strength =
+    strengthIdx !== -1 ? Number(args[strengthIdx + 1]) : 0.35;
+  const remixModel =
+    remixModelIdx !== -1 ? String(args[remixModelIdx + 1] || "").trim() : "recraftv3";
 
   if (!filePath && slug) {
     filePath = findRecipeBySlug(slug);
@@ -160,37 +224,77 @@ async function main() {
   const data = parsed.data || {};
 
   const recipeSlug = String(data.slug || path.basename(filePath).replace(/\.mdx?$/i, "")).trim();
-  const prompt = buildPrompt(data);
 
-  console.log(`\n🔹 Recraft prompt for ${recipeSlug}:\n`);
-  console.log(prompt);
-  console.log("");
+  ensureDir(OUT_DIR);
+  const outPath = path.join(OUT_DIR, `${recipeSlug}.png`);
+  const publicPath = `/images/recipes/${recipeSlug}.png`;
 
-  if (dryRun) {
-    ok("Dry run complete.");
-    return;
+  let imageUrl = "";
+  let modeLabel = "";
+
+  if (remixPrompt) {
+    const currentImagePath = getCurrentImagePath(recipeSlug, parsed);
+    if (!currentImagePath) {
+      die(
+        `No current image found for ${recipeSlug}. Generate the first image before using --remix-prompt.`
+      );
+    }
+
+    if (!(strength >= 0 && strength <= 1)) {
+      die("Strength must be between 0 and 1.");
+    }
+
+    console.log(`\n🔹 Remixing image for ${recipeSlug}\n`);
+    console.log(`Using source image: ${currentImagePath}`);
+    console.log(`Remix model: ${remixModel}`);
+    console.log(`Strength: ${strength}`);
+    console.log(`Prompt: ${remixPrompt}\n`);
+
+    if (dryRun) {
+      ok("Dry run complete.");
+      return;
+    }
+
+    imageUrl = await remixImage({
+      imagePath: currentImagePath,
+      prompt: remixPrompt,
+      strength,
+      model: remixModel,
+      styleId,
+      token,
+    });
+
+    modeLabel = "remixed";
+  } else {
+    const prompt = buildPrompt(data);
+
+    console.log(`\n🔹 Recraft prompt for ${recipeSlug}:\n`);
+    console.log(prompt);
+    console.log("");
+
+    if (dryRun) {
+      ok("Dry run complete.");
+      return;
+    }
+
+    imageUrl = await generateImage({
+      prompt,
+      model,
+      styleId,
+      token,
+    });
+
+    modeLabel = "generated";
   }
-
-  const imageUrl = await generateImage({
-    prompt,
-    model,
-    styleId,
-    token,
-  });
 
   console.log(`🔹 Recraft image URL:\n${imageUrl}\n`);
 
   const buffer = await downloadBuffer(imageUrl);
 
-  ensureDir(OUT_DIR);
-
-  const outPath = path.join(OUT_DIR, `${recipeSlug}.png`);
   await (await import("sharp")).default(buffer)
     .resize(1600, 1200, { fit: "cover" })
     .png()
     .toFile(outPath);
-
-  const publicPath = `/images/recipes/${recipeSlug}.png`;
 
   if (!noWrite) {
     const nextData = {
@@ -203,7 +307,7 @@ async function main() {
     ok(`Updated frontmatter image: ${publicPath}`);
   }
 
-  ok(`Saved image: ${outPath}`);
+  ok(`${modeLabel === "remixed" ? "Remixed" : "Saved"} image: ${outPath}`);
 }
 
 main().catch((err) => {

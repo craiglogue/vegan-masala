@@ -40,6 +40,19 @@ type PipelineResult =
       log?: string;
     };
 
+type RemixResult =
+  | {
+      ok: true;
+      slug: string;
+      log?: string;
+      message?: string;
+    }
+  | {
+      ok: false;
+      error: string;
+      log?: string;
+    };
+
 export default function AdminImportPage() {
   const [url, setUrl] = useState("");
   const [rewrite, setRewrite] = useState(true);
@@ -56,6 +69,13 @@ export default function AdminImportPage() {
   const [heroFile, setHeroFile] = useState<File | null>(null);
   const [heroBusy, setHeroBusy] = useState(false);
   const [heroMsg, setHeroMsg] = useState<string | null>(null);
+
+  // RECRAFT REMIX
+  const [remixPrompt, setRemixPrompt] = useState("");
+  const [remixStrength, setRemixStrength] = useState("0.35");
+  const [remixBusy, setRemixBusy] = useState(false);
+  const [remixMsg, setRemixMsg] = useState<string | null>(null);
+  const [remixLog, setRemixLog] = useState<string>("Waiting…");
 
   // PIPELINE
   const [pipelineMode, setPipelineMode] = useState<
@@ -105,6 +125,10 @@ export default function AdminImportPage() {
     setErrorMsg(null);
     setResult(null);
     setHeroMsg(null);
+    setRemixMsg(null);
+    setRemixPrompt("");
+    setRemixStrength("0.35");
+    setRemixLog("Waiting…");
     setLog(
       `Running import...\nURL: ${u}\nRewrite: ${rewrite ? "Yes" : "No"}\nRecraft image: Yes\n`
     );
@@ -198,6 +222,60 @@ export default function AdminImportPage() {
       setHeroMsg(e?.message ?? "Upload failed.");
     } finally {
       setHeroBusy(false);
+    }
+  }
+
+  async function remixHero() {
+    const t = adminToken.trim();
+    const slug = (result as any)?.ok ? (result as any).slug : null;
+    const prompt = remixPrompt.trim();
+    const strength = Number(remixStrength);
+
+    if (!t) return setRemixMsg("Missing admin token.");
+    if (!slug) return setRemixMsg("Import a recipe first (need the slug).");
+    if (!prompt) return setRemixMsg("Enter a remix prompt first.");
+    if (!Number.isFinite(strength) || strength < 0 || strength > 1) {
+      return setRemixMsg("Strength must be a number between 0 and 1.");
+    }
+
+    setRemixBusy(true);
+    setRemixMsg(null);
+    setRemixLog(
+      `Running Recraft remix...\nSlug: ${slug}\nStrength: ${strength}\nPrompt: ${prompt}\n`
+    );
+
+    try {
+      const res = await fetch("/api/admin/recraft/remix", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-admin-token": t,
+        },
+        body: JSON.stringify({
+          slug,
+          remixPrompt: prompt,
+          strength,
+        }),
+      });
+
+      const data = (await res.json().catch(() => null)) as RemixResult | null;
+
+      if (!res.ok || !data || !data.ok) {
+        const msg =
+          data && "error" in data ? data.error : `Remix failed (${res.status})`;
+        const nextLog = data && "log" in data && data.log ? data.log : `Error: ${msg}`;
+        setRemixMsg(`❌ ${msg}`);
+        setRemixLog(nextLog);
+        return;
+      }
+
+      setRemixMsg(`✅ ${data.message || "Recraft image remixed successfully"}`);
+      setRemixLog(data.log || "✅ Remix complete.");
+    } catch (err: any) {
+      setRemixMsg(`❌ ${err?.message || "Remix request failed"}`);
+      setRemixLog(String(err?.stack ?? err?.message ?? err));
+    } finally {
+      setRemixBusy(false);
     }
   }
 
@@ -364,6 +442,67 @@ export default function AdminImportPage() {
                 >
                   Copy slug
                 </button>
+              </div>
+            </div>
+
+            <div className="border-t border-[var(--border)] pt-5">
+              <div className="text-sm font-extrabold text-[var(--brand-gold)]">
+                Recraft remix
+              </div>
+              <p className="mt-2 text-xs text-[var(--text-soft)]/80">
+                Tweak the automatically generated Recraft image by describing what should change.
+                The remixed image will replace the current recipe hero image for this slug.
+              </p>
+
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-extrabold tracking-wide text-[var(--brand-gold)]">
+                    Remix prompt
+                  </label>
+                  <textarea
+                    value={remixPrompt}
+                    onChange={(e) => setRemixPrompt(e.target.value)}
+                    placeholder="more natural overhead food photography, richer masala, less orange, softer warm light"
+                    rows={4}
+                    className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/40"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold tracking-wide text-[var(--brand-gold)]">
+                    Strength (0 to 1)
+                  </label>
+                  <input
+                    value={remixStrength}
+                    onChange={(e) => setRemixStrength(e.target.value)}
+                    placeholder="0.35"
+                    className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/40 sm:max-w-[180px]"
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={remixHero}
+                    disabled={!adminToken.trim() || !importedSlug || !remixPrompt.trim() || remixBusy}
+                    className="inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-black/30 px-5 py-2.5 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/40 disabled:opacity-50"
+                  >
+                    {remixBusy ? "Remixing…" : "Remix Recraft image"}
+                  </button>
+
+                  {remixMsg ? (
+                    <div className="text-sm text-[var(--text-soft)]">{remixMsg}</div>
+                  ) : null}
+                </div>
+
+                <div>
+                  <div className="mb-2 text-xs font-extrabold tracking-wide text-[var(--brand-gold)]">
+                    Remix log
+                  </div>
+                  <pre className="max-h-[220px] overflow-auto whitespace-pre-wrap rounded-2xl border border-[var(--border)] bg-black/40 p-4 text-xs text-white/80">
+                    {remixLog}
+                  </pre>
+                </div>
               </div>
             </div>
 

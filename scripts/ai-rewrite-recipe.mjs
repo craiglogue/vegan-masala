@@ -160,17 +160,24 @@ async function main() {
   const raw = fs.readFileSync(filePath, "utf8");
   const { data, content } = matter(raw);
 
+  const ingredientsFromFrontmatter = cleanArray(data.ingredients);
+  const instructionsFromFrontmatter = cleanArray(data.instructions);
+  const notesFromFrontmatter = cleanArray(data.notes);
+
   const ingredients =
-    cleanArray(data.ingredients) ||
-    parseBullets(extractSection(content, ["Ingredients", "Ingredient"]));
+    ingredientsFromFrontmatter.length > 0
+      ? ingredientsFromFrontmatter
+      : parseBullets(extractSection(content, ["Ingredients", "Ingredient"]));
 
   const instructions =
-    cleanArray(data.instructions) ||
-    parseNumbered(extractSection(content, ["Method", "Instructions", "Instruction"]));
+    instructionsFromFrontmatter.length > 0
+      ? instructionsFromFrontmatter
+      : parseNumbered(extractSection(content, ["Method", "Instructions", "Instruction"]));
 
   const notes =
-    cleanArray(data.notes) ||
-    parseBullets(extractSection(content, ["Notes", "Tips"]));
+    notesFromFrontmatter.length > 0
+      ? notesFromFrontmatter
+      : parseBullets(extractSection(content, ["Notes", "Tips"]));
 
   const payload = {
     frontmatter: {
@@ -185,13 +192,15 @@ async function main() {
       tags: Array.isArray(data.tags) ? data.tags : [],
       image: data.image || "",
       publishedAt: data.publishedAt || "",
+      introNote: data.introNote || "",
+      servingSuggestion: data.servingSuggestion || "",
     },
     ingredients,
     instructions,
     notes,
   };
 
- const systemPrompt = `
+  const systemPrompt = `
 You are rewriting recipe content for a website called Vegan Masala.
 
 Vegan Masala is a vegan Indian cooking site with a warm, professional, family-oriented voice.
@@ -257,14 +266,48 @@ Notes guidance:
 - Include texture, reheating, leftovers, serving or adjustment notes where helpful.
 - Avoid repeating the method.
 
+Intro note guidance:
+- Write 1 to 2 sentences.
+- It should feel personal, natural and recipe-specific.
+- Do not use "expect" or obvious AI filler.
+- This text appears in the "What to expect" area on the recipe page.
+
+Serving suggestion guidance:
+- Write 1 sentence.
+- Keep it practical and natural.
+- Suggest simple sides or serving context that fits the dish.
+
 Return strict JSON with exactly:
 {
   "description": string,
   "ingredients": string[],
   "instructions": string[],
-  "notes": string[]
+  "notes": string[],
+  "introNote": string,
+  "servingSuggestion": string
 }
 `;
+
+  const userPrompt = `
+Rewrite this recipe for Vegan Masala.
+
+Current recipe data:
+${JSON.stringify(payload, null, 2)}
+
+Requirements:
+1. Rewrite the description in the Vegan Masala voice.
+2. Reorder ingredients into order of use.
+3. Rewrite instructions so the first mention of ingredients includes quantities.
+4. Keep the recipe practical and realistic.
+5. Improve the notes.
+6. Do not remove important ingredients.
+7. Do not make the tone generic.
+8. Write a short, unique introNote for the recipe page.
+9. Write a short, practical servingSuggestion.
+
+Return JSON only.
+`;
+
   if (dryRun) {
     console.log("DRY RUN");
     console.log(userPrompt);
@@ -293,6 +336,8 @@ Return strict JSON with exactly:
     ingredients: cleanArray(rewritten.ingredients),
     instructions: cleanArray(rewritten.instructions),
     notes: cleanArray(rewritten.notes),
+    introNote: String(rewritten.introNote || "").trim(),
+    servingSuggestion: String(rewritten.servingSuggestion || "").trim(),
   };
 
   const nextBody = buildBody({
