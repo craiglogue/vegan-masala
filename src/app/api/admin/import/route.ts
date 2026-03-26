@@ -1,4 +1,3 @@
-// src/app/api/admin/import/route.ts
 import fs from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
@@ -24,7 +23,10 @@ function listRecipeFiles() {
 
 function run(cmd: string, args: string[]) {
   return new Promise<{ code: number; out: string }>((resolve) => {
-    const child = spawn(cmd, args, { cwd: process.cwd() });
+    const child = spawn(cmd, args, {
+      cwd: process.cwd(),
+      env: process.env,
+    });
 
     let out = "";
     child.stdout.on("data", (d) => (out += d.toString()));
@@ -37,7 +39,9 @@ function run(cmd: string, args: string[]) {
 function guessSlugFromFrontmatter(mdx: string) {
   const m = mdx.match(/^\s*slug:\s*["']?([a-z0-9-]+)["']?\s*$/im);
   if (m?.[1]) return m[1];
+
   const t = mdx.match(/^\s*title:\s*(.+)\s*$/im)?.[1] ?? "recipe";
+
   return t
     .toLowerCase()
     .replace(/["']/g, "")
@@ -48,7 +52,6 @@ function guessSlugFromFrontmatter(mdx: string) {
 }
 
 export async function POST(req: Request) {
-  // ✅ PRODUCTION SAFETY: disable this route on Vercel / live deployments
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json(
       { ok: false, error: "Disabled in production" },
@@ -90,13 +93,15 @@ export async function POST(req: Request) {
   log += importRes.out + "\n";
 
   if (importRes.code !== 0) {
-    return NextResponse.json({ ok: false, error: "Import script failed", log }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Import script failed", log },
+      { status: 500 }
+    );
   }
 
   const afterFiles = listRecipeFiles();
   const created = afterFiles.find((p) => !beforeFiles.has(p));
 
-  // Fallback: use newest file if we can’t diff it cleanly
   const createdPath =
     created ??
     afterFiles.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs)[0];
@@ -110,14 +115,16 @@ export async function POST(req: Request) {
 
   const mdxBefore = fs.readFileSync(createdPath, "utf8");
 
-  // 2) Optional rewrite (AI)
+  // 2) Optional AI rewrite
   if (rewrite) {
     log += "\nRunning AI rewrite...\n";
+
     const rewriteRes = await run("node", [
-  "scripts/ai-rewrite-recipe.mjs",
-  "--file",
-  createdPath,
-]);
+      "scripts/ai-rewrite-recipe.mjs",
+      "--file",
+      createdPath,
+    ]);
+
     log += rewriteRes.out + "\n";
 
     if (rewriteRes.code !== 0) {
@@ -128,15 +135,47 @@ export async function POST(req: Request) {
     }
   }
 
+  // 3) Recraft image generation
+  log += "\nRunning Recraft image generation...\n";
+
+  const recraftRes = await run("node", [
+    "scripts/generate-recraft-image.mjs",
+    "--file",
+    createdPath,
+  ]);
+
+  log += recraftRes.out + "\n";
+
+  if (recraftRes.code !== 0) {
+    return NextResponse.json(
+      { ok: false, error: "Recraft image generation failed", log, mdxBefore },
+      { status: 500 }
+    );
+  }
+
+  // 4) Image/frontmatter sync
+  log += "\nFixing recipe image mappings...\n";
+
+  const imageFixRes = await run("node", [
+    "scripts/fix-recipe-images.mjs",
+    "--update-frontmatter",
+  ]);
+
+  log += imageFixRes.out + "\n";
+
+  if (imageFixRes.code !== 0) {
+    return NextResponse.json(
+      { ok: false, error: "Recipe image sync failed", log, mdxBefore },
+      { status: 500 }
+    );
+  }
+
   const mdxAfter = fs.readFileSync(createdPath, "utf8");
 
   const fileName = path.basename(createdPath);
   const relPath = path.relative(process.cwd(), createdPath);
   const slug = guessSlugFromFrontmatter(mdxAfter);
-
-  // Absolute path is useful for the "Open in VS Code" button (local dev)
-  // Only return absPath when running locally (never on Vercel)
-const absPath = process.env.NODE_ENV === "development" ? createdPath : undefined;
+  const absPath = process.env.NODE_ENV === "development" ? createdPath : undefined;
 
   log += `\n✅ Done.\nSaved: ${relPath}\n`;
 

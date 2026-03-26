@@ -105,7 +105,9 @@ export default function AdminImportPage() {
     setErrorMsg(null);
     setResult(null);
     setHeroMsg(null);
-    setLog(`Running import...\nURL: ${u}\nRewrite: ${rewrite ? "Yes" : "No"}\n`);
+    setLog(
+      `Running import...\nURL: ${u}\nRewrite: ${rewrite ? "Yes" : "No"}\nRecraft image: Yes\n`
+    );
 
     try {
       const res = await fetch("/api/admin/import", {
@@ -230,16 +232,16 @@ export default function AdminImportPage() {
       const data = (await res.json().catch(() => null)) as PipelineResult | null;
 
       if (!res.ok || !data?.ok) {
-  const errorMessage =
-    data && "error" in data ? data.error : `Pipeline failed (${res.status})`;
+        const errorMessage =
+          data && "error" in data ? data.error : `Pipeline failed (${res.status})`;
 
-  const logMessage =
-    data && "log" in data && data.log ? data.log : "No log returned.";
+        const logMessage =
+          data && "log" in data && data.log ? data.log : "No log returned.";
 
-  setPipelineError(errorMessage);
-  setPipelineLog(logMessage);
-  return;
-}
+        setPipelineError(errorMessage);
+        setPipelineLog(logMessage);
+        return;
+      }
 
       setPipelineLog(data.log || "✅ Pipeline complete.");
     } catch (err: any) {
@@ -262,12 +264,14 @@ export default function AdminImportPage() {
         Admin • Import Recipe
       </h1>
       <p className="mt-3 max-w-2xl text-[var(--text-soft)]">
-        Paste a recipe URL, import it into <code>content/recipes</code>, and optionally run an AI rewrite.
+        Paste a recipe URL to import it into <code>content/recipes</code>, optionally rewrite it in
+        Vegan Masala style, then automatically generate a Recraft hero image and attach it to the
+        recipe.
       </p>
 
       <form
         onSubmit={onSubmit}
-        className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm space-y-6"
+        className="mt-10 space-y-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm"
       >
         <div>
           <label className="block text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
@@ -333,7 +337,7 @@ export default function AdminImportPage() {
         </div>
 
         {result && (result as any).ok && (
-          <div className="rounded-2xl border border-[var(--border)] bg-black/20 p-5 space-y-5">
+          <div className="space-y-5 rounded-2xl border border-[var(--border)] bg-black/20 p-5">
             <div>
               <div className="text-sm font-extrabold text-[var(--brand-gold)]">Saved</div>
               <div className="mt-2 text-sm text-[var(--text-soft)]">
@@ -365,12 +369,13 @@ export default function AdminImportPage() {
 
             <div className="border-t border-[var(--border)] pt-5">
               <div className="text-sm font-extrabold text-[var(--brand-gold)]">
-                Hero image (manual)
+                Hero image (manual override)
               </div>
               <p className="mt-2 text-xs text-[var(--text-soft)]/80">
-                Generate your image in Recraft, download it, then upload here.
-                This will save it to <code>public/recipes</code> and inject{" "}
-                <code>image: "/recipes/{importedSlug}.png"</code> into the MDX frontmatter.
+                The import flow now generates a Recraft hero image automatically. Use this only if
+                you want to replace that image manually. It will save to <code>public/recipes</code>{" "}
+                and inject <code>image: "/recipes/{importedSlug}.png"</code> into the MDX
+                frontmatter.
               </p>
 
               <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -403,7 +408,8 @@ export default function AdminImportPage() {
           Recipe Pipeline
         </h2>
         <p className="mt-3 max-w-2xl text-[var(--text-soft)]">
-          Run your full recipe pipeline from one place: AI rewrite, ingredient quantities, structure cleanup, image fixing, and Midjourney prompt generation.
+          Run your full recipe pipeline from one place: AI rewrite, Recraft image generation,
+          ingredient quantities, structure cleanup, image fixing, and prompt generation.
         </p>
 
         <form onSubmit={runPipeline} className="mt-8 space-y-6">
