@@ -95,6 +95,10 @@ export default function AdminImportPage() {
   const [existingRemixMsg, setExistingRemixMsg] = useState<string | null>(null);
   const [existingRemixLog, setExistingRemixLog] = useState<string>("Waiting…");
 
+  // PREVIEWS
+  const [importPreviewUrl, setImportPreviewUrl] = useState<string | null>(null);
+  const [existingPreviewUrl, setExistingPreviewUrl] = useState<string | null>(null);
+
   // RECIPE SLUGS
   const [recipeSlugs, setRecipeSlugs] = useState<string[]>([]);
   const [slugsBusy, setSlugsBusy] = useState(false);
@@ -193,6 +197,7 @@ export default function AdminImportPage() {
     setRemixPrompt("");
     setRemixStrength("0.35");
     setRemixLog("Waiting…");
+    setImportPreviewUrl(null);
 
     setLog(
       `Running import...\nURL: ${u}\nRewrite: ${rewrite ? "Yes" : "No"}\nRecraft image: Yes\n`
@@ -230,6 +235,7 @@ export default function AdminImportPage() {
         setStatus("ok");
         setResult(data);
         setLog(data.log ?? "✅ Done.");
+        setImportPreviewUrl(`/images/recipes/${data.slug}.png?v=${Date.now()}`);
         await loadRecipeSlugs(t);
       } else {
         setStatus("error");
@@ -284,6 +290,7 @@ export default function AdminImportPage() {
       }
 
       setHeroMsg(`✅ Saved hero image: ${(data as any).imagePublicPath}`);
+      setImportPreviewUrl(`/images/recipes/${slug}.png?v=${Date.now()}`);
     } catch (e: any) {
       setHeroMsg(e?.message ?? "Upload failed.");
     } finally {
@@ -337,6 +344,7 @@ export default function AdminImportPage() {
 
       setRemixMsg(`✅ ${data.message || "Recraft image remixed successfully"}`);
       setRemixLog(data.log || "✅ Remix complete.");
+      setImportPreviewUrl(`/images/recipes/${slug}.png?v=${Date.now()}`);
     } catch (err: any) {
       setRemixMsg(`❌ ${err?.message || "Remix request failed"}`);
       setRemixLog(String(err?.stack ?? err?.message ?? err));
@@ -395,6 +403,7 @@ export default function AdminImportPage() {
         `✅ ${data.message || `Recraft image remixed successfully for ${slug}`}`
       );
       setExistingRemixLog(data.log || "✅ Remix complete.");
+      setExistingPreviewUrl(`/images/recipes/${slug}.png?v=${Date.now()}`);
     } catch (err: any) {
       setExistingRemixMsg(`❌ ${err?.message || "Remix request failed"}`);
       setExistingRemixLog(String(err?.stack ?? err?.message ?? err));
@@ -619,6 +628,19 @@ export default function AdminImportPage() {
                   ) : null}
                 </div>
 
+                {importPreviewUrl ? (
+                  <div className="rounded-2xl border border-[var(--border)] bg-black/20 p-4">
+                    <div className="mb-2 text-xs font-extrabold tracking-wide text-[var(--brand-gold)]">
+                      Current image preview
+                    </div>
+                    <img
+                      src={importPreviewUrl}
+                      alt="Imported recipe preview"
+                      className="h-auto w-full max-w-sm rounded-xl border border-[var(--border)] object-cover"
+                    />
+                  </div>
+                ) : null}
+
                 <div>
                   <div className="mb-2 text-xs font-extrabold tracking-wide text-[var(--brand-gold)]">
                     Remix log
@@ -682,7 +704,13 @@ export default function AdminImportPage() {
             </label>
             <select
               value={existingRemixSlug}
-              onChange={(e) => setExistingRemixSlug(e.target.value)}
+              onChange={(e) => {
+                const slug = e.target.value;
+                setExistingRemixSlug(slug);
+                setExistingPreviewUrl(
+                  slug ? `/images/recipes/${slug}.png?v=${Date.now()}` : null
+                );
+              }}
               className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white"
             >
               <option value="">
@@ -744,6 +772,19 @@ export default function AdminImportPage() {
               <div className="text-sm text-[var(--text-soft)]">{existingRemixMsg}</div>
             )}
           </div>
+
+          {existingPreviewUrl ? (
+            <div className="rounded-2xl border border-[var(--border)] bg-black/20 p-4">
+              <div className="mb-2 text-xs font-extrabold tracking-wide text-[var(--brand-gold)]">
+                Current image preview
+              </div>
+              <img
+                src={existingPreviewUrl}
+                alt="Existing recipe preview"
+                className="h-auto w-full max-w-sm rounded-xl border border-[var(--border)] object-cover"
+              />
+            </div>
+          ) : null}
 
           <div>
             <div className="mb-2 text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">

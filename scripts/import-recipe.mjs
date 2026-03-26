@@ -74,6 +74,37 @@ function normalizeHowToSteps(recipe) {
   return steps.filter(Boolean);
 }
 
+function toAbsoluteUrl(url, pageUrl) {
+  try {
+    return new URL(String(url), pageUrl).toString();
+  } catch {
+    return "";
+  }
+}
+
+function firstUsableImage(value, pageUrl) {
+  const candidates = asArray(value)
+    .flatMap((item) => {
+      if (!item) return [];
+      if (typeof item === "string") return [item];
+      if (typeof item === "object") {
+        return [
+          item.url,
+          item.contentUrl,
+          item.thumbnailUrl,
+          item["@id"],
+        ].filter(Boolean);
+      }
+      return [];
+    })
+    .map((x) => cleanText(x))
+    .filter(Boolean)
+    .map((x) => toAbsoluteUrl(x, pageUrl))
+    .filter(Boolean);
+
+  return candidates[0] || "";
+}
+
 function extractJsonLdRecipe($) {
   const scripts = $('script[type="application/ld+json"]')
     .map((_, el) => $(el).text())
@@ -110,7 +141,7 @@ function extractJsonLdRecipe($) {
   return null;
 }
 
-function fallbackExtractFromHtml($) {
+function fallbackExtractFromHtml($, pageUrl) {
   const title =
     cleanText($("h1").first().text()) ||
     cleanText($('meta[property="og:title"]').attr("content")) ||
@@ -154,10 +185,17 @@ function fallbackExtractFromHtml($) {
     }
   }
 
+  const fallbackImage =
+    $('meta[property="og:image"]').attr("content") ||
+    $('meta[name="twitter:image"]').attr("content") ||
+    $("img").first().attr("src") ||
+    "";
+
   return {
     name: title,
     recipeIngredient: ingredients,
     recipeInstructions: instructions,
+    image: toAbsoluteUrl(fallbackImage, pageUrl),
   };
 }
 
@@ -179,7 +217,7 @@ function buildStarterDescription(title, cuisine) {
   return "A vegan Indian recipe imported for refinement. Rewrite this in the Vegan Masala voice: warm, experienced, family-oriented and specific about flavour and method.";
 }
 
-function mdxFromRecipe(recipe) {
+function mdxFromRecipe(recipe, pageUrl) {
   const title = pickFirst(recipe, ["name", "headline"]) || "Imported Recipe";
   const slug = slugify(title);
 
@@ -217,6 +255,11 @@ function mdxFromRecipe(recipe) {
 
   const tags = Array.from(new Set(keywords)).slice(0, 6);
 
+  const sourceImage = firstUsableImage(
+    pickFirst(recipe, ["image", "thumbnailUrl", "photo"]),
+    pageUrl
+  );
+
   const frontmatter = [
     `title: ${JSON.stringify(title)}`,
     `slug: ${JSON.stringify(slug)}`,
@@ -231,6 +274,7 @@ function mdxFromRecipe(recipe) {
     servings ? `servings: ${servings}` : null,
     `diet: ["vegan"]`,
     tags.length ? `tags: ${JSON.stringify(tags)}` : null,
+    sourceImage ? `sourceImage: ${JSON.stringify(sourceImage)}` : null,
     `publishedAt: ${JSON.stringify(new Date().toISOString().slice(0, 10))}`,
   ]
     .filter(Boolean)
@@ -294,12 +338,12 @@ async function main() {
 
   if (!recipe) {
     console.log("No JSON-LD Recipe found. Using fallback HTML extraction.");
-    recipe = fallbackExtractFromHtml($);
+    recipe = fallbackExtractFromHtml($, url);
   } else {
     console.log("Found JSON-LD Recipe.");
   }
 
-  const { slug, mdx } = mdxFromRecipe(recipe);
+  const { slug, mdx } = mdxFromRecipe(recipe, url);
 
   const outDir = path.join(process.cwd(), "content", "recipes");
   ensureDir(outDir);
@@ -308,6 +352,12 @@ async function main() {
   fs.writeFileSync(outPath, mdx, "utf8");
 
   console.log(`Saved: ${outPath}`);
+
+  const sourceImageMatch = mdx.match(/^sourceImage:\s*["']?(.+?)["']?\s*$/m);
+  if (sourceImageMatch?.[1]) {
+    console.log(`Captured source image: ${sourceImageMatch[1]}`);
+  }
+
   console.log("Next: run the AI rewrite so the recipe matches the Vegan Masala style.");
 }
 

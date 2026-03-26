@@ -4,6 +4,7 @@ dotenv.config({ path: ".env.local" });
 
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import matter from "gray-matter";
 
 const ROOT = process.cwd();
@@ -47,31 +48,54 @@ function findRecipeBySlug(slug) {
   return null;
 }
 
+function compactText(s, max = 180) {
+  return String(s || "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
 function buildPrompt(data) {
-  const title = String(data.title || "Vegan Indian recipe").trim();
-  const description = String(data.description || "").trim();
-  const cuisine = String(data.cuisine || "Indian").trim();
-  const tags = Array.isArray(data.tags) ? data.tags.join(", ") : "";
+  const title = compactText(data.title || "Vegan Indian recipe", 80);
+  const description = compactText(data.description || "", 180);
+  const cuisine = compactText(data.cuisine || "Indian", 40);
+
+  const tags = Array.isArray(data.tags)
+    ? data.tags
+        .slice(0, 4)
+        .map((t) => String(t).trim())
+        .filter(Boolean)
+        .join(", ")
+    : "";
+
   const ingredients = Array.isArray(data.ingredients)
-    ? data.ingredients.slice(0, 8).join(", ")
+    ? data.ingredients
+        .slice(0, 4)
+        .map((i) => String(i).replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .join(", ")
     : "";
 
   return [
-    `A realistic editorial food photograph of ${title}.`,
+    `${title}.`,
     `Vegan ${cuisine} dish.`,
-    description ? description : "",
-    ingredients ? `Visible ingredients may include: ${ingredients}.` : "",
+    description,
+    ingredients ? `Ingredients visible: ${ingredients}.` : "",
     tags ? `Keywords: ${tags}.` : "",
-    `Premium, natural food styling.`,
-    `Warm, rich, grounded lighting.`,
-    `Family-table feel, elegant but not fussy.`,
-    `Authentic looking Indian food presentation.`,
-    `No text, no typography, no watermark, no collage, no split layout.`,
-    `Not glossy AI fantasy food, not overly stylised, not cartoonish.`,
-    `Suitable as a recipe hero image for a premium vegan Indian cooking website.`,
+    `Realistic editorial food photography.`,
+    `Natural plating, warm light, authentic Indian presentation.`,
+    `No text, no watermark, not cartoonish, not glossy AI food.`,
   ]
     .filter(Boolean)
-    .join(" ");
+    .join(" ")
+    .slice(0, 900);
+}
+
+function buildReferencePrompt(data) {
+  return [
+    buildPrompt(data),
+    `Use the reference image for realism, composition and plating inspiration only.`,
+    `Create a fresh original Vegan Masala hero image.`,
+  ]
+    .join(" ")
+    .slice(0, 950);
 }
 
 function getCurrentImagePath(recipeSlug, parsed) {
@@ -166,6 +190,26 @@ async function downloadBuffer(url) {
   return Buffer.from(await res.arrayBuffer());
 }
 
+async function downloadSourceImageToTemp(sourceUrl, recipeSlug) {
+  const res = await fetch(sourceUrl, {
+    headers: {
+      "user-agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari",
+      referer: sourceUrl,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to download source image: ${res.status} ${res.statusText}`);
+  }
+
+  const buffer = Buffer.from(await res.arrayBuffer());
+  const tempPath = path.join(os.tmpdir(), `${recipeSlug}-source-image`);
+
+  await (await import("sharp")).default(buffer).png().toFile(`${tempPath}.png`);
+  return `${tempPath}.png`;
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -177,6 +221,7 @@ async function main() {
   const remixPromptIdx = args.indexOf("--remix-prompt");
   const strengthIdx = args.indexOf("--strength");
   const remixModelIdx = args.indexOf("--remix-model");
+  const referenceStrengthIdx = args.indexOf("--reference-strength");
 
   let filePath = fileIdx !== -1 ? args[fileIdx + 1] : null;
   const slug = slugIdx !== -1 ? args[slugIdx + 1] : null;
@@ -184,6 +229,10 @@ async function main() {
   const strength = strengthIdx !== -1 ? Number(args[strengthIdx + 1]) : 0.35;
   const remixModel =
     remixModelIdx !== -1 ? String(args[remixModelIdx + 1] || "").trim() : "recraftv3";
+  const referenceStrength =
+    referenceStrengthIdx !== -1
+      ? Number(args[referenceStrengthIdx + 1])
+      : Number(process.env.RECRAFT_REFERENCE_STRENGTH || 0.28);
 
   if (!filePath && slug) {
     filePath = findRecipeBySlug(slug);
@@ -219,6 +268,7 @@ async function main() {
   const data = parsed.data || {};
 
   const recipeSlug = String(data.slug || path.basename(filePath).replace(/\.mdx?$/i, "")).trim();
+  const sourceImage = String(data.sourceImage || "").trim();
 
   ensureDir(OUT_DIR);
   const outPath = path.join(OUT_DIR, `${recipeSlug}.png`);
@@ -226,85 +276,128 @@ async function main() {
 
   let imageUrl = "";
   let modeLabel = "";
+  let tempReferenceImagePath = "";
 
-  if (remixPrompt) {
-    const currentImagePath = getCurrentImagePath(recipeSlug, parsed);
-    if (!currentImagePath) {
-      die(
-        `No current image found for ${recipeSlug}. Generate the first image before using --remix-prompt.`
-      );
+  try {
+    if (remixPrompt) {
+      const currentImagePath = getCurrentImagePath(recipeSlug, parsed);
+      if (!currentImagePath) {
+        die(
+          `No current image found for ${recipeSlug}. Generate the first image before using --remix-prompt.`
+        );
+      }
+
+      if (!(strength >= 0 && strength <= 1)) {
+        die("Strength must be between 0 and 1.");
+      }
+
+      console.log(`\n🔹 Remixing image for ${recipeSlug}\n`);
+      console.log(`Using source image: ${currentImagePath}`);
+      console.log(`Remix model: ${remixModel}`);
+      console.log(`Strength: ${strength}`);
+      console.log(`Prompt: ${remixPrompt}\n`);
+
+      if (dryRun) {
+        ok("Dry run complete.");
+        return;
+      }
+
+      imageUrl = await remixImage({
+        imagePath: currentImagePath,
+        prompt: remixPrompt,
+        strength,
+        model: remixModel,
+        styleId,
+        token,
+      });
+
+      modeLabel = "remixed";
+    } else if (sourceImage) {
+      if (!(referenceStrength >= 0 && referenceStrength <= 1)) {
+        die("Reference strength must be between 0 and 1.");
+      }
+
+      const prompt = buildReferencePrompt(data);
+
+      console.log(`\n🔹 Recraft reference generation for ${recipeSlug}\n`);
+      console.log(`Using imported source image: ${sourceImage}`);
+      console.log(`Reference model: ${remixModel}`);
+      console.log(`Reference strength: ${referenceStrength}`);
+      console.log(`Prompt length: ${prompt.length}`);
+      console.log(`Prompt:\n${prompt}\n`);
+
+      if (dryRun) {
+        ok("Dry run complete.");
+        return;
+      }
+
+      tempReferenceImagePath = await downloadSourceImageToTemp(sourceImage, recipeSlug);
+
+      imageUrl = await remixImage({
+        imagePath: tempReferenceImagePath,
+        prompt,
+        strength: referenceStrength,
+        model: remixModel,
+        styleId,
+        token,
+      });
+
+      modeLabel = "generated from reference image";
+    } else {
+      const prompt = buildPrompt(data);
+
+      console.log(`\n🔹 Recraft prompt for ${recipeSlug}:\n`);
+      console.log(`Prompt length: ${prompt.length}`);
+      console.log(prompt);
+      console.log("");
+
+      if (dryRun) {
+        ok("Dry run complete.");
+        return;
+      }
+
+      imageUrl = await generateImage({
+        prompt,
+        model,
+        styleId,
+        token,
+      });
+
+      modeLabel = "generated";
     }
 
-    if (!(strength >= 0 && strength <= 1)) {
-      die("Strength must be between 0 and 1.");
+    console.log(`🔹 Recraft image URL:\n${imageUrl}\n`);
+
+    const buffer = await downloadBuffer(imageUrl);
+
+    await (await import("sharp")).default(buffer)
+      .resize(1600, 1200, { fit: "cover" })
+      .png()
+      .toFile(outPath);
+
+    if (!noWrite) {
+      const nextData = {
+        ...parsed.data,
+        image: publicPath,
+        imageVersion: Date.now(),
+      };
+
+      const nextMdx = matter.stringify(parsed.content || "", nextData);
+      fs.writeFileSync(filePath, nextMdx, "utf8");
+      ok(`Updated frontmatter image: ${publicPath}`);
+      ok(`Updated frontmatter imageVersion: ${nextData.imageVersion}`);
     }
 
-    console.log(`\n🔹 Remixing image for ${recipeSlug}\n`);
-    console.log(`Using source image: ${currentImagePath}`);
-    console.log(`Remix model: ${remixModel}`);
-    console.log(`Strength: ${strength}`);
-    console.log(`Prompt: ${remixPrompt}\n`);
-
-    if (dryRun) {
-      ok("Dry run complete.");
-      return;
+    ok(`${modeLabel === "remixed" ? "Remixed" : "Saved"} image: ${outPath}`);
+  } finally {
+    if (tempReferenceImagePath && fs.existsSync(tempReferenceImagePath)) {
+      try {
+        fs.unlinkSync(tempReferenceImagePath);
+      } catch {
+        // ignore cleanup failure
+      }
     }
-
-    imageUrl = await remixImage({
-      imagePath: currentImagePath,
-      prompt: remixPrompt,
-      strength,
-      model: remixModel,
-      styleId,
-      token,
-    });
-
-    modeLabel = "remixed";
-  } else {
-    const prompt = buildPrompt(data);
-
-    console.log(`\n🔹 Recraft prompt for ${recipeSlug}:\n`);
-    console.log(prompt);
-    console.log("");
-
-    if (dryRun) {
-      ok("Dry run complete.");
-      return;
-    }
-
-    imageUrl = await generateImage({
-      prompt,
-      model,
-      styleId,
-      token,
-    });
-
-    modeLabel = "generated";
   }
-
-  console.log(`🔹 Recraft image URL:\n${imageUrl}\n`);
-
-  const buffer = await downloadBuffer(imageUrl);
-
-  await (await import("sharp")).default(buffer)
-    .resize(1600, 1200, { fit: "cover" })
-    .png()
-    .toFile(outPath);
-
-  if (!noWrite) {
-    const nextData = {
-      ...parsed.data,
-      image: publicPath,
-      imageVersion: Date.now(),
-    };
-
-    const nextMdx = matter.stringify(parsed.content || "", nextData);
-    fs.writeFileSync(filePath, nextMdx, "utf8");
-    ok(`Updated frontmatter image: ${publicPath}`);
-    ok(`Updated frontmatter imageVersion: ${nextData.imageVersion}`);
-  }
-
-  ok(`${modeLabel === "remixed" ? "Remixed" : "Saved"} image: ${outPath}`);
 }
 
 main().catch((err) => {
