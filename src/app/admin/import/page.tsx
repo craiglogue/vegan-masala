@@ -53,6 +53,16 @@ type RemixResult =
       log?: string;
     };
 
+type RecipeSlugsResult =
+  | {
+      ok: true;
+      slugs: string[];
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
 export default function AdminImportPage() {
   const [url, setUrl] = useState("");
   const [rewrite, setRewrite] = useState(true);
@@ -84,6 +94,10 @@ export default function AdminImportPage() {
   const [existingRemixBusy, setExistingRemixBusy] = useState(false);
   const [existingRemixMsg, setExistingRemixMsg] = useState<string | null>(null);
   const [existingRemixLog, setExistingRemixLog] = useState<string>("Waiting…");
+
+  // RECIPE SLUGS
+  const [recipeSlugs, setRecipeSlugs] = useState<string[]>([]);
+  const [slugsBusy, setSlugsBusy] = useState(false);
 
   // PIPELINE
   const [pipelineMode, setPipelineMode] = useState<
@@ -124,12 +138,44 @@ export default function AdminImportPage() {
 
   useEffect(() => {
     const saved = localStorage.getItem("vm_admin_token");
-    if (saved) setAdminToken(saved);
+    if (saved) {
+      setAdminToken(saved);
+    }
   }, []);
 
   useEffect(() => {
     localStorage.setItem("vm_admin_token", adminToken);
+
+    if (adminToken.trim()) {
+      loadRecipeSlugs(adminToken);
+    }
   }, [adminToken]);
+
+  async function loadRecipeSlugs(tokenOverride?: string) {
+    const token = (tokenOverride ?? adminToken).trim();
+    if (!token) return;
+
+    setSlugsBusy(true);
+
+    try {
+      const res = await fetch("/api/admin/recipes/slugs", {
+        method: "GET",
+        headers: {
+          "x-admin-token": token,
+        },
+      });
+
+      const data = (await res.json().catch(() => null)) as RecipeSlugsResult | null;
+
+      if (res.ok && data?.ok && Array.isArray(data.slugs)) {
+        setRecipeSlugs(data.slugs);
+      }
+    } catch {
+      // ignore quietly
+    } finally {
+      setSlugsBusy(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -184,6 +230,7 @@ export default function AdminImportPage() {
         setStatus("ok");
         setResult(data);
         setLog(data.log ?? "✅ Done.");
+        await loadRecipeSlugs(t);
       } else {
         setStatus("error");
         setResult(data);
@@ -307,7 +354,7 @@ export default function AdminImportPage() {
     const strength = Number(existingRemixStrength);
 
     if (!t) return setExistingRemixMsg("Missing admin token.");
-    if (!slug) return setExistingRemixMsg("Enter a recipe slug first.");
+    if (!slug) return setExistingRemixMsg("Select a recipe slug first.");
     if (!prompt) return setExistingRemixMsg("Enter a remix prompt first.");
     if (!Number.isFinite(strength) || strength < 0 || strength > 1) {
       return setExistingRemixMsg("Strength must be a number between 0 and 1.");
@@ -624,8 +671,8 @@ export default function AdminImportPage() {
           Recraft Remix Existing Recipe
         </h2>
         <p className="mt-3 max-w-2xl text-[var(--text-soft)]">
-          Remix the current hero image for any existing recipe by entering its slug, a tweak prompt,
-          and a strength value.
+          Remix the current hero image for any existing recipe by selecting its slug, adding a tweak
+          prompt, and choosing a strength value.
         </p>
 
         <form onSubmit={remixExistingRecipe} className="mt-8 space-y-6">
@@ -633,12 +680,31 @@ export default function AdminImportPage() {
             <label className="block text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
               Recipe slug
             </label>
-            <input
+            <select
               value={existingRemixSlug}
               onChange={(e) => setExistingRemixSlug(e.target.value)}
-              placeholder="chana-masala"
-              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/40"
-            />
+              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white"
+            >
+              <option value="">
+                {slugsBusy ? "Loading recipe slugs..." : "Select a recipe slug"}
+              </option>
+              {recipeSlugs.map((slug) => (
+                <option key={slug} value={slug}>
+                  {slug}
+                </option>
+              ))}
+            </select>
+
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => loadRecipeSlugs()}
+                disabled={!adminToken.trim() || slugsBusy}
+                className="rounded-xl border border-[var(--border)] bg-black/30 px-4 py-2 text-sm font-extrabold text-[var(--brand-gold)] hover:bg-black/40 disabled:opacity-50"
+              >
+                {slugsBusy ? "Refreshing..." : "Refresh recipe list"}
+              </button>
+            </div>
           </div>
 
           <div>
