@@ -128,11 +128,7 @@ async function remixImage({ imagePath, prompt, strength, model, styleId, token }
   const imageBuffer = fs.readFileSync(imagePath);
   const imageName = path.basename(imagePath);
 
-  form.set(
-    "image",
-    new Blob([imageBuffer], { type: "image/png" }),
-    imageName
-  );
+  form.set("image", new Blob([imageBuffer], { type: "image/png" }), imageName);
   form.set("prompt", prompt);
   form.set("strength", String(strength));
   form.set("model", model);
@@ -185,8 +181,7 @@ async function main() {
   let filePath = fileIdx !== -1 ? args[fileIdx + 1] : null;
   const slug = slugIdx !== -1 ? args[slugIdx + 1] : null;
   const remixPrompt = remixPromptIdx !== -1 ? String(args[remixPromptIdx + 1] || "").trim() : "";
-  const strength =
-    strengthIdx !== -1 ? Number(args[strengthIdx + 1]) : 0.35;
+  const strength = strengthIdx !== -1 ? Number(args[strengthIdx + 1]) : 0.35;
   const remixModel =
     remixModelIdx !== -1 ? String(args[remixModelIdx + 1] || "").trim() : "recraftv3";
 
@@ -300,11 +295,13 @@ async function main() {
     const nextData = {
       ...parsed.data,
       image: publicPath,
+      imageVersion: Date.now(),
     };
 
     const nextMdx = matter.stringify(parsed.content || "", nextData);
     fs.writeFileSync(filePath, nextMdx, "utf8");
     ok(`Updated frontmatter image: ${publicPath}`);
+    ok(`Updated frontmatter imageVersion: ${nextData.imageVersion}`);
   }
 
   ok(`${modeLabel === "remixed" ? "Remixed" : "Saved"} image: ${outPath}`);

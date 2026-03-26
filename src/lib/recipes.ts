@@ -11,6 +11,7 @@ export type Recipe = {
   slug: string;
   description?: string;
   image?: string;
+  imageVersion?: number | string;
   cuisine?: string;
   prepMinutes?: number;
   cookMinutes?: number;
@@ -125,6 +126,11 @@ function buildRecipeFromFile(file: string): Recipe | null {
       typeof data.description === "string" ? data.description : undefined,
 
     image: typeof data.image === "string" ? data.image : undefined,
+
+    imageVersion:
+      typeof data.imageVersion === "number" || typeof data.imageVersion === "string"
+        ? data.imageVersion
+        : undefined,
 
     cuisine: typeof data.cuisine === "string" ? data.cuisine : undefined,
 

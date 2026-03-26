@@ -27,7 +27,6 @@ function recipeText(r: any) {
   )}`.toLowerCase();
 }
 
-/** Build href preserving existing filters */
 function buildHref(base: string, params: { tag?: string | null; collection?: string | null }) {
   const sp = new URLSearchParams();
   if (params.collection) sp.set("collection", params.collection);
@@ -36,10 +35,6 @@ function buildHref(base: string, params: { tag?: string | null; collection?: str
   return qs ? `${base}?${qs}` : base;
 }
 
-/**
- * Consolidate messy tags into a small set of canonical tags
- * (so the filter bar doesn't explode into dozens of near-duplicates).
- */
 function canonicalizeTag(raw: string): string | null {
   const t = norm(String(raw));
   const clean = t.replace(/[&]/g, "and").replace(/[^a-z0-9\s-]/g, "").trim();
@@ -336,12 +331,17 @@ export default async function RecipesPage({
 
       <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((r: any) => {
-          const img =
+          const baseImg =
             typeof r.image === "string" && r.image.trim().length > 0
               ? r.image
               : getRecipeImage(r.slug);
 
-          const placeholder = isPlaceholderImage(img);
+          const img =
+            r.imageVersion !== undefined && r.imageVersion !== null
+              ? `${baseImg}${baseImg.includes("?") ? "&" : "?"}v=${r.imageVersion}`
+              : baseImg;
+
+          const placeholder = isPlaceholderImage(baseImg);
           const time = minutesLabel(r.prepMinutes, r.cookMinutes);
 
           return (
