@@ -70,12 +70,20 @@ export default function AdminImportPage() {
   const [heroBusy, setHeroBusy] = useState(false);
   const [heroMsg, setHeroMsg] = useState<string | null>(null);
 
-  // RECRAFT REMIX
+  // RECRAFT REMIX (JUST IMPORTED)
   const [remixPrompt, setRemixPrompt] = useState("");
   const [remixStrength, setRemixStrength] = useState("0.35");
   const [remixBusy, setRemixBusy] = useState(false);
   const [remixMsg, setRemixMsg] = useState<string | null>(null);
   const [remixLog, setRemixLog] = useState<string>("Waiting…");
+
+  // RECRAFT REMIX (EXISTING SLUG)
+  const [existingRemixSlug, setExistingRemixSlug] = useState("");
+  const [existingRemixPrompt, setExistingRemixPrompt] = useState("");
+  const [existingRemixStrength, setExistingRemixStrength] = useState("0.35");
+  const [existingRemixBusy, setExistingRemixBusy] = useState(false);
+  const [existingRemixMsg, setExistingRemixMsg] = useState<string | null>(null);
+  const [existingRemixLog, setExistingRemixLog] = useState<string>("Waiting…");
 
   // PIPELINE
   const [pipelineMode, setPipelineMode] = useState<
@@ -105,6 +113,15 @@ export default function AdminImportPage() {
     return true;
   }, [adminToken, pipelineBusy, pipelineMode, pipelineSlug, pipelineUrl]);
 
+  const canRunExistingRemix = useMemo(() => {
+    return (
+      adminToken.trim().length > 0 &&
+      existingRemixSlug.trim().length > 0 &&
+      existingRemixPrompt.trim().length > 0 &&
+      !existingRemixBusy
+    );
+  }, [adminToken, existingRemixSlug, existingRemixPrompt, existingRemixBusy]);
+
   useEffect(() => {
     const saved = localStorage.getItem("vm_admin_token");
     if (saved) setAdminToken(saved);
@@ -125,10 +142,12 @@ export default function AdminImportPage() {
     setErrorMsg(null);
     setResult(null);
     setHeroMsg(null);
+
     setRemixMsg(null);
     setRemixPrompt("");
     setRemixStrength("0.35");
     setRemixLog("Waiting…");
+
     setLog(
       `Running import...\nURL: ${u}\nRewrite: ${rewrite ? "Yes" : "No"}\nRecraft image: Yes\n`
     );
@@ -276,6 +295,64 @@ export default function AdminImportPage() {
       setRemixLog(String(err?.stack ?? err?.message ?? err));
     } finally {
       setRemixBusy(false);
+    }
+  }
+
+  async function remixExistingRecipe(e: React.FormEvent) {
+    e.preventDefault();
+
+    const t = adminToken.trim();
+    const slug = existingRemixSlug.trim();
+    const prompt = existingRemixPrompt.trim();
+    const strength = Number(existingRemixStrength);
+
+    if (!t) return setExistingRemixMsg("Missing admin token.");
+    if (!slug) return setExistingRemixMsg("Enter a recipe slug first.");
+    if (!prompt) return setExistingRemixMsg("Enter a remix prompt first.");
+    if (!Number.isFinite(strength) || strength < 0 || strength > 1) {
+      return setExistingRemixMsg("Strength must be a number between 0 and 1.");
+    }
+
+    setExistingRemixBusy(true);
+    setExistingRemixMsg(null);
+    setExistingRemixLog(
+      `Running Recraft remix...\nSlug: ${slug}\nStrength: ${strength}\nPrompt: ${prompt}\n`
+    );
+
+    try {
+      const res = await fetch("/api/admin/recraft/remix", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-admin-token": t,
+        },
+        body: JSON.stringify({
+          slug,
+          remixPrompt: prompt,
+          strength,
+        }),
+      });
+
+      const data = (await res.json().catch(() => null)) as RemixResult | null;
+
+      if (!res.ok || !data || !data.ok) {
+        const msg =
+          data && "error" in data ? data.error : `Remix failed (${res.status})`;
+        const nextLog = data && "log" in data && data.log ? data.log : `Error: ${msg}`;
+        setExistingRemixMsg(`❌ ${msg}`);
+        setExistingRemixLog(nextLog);
+        return;
+      }
+
+      setExistingRemixMsg(
+        `✅ ${data.message || `Recraft image remixed successfully for ${slug}`}`
+      );
+      setExistingRemixLog(data.log || "✅ Remix complete.");
+    } catch (err: any) {
+      setExistingRemixMsg(`❌ ${err?.message || "Remix request failed"}`);
+      setExistingRemixLog(String(err?.stack ?? err?.message ?? err));
+    } finally {
+      setExistingRemixBusy(false);
     }
   }
 
@@ -541,6 +618,77 @@ export default function AdminImportPage() {
           </div>
         )}
       </form>
+
+      <section className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm">
+        <h2 className="text-2xl font-extrabold text-[var(--brand-gold)]">
+          Recraft Remix Existing Recipe
+        </h2>
+        <p className="mt-3 max-w-2xl text-[var(--text-soft)]">
+          Remix the current hero image for any existing recipe by entering its slug, a tweak prompt,
+          and a strength value.
+        </p>
+
+        <form onSubmit={remixExistingRecipe} className="mt-8 space-y-6">
+          <div>
+            <label className="block text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
+              Recipe slug
+            </label>
+            <input
+              value={existingRemixSlug}
+              onChange={(e) => setExistingRemixSlug(e.target.value)}
+              placeholder="chana-masala"
+              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/40"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
+              Remix prompt
+            </label>
+            <textarea
+              value={existingRemixPrompt}
+              onChange={(e) => setExistingRemixPrompt(e.target.value)}
+              placeholder="more natural overhead food photography, richer tomato masala, better defined chickpeas, less orange, softer warm light"
+              rows={4}
+              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/40"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
+              Strength (0 to 1)
+            </label>
+            <input
+              value={existingRemixStrength}
+              onChange={(e) => setExistingRemixStrength(e.target.value)}
+              placeholder="0.35"
+              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/40 sm:max-w-[180px]"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              disabled={!canRunExistingRemix}
+              className="inline-flex items-center justify-center rounded-xl bg-[var(--brand-red)] px-7 py-3 text-sm font-extrabold text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {existingRemixBusy ? "Remixing…" : "Remix Existing Recipe"}
+            </button>
+
+            {existingRemixMsg && (
+              <div className="text-sm text-[var(--text-soft)]">{existingRemixMsg}</div>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-2 text-sm font-extrabold tracking-wide text-[var(--brand-gold)]">
+              Existing recipe remix log
+            </div>
+            <pre className="max-h-[260px] overflow-auto whitespace-pre-wrap rounded-2xl border border-[var(--border)] bg-black/40 p-4 text-xs text-white/80">
+              {existingRemixLog}
+            </pre>
+          </div>
+        </form>
+      </section>
 
       <section className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm">
         <h2 className="text-2xl font-extrabold text-[var(--brand-gold)]">
