@@ -1,0 +1,9 @@
+generated
+public/generated
+*.mp4
+*.mov
+*.webm
+*.psd
+ebook 1
+Logos
+video-debug-report.txt

@@ -54,3 +54,14 @@ generated/
 node_modules/
 
 *.zip
+
+# generated social/media assets
+generated/
+public/generated/
+
+# large source assets not needed for deploy
+*.mp4
+*.mov
+*.webm
+*.psd
+ebook 1/
