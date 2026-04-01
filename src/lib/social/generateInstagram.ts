@@ -13,7 +13,7 @@ import {
   titleFromSlug,
   type ContentType,
 } from "./core/content";
-import { findContentImage } from "./core/images";
+import { backgroundBuffer, findContentImage } from "./core/images";
 import { buildInstagramCaption, saveCaption } from "./core/captions";
 import { updateManifest } from "./core/manifest";
 import { saveGeneratedInstagramImage } from "./core/generatedAssets";
@@ -30,6 +30,27 @@ const PUBLIC_OUTPUT = process.env.VERCEL
 
 const WIDTH = 1080;
 const HEIGHT = 1080;
+
+const BADGE_LEFT = 84;
+const BADGE_TOP = 66;
+
+const TITLE_LEFT = 84;
+const TITLE_TOP = 150;
+const TITLE_WIDTH = 410;
+
+const IMAGE_LEFT = 150;
+const IMAGE_TOP = 290;
+const IMAGE_WIDTH = 780;
+const IMAGE_HEIGHT = 540;
+
+const BOTTOM_LEFT = 84;
+const HOOK_TOP = 880;
+const SUBTITLE_TOP = 948;
+const SITE_TOP = 1038;
+
+const LOGO_SIZE = 124;
+const LOGO_LEFT = WIDTH - LOGO_SIZE - 76;
+const LOGO_TOP = HEIGHT - LOGO_SIZE - 64;
 
 function getBaseUrl() {
   return (
@@ -209,8 +230,8 @@ function makeShadowedTextPathSvg(
   x: number,
   baselineY: number,
   letterSpacing = 0,
-  shadowOpacity = 0.28,
-  shadowOffsetY = 3,
+  shadowOpacity = 0.2,
+  shadowOffsetY = 2,
   align: "left" | "center" = "center"
 ) {
   const shadow = makeTextPathSvg(
@@ -239,31 +260,61 @@ function makeShadowedTextPathSvg(
 }
 
 function wrapTitle(text: string) {
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = String(text || "").split(/\s+/).filter(Boolean);
   if (!words.length) return [text];
 
   const lines: string[] = [];
   let current = "";
+  let maxLen = 14;
 
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word;
 
-    if (candidate.length <= 13) {
+    if (candidate.length <= maxLen) {
       current = candidate;
     } else {
       if (current) lines.push(current);
       current = word;
+
+      if (lines.length === 1) maxLen = 16;
+      if (lines.length === 2) maxLen = 18;
+      if (lines.length === 3) maxLen = 20;
     }
   }
 
   if (current) lines.push(current);
 
-  if (lines.length <= 3) return lines;
+  if (lines.length <= 4) return lines;
+  return [lines[0], lines[1], lines[2], lines.slice(3).join(" ")];
+}
 
-  const first = lines[0];
-  const second = lines[1];
-  const rest = lines.slice(2).join(" ");
-  return [first, second, rest];
+function wrapCopy(text: string, maxChars: number, maxLines: number) {
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+
+    if (next.length <= maxChars) {
+      current = next;
+      continue;
+    }
+
+    if (current) lines.push(current);
+    current = word;
+
+    if (lines.length === maxLines - 1) break;
+  }
+
+  if (current && lines.length < maxLines) lines.push(current);
+
+  const usedWords = lines.join(" ").split(/\s+/).filter(Boolean).length;
+  if (usedWords < words.length && lines.length) {
+    lines[lines.length - 1] = `${lines[lines.length - 1]}…`;
+  }
+
+  return lines;
 }
 
 function buildBadge(type: ContentType) {
@@ -277,14 +328,9 @@ function cleanPromoText(text?: string) {
     .replace(/\brestaurant-quality\b/gi, "")
     .replace(/\bcomes together beautifully\b/gi, "")
     .replace(/\bwritten in the style of\b/gi, "")
+    .replace(/\bflavour-packed\b/gi, "")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function shortenLine(text: string, max = 58) {
-  const clean = cleanPromoText(text);
-  if (clean.length <= max) return clean;
-  return `${clean.slice(0, max).trimEnd()}…`;
 }
 
 function getEditorialContent(slug: string, type: ContentType) {
@@ -334,21 +380,25 @@ function buildNaturalHook(
   type: ContentType,
   slug: string
 ) {
-  if (content.socialHook) return shortenLine(content.socialHook, 44);
-  if (content.introNote) return shortenLine(content.introNote, 44);
+  const clean = content.socialHook || content.introNote || "";
+
+  if (clean) {
+    return cleanPromoText(clean)
+      .split(/[.!?]/)[0]
+      .trim()
+      .replace(/\s+/g, " ");
+  }
 
   if (type === "guide") {
     return pickFromSeed(slug, [
       "Cook With More Confidence",
       "Simple, Practical Kitchen Help",
-      "A Better Way To Learn",
       "Useful Guidance For Home Cooks",
       "Start With The Essentials",
     ]);
   }
 
   return pickFromSeed(slug, [
-    "Cooked Properly, Served Hot",
     "Family-Style Vegan Indian Food",
     "A Dish Worth Making Well",
     "Warm, Grounded, Full Of Character",
@@ -365,8 +415,17 @@ function buildNaturalSubtitle(
   type: ContentType,
   slug: string
 ) {
-  if (content.description) return shortenLine(content.description, 66);
-  if (content.servingSuggestion) return shortenLine(content.servingSuggestion, 66);
+  const clean = content.description || content.servingSuggestion || "";
+
+  if (clean) {
+    const firstSentence = cleanPromoText(clean)
+      .split(/[.!?]/)[0]
+      .trim()
+      .replace(/\s+/g, " ");
+
+    const words = firstSentence.split(" ");
+    return words.slice(0, 10).join(" ");
+  }
 
   if (type === "guide") {
     return pickFromSeed(slug, [
@@ -377,27 +436,10 @@ function buildNaturalSubtitle(
   }
 
   return pickFromSeed(slug, [
-    "Vegan Indian cooking with depth, warmth and real flavour",
-    "Built on proper masala, steady seasoning and patience",
+    "Vegan Indian cooking with depth and warmth",
+    "Built on proper masala and steady seasoning",
     "The kind of cooking that earns a place at the table",
   ]);
-}
-
-async function backgroundBufferFromSource(source: string | Buffer | null) {
-  if (!source) {
-    return sharp({
-      create: {
-        width: WIDTH,
-        height: HEIGHT,
-        channels: 4,
-        background: BRAND.bg,
-      },
-    })
-      .png()
-      .toBuffer();
-  }
-
-  return sharp(source).resize(WIDTH, HEIGHT, { fit: "cover" }).png().toBuffer();
 }
 
 async function brandedTextureOverlay() {
@@ -412,7 +454,8 @@ async function brandedTextureOverlay() {
 
   return sharp(texturePath)
     .resize(WIDTH, HEIGHT, { fit: "cover" })
-    .modulate({ brightness: 0.85, saturation: 0.55 })
+    .modulate({ brightness: 1.15, saturation: 0.92 })
+    .gamma(1.08)
     .png()
     .toBuffer();
 }
@@ -421,7 +464,7 @@ async function brandWashOverlay() {
   return sharp(
     Buffer.from(`
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-        <rect width="${WIDTH}" height="${HEIGHT}" fill="#081318" fill-opacity="0.58"/>
+        <rect width="${WIDTH}" height="${HEIGHT}" fill="#081318" fill-opacity="0.10"/>
       </svg>
     `)
   )
@@ -435,10 +478,9 @@ async function topGradient() {
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="black" stop-opacity="0.88"/>
-            <stop offset="18%" stop-color="black" stop-opacity="0.66"/>
-            <stop offset="42%" stop-color="black" stop-opacity="0.28"/>
-            <stop offset="72%" stop-color="black" stop-opacity="0.10"/>
+            <stop offset="0%" stop-color="black" stop-opacity="0.38"/>
+            <stop offset="18%" stop-color="black" stop-opacity="0.18"/>
+            <stop offset="45%" stop-color="black" stop-opacity="0.04"/>
             <stop offset="100%" stop-color="black" stop-opacity="0"/>
           </linearGradient>
         </defs>
@@ -456,9 +498,9 @@ async function bottomGradient() {
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bg" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0%" stop-color="black" stop-opacity="0.68"/>
-            <stop offset="18%" stop-color="black" stop-opacity="0.38"/>
-            <stop offset="38%" stop-color="black" stop-opacity="0.12"/>
+            <stop offset="0%" stop-color="black" stop-opacity="0.22"/>
+            <stop offset="20%" stop-color="black" stop-opacity="0.08"/>
+            <stop offset="40%" stop-color="black" stop-opacity="0.02"/>
             <stop offset="100%" stop-color="black" stop-opacity="0"/>
           </linearGradient>
         </defs>
@@ -476,33 +518,11 @@ async function vignetteOverlay() {
       <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="v" cx="50%" cy="50%" r="72%">
-            <stop offset="58%" stop-color="black" stop-opacity="0"/>
-            <stop offset="100%" stop-color="black" stop-opacity="0.18"/>
+            <stop offset="68%" stop-color="black" stop-opacity="0"/>
+            <stop offset="100%" stop-color="black" stop-opacity="0.05"/>
           </radialGradient>
         </defs>
         <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#v)"/>
-      </svg>
-    `)
-  )
-    .png()
-    .toBuffer();
-}
-
-async function cornerSoftMask() {
-  return sharp(
-    Buffer.from(`
-      <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-        <rect
-          x="0"
-          y="0"
-          width="${WIDTH}"
-          height="${HEIGHT}"
-          rx="34"
-          ry="34"
-          fill="none"
-          stroke="rgba(0,0,0,0.18)"
-          stroke-width="28"
-        />
       </svg>
     `)
   )
@@ -533,6 +553,29 @@ async function frameOverlay() {
     .toBuffer();
 }
 
+async function imageFrameOverlay() {
+  return sharp(
+    Buffer.from(`
+      <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+        <rect
+          x="${IMAGE_LEFT}"
+          y="${IMAGE_TOP}"
+          width="${IMAGE_WIDTH}"
+          height="${IMAGE_HEIGHT}"
+          rx="34"
+          ry="34"
+          fill="none"
+          stroke="${BRAND.border}"
+          stroke-opacity="0.95"
+          stroke-width="3"
+        />
+      </svg>
+    `)
+  )
+    .png()
+    .toBuffer();
+}
+
 async function textOverlay(
   title: string,
   subtitle: string,
@@ -540,24 +583,32 @@ async function textOverlay(
   hook: string,
   font: opentype.Font
 ) {
-  const lines = wrapTitle(title).slice(0, 3);
+  const lines = wrapTitle(title).slice(0, 4);
+  const hookLines = wrapCopy(hook, 28, 2);
+  const subtitleLines = wrapCopy(subtitle, 34, 3);
 
-  const TEXT_LEFT = 88;
-  const TITLE_START = 286;
-  const LINE_HEIGHT = 66;
+  let titleFontSize = 52;
+  let lineHeight = 44;
 
-  let titleFontSize = 72;
-
-  if (title.length > 28) titleFontSize = 64;
-  if (title.length > 38) titleFontSize = 58;
-  if (title.length > 52) titleFontSize = 52;
+  if (title.length > 24) {
+    titleFontSize = 48;
+    lineHeight = 40;
+  }
+  if (title.length > 34) {
+    titleFontSize = 44;
+    lineHeight = 36;
+  }
+  if (title.length > 46) {
+    titleFontSize = 40;
+    lineHeight = 34;
+  }
 
   const badgeWidth = badge === "GUIDE" ? 160 : 175;
 
   const badgeRect = `
     <rect
-      x="${TEXT_LEFT}"
-      y="84"
+      x="${BADGE_LEFT}"
+      y="${BADGE_TOP}"
       rx="22"
       ry="22"
       width="${badgeWidth}"
@@ -571,10 +622,10 @@ async function textOverlay(
     font,
     27,
     "#ffffff",
-    TEXT_LEFT + badgeWidth / 2,
-    118,
+    BADGE_LEFT + badgeWidth / 2,
+    BADGE_TOP + 34,
     0.75,
-    0.18,
+    0.16,
     2,
     "center"
   );
@@ -586,53 +637,61 @@ async function textOverlay(
         font,
         titleFontSize,
         BRAND.gold,
-        TEXT_LEFT,
-        TITLE_START + i * LINE_HEIGHT,
-        0.6,
-        0.28,
-        3,
+        TITLE_LEFT,
+        TITLE_TOP + i * lineHeight,
+        0.3,
+        0.14,
+        2,
         "left"
       )
     )
     .join("");
 
-  const hookPath = makeShadowedTextPathSvg(
-    hook,
-    font,
-    36,
-    BRAND.gold,
-    TEXT_LEFT,
-    TITLE_START + lines.length * LINE_HEIGHT + 42,
-    0.4,
-    0.2,
-    2,
-    "left"
-  );
+  const hookPaths = hookLines
+    .map((line, i) =>
+      makeShadowedTextPathSvg(
+        line,
+        font,
+        22,
+        BRAND.gold,
+        BOTTOM_LEFT,
+        HOOK_TOP + i * 24,
+        0.06,
+        0.1,
+        2,
+        "left"
+      )
+    )
+    .join("");
 
-  const subtitlePath = makeShadowedTextPathSvg(
-    subtitle,
-    font,
-    30,
-    "rgba(255,255,255,0.92)",
-    TEXT_LEFT,
-    TITLE_START + lines.length * LINE_HEIGHT + 92,
-    0.35,
-    0.18,
-    2,
-    "left"
-  );
+  const subtitlePaths = subtitleLines
+    .map((line, i) =>
+      makeShadowedTextPathSvg(
+        line,
+        font,
+        17,
+        "rgba(255,255,255,0.96)",
+        BOTTOM_LEFT,
+        SUBTITLE_TOP + i * 20,
+        0.02,
+        0.08,
+        2,
+        "left"
+      )
+    )
+    .join("");
 
   const sitePath = makeShadowedTextPathSvg(
     "vegan-masala.com",
     font,
-    30,
+    17,
     "#ffffff",
-    WIDTH / 2,
-    HEIGHT - 82,
-    0.45,
-    0.18,
+    BOTTOM_LEFT,
+    SITE_TOP,
+    0.02,
+    0.08,
     2,
-    "center"
+    "left"
   );
 
   const svg = `
@@ -641,8 +700,8 @@ async function textOverlay(
       ${badgeRect}
       ${badgePath}
       ${titlePaths}
-      ${hookPath}
-      ${subtitlePath}
+      ${hookPaths}
+      ${subtitlePaths}
       ${sitePath}
     </svg>
   `;
@@ -655,7 +714,7 @@ async function logoOverlay(logo: Buffer | null) {
 
   return sharp(logo)
     .trim({ threshold: 10 })
-    .resize(145, 145, {
+    .resize(LOGO_SIZE, LOGO_SIZE, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
@@ -677,14 +736,57 @@ async function createPost(slug: string, title: string, type: ContentType) {
   const font = loadFontOrThrow(fontPath);
   const logo = await resolveLogo();
 
-  const bg = await backgroundBufferFromSource(sourceImage);
+  const bg = await backgroundBuffer(WIDTH, HEIGHT, null, BRAND.bg);
   const texture = await brandedTextureOverlay();
   const wash = await brandWashOverlay();
+
+  let contentImage: Buffer | null = null;
+  let contentImageShadow: Buffer | null = null;
+
+  if (sourceImage) {
+    const roundedMask = Buffer.from(`
+      <svg width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" rx="30" ry="30" fill="white"/>
+      </svg>
+    `);
+
+    contentImage = await sharp(sourceImage)
+      .resize(IMAGE_WIDTH, IMAGE_HEIGHT, { fit: "cover" })
+      .composite([{ input: roundedMask, blend: "dest-in" }])
+      .png()
+      .toBuffer();
+
+    contentImageShadow = await sharp(
+      Buffer.from(`
+        <svg width="${IMAGE_WIDTH + 28}" height="${IMAGE_HEIGHT + 28}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="black" flood-opacity="0.18"/>
+            </filter>
+          </defs>
+          <rect
+            x="14"
+            y="14"
+            width="${IMAGE_WIDTH}"
+            height="${IMAGE_HEIGHT}"
+            rx="30"
+            ry="30"
+            fill="black"
+            opacity="0.14"
+            filter="url(#shadow)"
+          />
+        </svg>
+      `)
+    )
+      .png()
+      .toBuffer();
+  }
+
   const gradTop = await topGradient();
   const gradBottom = await bottomGradient();
   const vignette = await vignetteOverlay();
-  const cornerMask = await cornerSoftMask();
   const frame = await frameOverlay();
+  const imageFrame = await imageFrameOverlay();
   const text = await textOverlay(
     editorial.title || title,
     buildNaturalSubtitle(editorial, type, slug),
@@ -704,20 +806,36 @@ async function createPost(slug: string, title: string, type: ContentType) {
     comps.push({ input: wash, left: 0, top: 0 });
   }
 
+  if (contentImageShadow) {
+    comps.push({
+      input: contentImageShadow,
+      left: IMAGE_LEFT - 14,
+      top: IMAGE_TOP - 14,
+    });
+  }
+
+  if (contentImage) {
+    comps.push({
+      input: contentImage,
+      left: IMAGE_LEFT,
+      top: IMAGE_TOP,
+    });
+  }
+
   comps.push(
     { input: gradTop, left: 0, top: 0 },
     { input: gradBottom, left: 0, top: 0 },
     { input: vignette, left: 0, top: 0 },
-    { input: cornerMask, left: 0, top: 0 },
     { input: text, left: 0, top: 0 },
+    { input: imageFrame, left: 0, top: 0 },
     { input: frame, left: 0, top: 0 }
   );
 
   if (logoPng) {
     comps.push({
       input: logoPng,
-      top: HEIGHT - 210,
-      left: WIDTH - 210,
+      top: LOGO_TOP,
+      left: LOGO_LEFT,
     });
   }
 

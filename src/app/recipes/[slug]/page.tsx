@@ -8,6 +8,7 @@ import { getRecipeBySlug } from "@/lib/recipes";
 import { getRecipeImage, isPlaceholderImage } from "@/lib/recipeimages";
 import PrintButton from "@/components/PrintButton";
 import RelatedGuides from "@/components/RelatedGuides";
+import StorePromo from "@/components/StorePromo";
 
 function extractSections(raw: string) {
   const sections: Record<string, string> = {};
@@ -361,6 +362,15 @@ export default async function RecipePage({
     return "Serve hot and simply, with sides that let the spices and masala stay at the centre.";
   })();
 
+  const storePromoSlugs = [
+    "jalebi-recipe-traditional-method",
+    "vegan-gulab-jamun",
+    "coconut-ladoo",
+    "kheer",
+    "carrot-halwa",
+    "mango-lassi",
+  ];
+
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -470,9 +480,7 @@ export default async function RecipePage({
                 src={hero}
                 alt={recipe.title}
                 fill
-                className={
-                  placeholder ? "object-contain p-8 opacity-90" : "object-cover"
-                }
+                className={placeholder ? "object-contain p-8 opacity-90" : "object-cover"}
                 sizes="(max-width: 1024px) 100vw, 380px"
                 priority
               />
@@ -594,9 +602,7 @@ export default async function RecipePage({
           <h2 className="mt-2 text-xl font-extrabold text-[var(--brand-gold)]">
             Best served simply
           </h2>
-          <p className="mt-3 leading-7 text-[var(--text-soft)]">
-            {servingIdeas}
-          </p>
+          <p className="mt-3 leading-7 text-[var(--text-soft)]">{servingIdeas}</p>
         </div>
       </section>
 
@@ -699,11 +705,9 @@ export default async function RecipePage({
         </div>
       </section>
 
-      <RelatedGuides
-        title="Learn the technique"
-        tags={relatedGuideTags}
-        max={3}
-      />
+      {storePromoSlugs.includes(recipe.slug) && <StorePromo />}
+
+      <RelatedGuides title="Learn the technique" tags={relatedGuideTags} max={3} />
     </main>
   );
 }

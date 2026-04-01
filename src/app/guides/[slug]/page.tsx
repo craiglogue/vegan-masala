@@ -334,13 +334,22 @@ export async function generateMetadata({
   if (!guide) return {};
 
   const image = getGuideImage(guide);
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
+  const canonical = `${siteUrl}/guides/${slug}`;
 
   return {
-    title: `${guide.title} | Vegan Masala`,
+    title: guide.title,
     description: guide.description,
+    alternates: {
+      canonical,
+    },
     openGraph: {
       title: `${guide.title} | Vegan Masala`,
       description: guide.description,
+      url: canonical,
+      siteName: "Vegan Masala",
+      type: "article",
       images: image ? [image] : undefined,
     },
     twitter: {

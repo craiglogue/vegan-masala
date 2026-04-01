@@ -11,24 +11,6 @@ function imageExts() {
   return [".png", ".jpg", ".jpeg", ".webp"];
 }
 
-function walk(dir: string, results: string[] = []) {
-  if (!fs.existsSync(dir)) return results;
-
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      walk(full, results);
-    } else {
-      results.push(full);
-    }
-  }
-
-  return results;
-}
-
 function exactCandidates(slug: string, type: ContentType) {
   const folder = type === "recipe" ? "recipes" : "guides";
 
@@ -37,7 +19,27 @@ function exactCandidates(slug: string, type: ContentType) {
     path.join(PUBLIC_DIR, "images", `${slug}${ext}`),
     path.join(PUBLIC_DIR, `${slug}${ext}`),
     path.join(PUBLIC_DIR, "generated", "instagram", `${slug}${ext}`),
+    path.join(PUBLIC_DIR, "generated", "pinterest", `${slug}${ext}`),
   ]);
+}
+
+function findBrandBackground(): string | null {
+  const candidates = [
+    path.join(PUBLIC_DIR, "brand", "social-bg.png"),
+    path.join(PUBLIC_DIR, "brand", "social-bg.jpg"),
+    path.join(PUBLIC_DIR, "brand", "social-background.png"),
+    path.join(PUBLIC_DIR, "brand", "social-background.jpg"),
+    path.join(PUBLIC_DIR, "images", "header", "mandala-bg.jpg"),
+    path.join(PUBLIC_DIR, "images", "header", "mandala-bg.png"),
+    path.join(PUBLIC_DIR, "images", "social", "background.jpg"),
+    path.join(PUBLIC_DIR, "images", "social", "background.png"),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  return null;
 }
 
 export function findContentImage(
@@ -48,8 +50,23 @@ export function findContentImage(
     if (fs.existsSync(candidate)) return candidate;
   }
 
-  const generated = path.join(ROOT, "public", "generated", "instagram", `${slug}.png`);
-  if (fs.existsSync(generated)) return generated;
+  const instagramGenerated = path.join(
+    ROOT,
+    "public",
+    "generated",
+    "instagram",
+    `${slug}.png`
+  );
+  if (fs.existsSync(instagramGenerated)) return instagramGenerated;
+
+  const pinterestGenerated = path.join(
+    ROOT,
+    "public",
+    "generated",
+    "pinterest",
+    `${slug}.png`
+  );
+  if (fs.existsSync(pinterestGenerated)) return pinterestGenerated;
 
   return null;
 }
@@ -60,7 +77,9 @@ export async function backgroundBuffer(
   img: string | null,
   bg = "#000000"
 ) {
-  if (!img) {
+  const source = img || findBrandBackground();
+
+  if (!source) {
     return sharp({
       create: {
         width,
@@ -73,7 +92,7 @@ export async function backgroundBuffer(
       .toBuffer();
   }
 
-  return sharp(img)
+  return sharp(source)
     .resize(width, height, { fit: "cover" })
     .png()
     .toBuffer();

@@ -5,7 +5,6 @@ export default function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)]">
       <div className="relative overflow-hidden">
-        {/* Background */}
         <div className="absolute inset-0">
           <img
             src="/images/header/mandala-bg.jpg"
@@ -16,17 +15,14 @@ export default function SiteHeader() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/75" />
         </div>
 
-        {/* Centered logo + nav */}
         <div className="relative mx-auto max-w-7xl px-4 py-3">
-          {/* Hard height cap container */}
           <div className="flex items-center justify-center overflow-hidden">
             <Link href="/" className="flex items-center justify-center">
               <img
                 src="/brand/logo-flat.png"
                 alt="Vegan Masala"
-                // FORCE size no matter what global CSS says:
                 style={{
-                  height: "clamp(120px, 14vw, 180px)", // responsive but capped
+                  height: "clamp(120px, 14vw, 180px)",
                   width: "auto",
                   display: "block",
                 }}
@@ -40,6 +36,9 @@ export default function SiteHeader() {
             </Link>
             <Link className="hover:opacity-90" href="/guides">
               Guides
+            </Link>
+            <Link className="hover:opacity-90" href="/store">
+              Store
             </Link>
             <Link className="hover:opacity-90" href="/about">
               About

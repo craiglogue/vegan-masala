@@ -81,6 +81,11 @@ function SiteFooter() {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/store" className="hover:text-[var(--brand-gold)]">
+                    Store
+                  </Link>
+                </li>
+                <li>
                   <Link href="/about" className="hover:text-[var(--brand-gold)]">
                     About
                   </Link>

@@ -1,11 +1,37 @@
 export const dynamic = "force-dynamic";
 
-// src/app/recipes/page.tsx
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 
 import { getAllRecipes } from "@/lib/recipes";
 import { getRecipeImage, isPlaceholderImage } from "@/lib/recipeimages";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
+
+export const metadata: Metadata = {
+  title: "Vegan Indian Recipes | Curries, Dal, Rice & Flatbreads",
+  description:
+    "Browse vegan Indian recipes including curries, dals, rice dishes, snacks and flatbreads. Practical recipes with proper flavour and clear step-by-step methods.",
+  alternates: {
+    canonical: `${siteUrl}/recipes`,
+  },
+  openGraph: {
+    title: "Vegan Indian Recipes | Curries, Dal, Rice & Flatbreads | Vegan Masala",
+    description:
+      "Browse vegan Indian recipes including curries, dals, rice dishes, snacks and flatbreads.",
+    url: `${siteUrl}/recipes`,
+    siteName: "Vegan Masala",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vegan Indian Recipes | Curries, Dal, Rice & Flatbreads | Vegan Masala",
+    description:
+      "Browse vegan Indian recipes including curries, dals, rice dishes, snacks and flatbreads.",
+  },
+};
 
 function totalMinutes(prep?: number, cook?: number) {
   const t = (prep ?? 0) + (cook ?? 0);
@@ -124,7 +150,10 @@ function canonicalizeTag(raw: string): string | null {
     if (re.test(clean)) return key;
   }
 
-  if (clean.length <= 20 && clean.split(" ").length <= 3) return clean.replace(/\s+/g, "-");
+  if (clean.length <= 20 && clean.split(" ").length <= 3) {
+    return clean.replace(/\s+/g, "-");
+  }
+
   return null;
 }
 
@@ -135,6 +164,7 @@ function recipeCanonicalTags(r: any): string[] {
     const c = canonicalizeTag(String(t));
     if (c) out.add(c);
   }
+
   for (const d of r.diet ?? []) {
     const c = canonicalizeTag(String(d));
     if (c) out.add(c);
@@ -155,6 +185,7 @@ function recipeCanonicalTags(r: any): string[] {
     [/\b(biryani|rice)\b/i, "rice"],
     [/\b(curry|masala|korma|vindaloo)\b/i, "curries"],
   ];
+
   for (const [re, key] of heuristics) {
     if (re.test(txt)) out.add(key);
   }
@@ -202,14 +233,11 @@ export default async function RecipesPage({
   const recipes = getAllRecipes();
 
   const sp = (await searchParams) ?? {};
-  const tagRaw = Array.isArray(sp.tag) ? sp.tag?.[0] : sp.tag;
-  const collectionRaw = Array.isArray(sp.collection) ? sp.collection?.[0] : sp.collection;
+  const tagRaw = Array.isArray(sp.tag) ? sp.tag[0] : sp.tag;
+  const collectionRaw = Array.isArray(sp.collection) ? sp.collection[0] : sp.collection;
 
   const selectedTag = tagRaw ? norm(tagRaw) : null;
   const selectedCollection = collectionRaw ? norm(collectionRaw) : null;
-
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
   const jsonLd = {
     "@context": "https://schema.org",

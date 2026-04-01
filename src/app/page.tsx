@@ -1,4 +1,5 @@
 // src/app/page.tsx
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -6,6 +7,32 @@ import { getAllRecipes } from "@/lib/recipes";
 import { getAllGuides } from "@/lib/guides";
 import { getRecipeImage, isPlaceholderImage } from "@/lib/recipeimages";
 import CurrySlider from "@/components/CurrySlider";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
+
+export const metadata: Metadata = {
+  title: "Vegan Indian Recipes & Cooking Guides",
+  description:
+    "Authentic vegan Indian recipes, curries, dals, flatbreads and practical cooking guides. Learn vegan Indian cooking with clear methods, proper masalas and weeknight-friendly ideas.",
+  alternates: {
+    canonical: `${siteUrl}/`,
+  },
+  openGraph: {
+    title: "Vegan Indian Recipes & Cooking Guides | Vegan Masala",
+    description:
+      "Authentic vegan Indian recipes, curries, dals, flatbreads and practical cooking guides.",
+    url: `${siteUrl}/`,
+    siteName: "Vegan Masala",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vegan Indian Recipes & Cooking Guides | Vegan Masala",
+    description:
+      "Authentic vegan Indian recipes, curries, dals, flatbreads and practical cooking guides.",
+  },
+};
 
 function minutes(prep?: number, cook?: number) {
   const total = (prep ?? 0) + (cook ?? 0);
@@ -30,13 +57,58 @@ export default function Home() {
   const featuredRecipes = recipes.slice(0, 3);
   const featuredGuides = guides.slice(0, 3);
 
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Vegan Masala",
+    url: siteUrl,
+    logo: `${siteUrl}/apple-touch-icon.png?v=3`,
+    sameAs: [
+      "https://www.instagram.com/veganmasalaonline/",
+      "https://www.youtube.com/@vegan-masala",
+      "https://uk.pinterest.com/VeganMasala/",
+      "https://www.facebook.com/profile.php?id=61588342679463",
+      "https://www.tiktok.com/@user2554050179629?lang=en-GB",
+    ],
+  };
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Vegan Masala",
+    url: siteUrl,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${siteUrl}/recipes?search={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   const currySliderImages = [
-    { src: "/images/curries/curry_1.jpg", alt: "Vegan Indian curry" },
-    { src: "/images/curries/curry_2.jpg", alt: "Vegan Indian curry" },
-    { src: "/images/curries/curry_3.jpg", alt: "Vegan Indian curry" },
-    { src: "/images/curries/curry_4.jpg", alt: "Vegan Indian curry" },
-    { src: "/images/curries/curry_5.jpg", alt: "Vegan Indian curry" },
-    { src: "/images/curries/curry_6.jpg", alt: "Vegan Indian curry" },
+    {
+      src: "/images/curries/curry_1.jpg",
+      alt: "Vegan Indian curry in rich masala sauce",
+    },
+    {
+      src: "/images/curries/curry_2.jpg",
+      alt: "Bowl of vegan Indian curry",
+    },
+    {
+      src: "/images/curries/curry_3.jpg",
+      alt: "Homemade vegan Indian curry with deep red gravy",
+    },
+    {
+      src: "/images/curries/curry_4.jpg",
+      alt: "Vegan Indian curry served for dinner",
+    },
+    {
+      src: "/images/curries/curry_5.jpg",
+      alt: "Close-up of vegan Indian curry",
+    },
+    {
+      src: "/images/curries/curry_6.jpg",
+      alt: "Vegan Indian curry with rich tomato masala",
+    },
   ];
 
   const collections = [
@@ -98,6 +170,15 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 pt-6 pb-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+
       {/* HERO */}
       <section className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-6 pt-10 pb-16 shadow-sm">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-black/20" />
@@ -114,10 +195,15 @@ export default function Home() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--text-soft)]">
-              A growing collection of vegan Indian recipes and cooking guides
-              built around proper masalas, dependable methods and the generous
-              spirit of family-style food — the kind of cooking that brings back
-              memories and earns a regular place at the table.
+              Vegan Masala is a growing collection of vegan Indian recipes and cooking
+              guides built around proper masalas, dependable methods and the generous
+              spirit of family-style food.
+            </p>
+
+            <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--text-soft)]">
+              Explore vegan Indian curries, dals, flatbreads, rice dishes, snacks and
+              practical cooking guides designed to help home cooks build real flavour
+              with confidence.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
@@ -157,7 +243,7 @@ export default function Home() {
               <div className="relative aspect-[4/4.5] w-full">
                 <Image
                   src="/images/hero-curry.jpg"
-                  alt="Vegan Indian curry"
+                  alt="Vegan Indian curry in a rich masala sauce"
                   fill
                   className="object-cover"
                   priority
