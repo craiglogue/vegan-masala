@@ -1,5 +1,8 @@
 const GRAPH_BASE = "https://graph.facebook.com/v23.0";
 
+import { assertSocialPublishPreflight } from "@/lib/social/core/publishPreflight";
+import { resolveFacebookMetaAuth } from "@/lib/social/publishers/metaCore";
+
 type PublishFacebookInput = {
   slug: string;
   caption: string;
@@ -8,20 +11,19 @@ type PublishFacebookInput = {
   videoUrl?: string;
 };
 
-function getRequiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} missing`);
-  }
-  return value;
+function getSiteBase() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    "https://www.vegan-masala.com"
+  ).replace(/\/+$/, "");
 }
 
 async function metaPostForm(
   endpoint: string,
-  body: Record<string, string>
+  body: Record<string, string>,
+  accessToken: string
 ): Promise<any> {
-  const accessToken = getRequiredEnv("META_ACCESS_TOKEN");
-
   const form = new URLSearchParams();
   Object.entries(body).forEach(([key, value]) => {
     form.set(key, value);
@@ -57,44 +59,63 @@ export async function publishFacebook(input: PublishFacebookInput) {
     throw new Error("Facebook publish slug missing");
   }
 
-  const pageId = getRequiredEnv("META_PAGE_ID");
+  const preflight = assertSocialPublishPreflight({
+    platform: "facebook",
+    slug,
+    stage: "publish",
+    assetType: input.assetType,
+    imageUrl: input.imageUrl,
+    publishImageUrl: input.imageUrl,
+    videoUrl: input.videoUrl,
+    baseUrl: getSiteBase(),
+  });
+
+  const { accessToken, pageId } = resolveFacebookMetaAuth();
 
   if (input.assetType === "video") {
-    if (!input.videoUrl) {
+    const safeVideoUrl = preflight.normalized.videoUrl || input.videoUrl || "";
+
+    if (!safeVideoUrl) {
       throw new Error("Facebook video URL missing");
     }
 
     const published = await metaPostForm(`/${pageId}/videos`, {
-      file_url: input.videoUrl,
+      file_url: safeVideoUrl,
       description: input.caption || "",
       published: "true",
-    });
+    }, accessToken);
 
     return {
       ok: true,
       assetType: "video" as const,
       pageId,
-      videoUrl: input.videoUrl,
+      videoUrl: safeVideoUrl,
       videoId: published?.id || null,
       published,
     };
   }
 
-  if (!input.imageUrl) {
+  const safeImageUrl =
+    preflight.normalized.publishImageUrl ||
+    preflight.normalized.imageUrl ||
+    input.imageUrl ||
+    "";
+
+  if (!safeImageUrl) {
     throw new Error("Facebook image URL missing");
   }
 
   const published = await metaPostForm(`/${pageId}/photos`, {
-    url: input.imageUrl,
+    url: safeImageUrl,
     caption: input.caption || "",
     published: "true",
-  });
+  }, accessToken);
 
   return {
     ok: true,
     assetType: "image" as const,
     pageId,
-    imageUrl: input.imageUrl,
+    imageUrl: safeImageUrl,
     photoId: published?.id || null,
     postId: published?.post_id || null,
     published,

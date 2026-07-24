@@ -4,7 +4,8 @@ import path from "node:path";
 export type QueuePlatform = "instagram" | "pinterest" | "facebook";
 export type QueueStatus = "queued" | "posted" | "failed";
 export type QueueAssetType = "image" | "video";
-export type QueueContentType = "recipe" | "guide";
+export type QueueContentType = "recipe" | "guide" | "store";
+export type QueueContentKind = "standard" | "ebook";
 
 export type QueueItem = {
   id: string;
@@ -20,8 +21,10 @@ export type QueueItem = {
   postedAt?: string;
   error?: string;
   contentType?: QueueContentType;
+  kind?: QueueContentKind;
   assetType?: QueueAssetType;
   imageUrl?: string;
+  publishImageUrl?: string;
   videoUrl?: string;
 };
 
@@ -55,7 +58,7 @@ function writeQueueFile(items: QueueItem[]) {
   fs.writeFileSync(QUEUE_FILE, JSON.stringify(items, null, 2), "utf8");
 }
 
-export function allQueueItems() {
+export function allQueueItems(): QueueItem[] {
   return readQueueFile().sort((a, b) => {
     const aTime = new Date(a.scheduledFor).getTime();
     const bTime = new Date(b.scheduledFor).getTime();
@@ -81,7 +84,7 @@ export function addQueueItem(
   return next;
 }
 
-export function dueQueueItems() {
+export function dueQueueItems(): QueueItem[] {
   const now = Date.now();
 
   return readQueueFile().filter((item) => {
@@ -90,11 +93,11 @@ export function dueQueueItems() {
   });
 }
 
-export function findQueueItemById(id: string) {
+export function findQueueItemById(id: string): QueueItem | null {
   return readQueueFile().find((item) => item.id === id) || null;
 }
 
-export function markQueueItemPosted(id: string) {
+export function markQueueItemPosted(id: string): void {
   const items = readQueueFile();
   const next = items.map((item) =>
     item.id === id
@@ -110,7 +113,7 @@ export function markQueueItemPosted(id: string) {
   writeQueueFile(next);
 }
 
-export function markQueueItemFailed(id: string, error: string) {
+export function markQueueItemFailed(id: string, error: string): void {
   const items = readQueueFile();
   const next = items.map((item) =>
     item.id === id
@@ -125,7 +128,7 @@ export function markQueueItemFailed(id: string, error: string) {
   writeQueueFile(next);
 }
 
-export function retryQueueItem(id: string) {
+export function retryQueueItem(id: string): void {
   const items = readQueueFile();
   const next = items.map((item) =>
     item.id === id
@@ -140,7 +143,7 @@ export function retryQueueItem(id: string) {
   writeQueueFile(next);
 }
 
-export function rescheduleQueueItemNow(id: string) {
+export function rescheduleQueueItemNow(id: string): void {
   const items = readQueueFile();
   const next = items.map((item) =>
     item.id === id
@@ -156,7 +159,7 @@ export function rescheduleQueueItemNow(id: string) {
   writeQueueFile(next);
 }
 
-export function deleteQueueItem(id: string) {
+export function deleteQueueItem(id: string): void {
   const items = readQueueFile();
   const next = items.filter((item) => item.id !== id);
   writeQueueFile(next);

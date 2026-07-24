@@ -25,6 +25,14 @@ function hasBlobToken() {
   return Boolean(getBlobToken());
 }
 
+function getSiteBase() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    "https://www.vegan-masala.com"
+  ).replace(/\/+$/, "");
+}
+
 async function toInstagramJpeg(buffer: Buffer) {
   return sharp(buffer)
     .flatten({ background: "#000000" })
@@ -40,35 +48,39 @@ export async function saveGeneratedInstagramImage(
   buffer: Buffer
 ) {
   const jpegBuffer = await toInstagramJpeg(buffer);
-
-  if (hasBlobToken()) {
-    const token = getBlobToken();
-
-    const blob = await put(`instagram/${slug}.jpg`, jpegBuffer, {
-      access: "public",
-      contentType: "image/jpeg",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      token,
-    });
-
-    return {
-      url: blob.url,
-      storage: "blob" as const,
-      path: blob.pathname,
-    };
-  }
+  const stamp = Date.now();
 
   const dir = path.join(LOCAL_PUBLIC_GENERATED_DIR, "instagram");
   ensureDir(dir);
 
-  const localFile = path.join(dir, `${slug}.jpg`);
+  const localFile = path.join(dir, `${slug}-${stamp}.jpg`);
   fs.writeFileSync(localFile, jpegBuffer);
 
+  const localUrl = `/generated/instagram/${slug}-${stamp}.jpg?v=${Date.now()}`;
+
+  let blobUrl = "";
+  let blobPath = "";
+
+  if (hasBlobToken()) {
+    const token = getBlobToken();
+
+    const blob = await put(`instagram/${slug}-${stamp}.jpg`, jpegBuffer, {
+      access: "public",
+      contentType: "image/jpeg",
+      addRandomSuffix: false,
+      allowOverwrite: false,
+      token,
+    });
+
+    blobUrl = blob.url;
+    blobPath = blob.pathname;
+  }
+
   return {
-    url: `/generated/instagram/${slug}.jpg?v=${Date.now()}`,
-    storage: "local" as const,
-    path: localFile,
+    url: process.env.VERCEL ? (blobUrl || `${getSiteBase()}${localUrl}`) : localUrl,
+    publishUrl: blobUrl || `${getSiteBase()}${localUrl.split("?")[0]}`,
+    storage: blobUrl ? ("blob" as const) : ("local" as const),
+    path: blobPath || localFile,
   };
 }
 

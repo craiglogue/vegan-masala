@@ -77,73 +77,108 @@ function getGuideImage(guide: { slug: string; image?: string }) {
   return guide.image || slugImage || "/images/guides/spices.jpg";
 }
 
+function absUrl(siteUrl: string, maybePath?: string) {
+  if (!maybePath) return undefined;
+  if (maybePath.startsWith("http://") || maybePath.startsWith("https://")) return maybePath;
+  return `${siteUrl}${maybePath.startsWith("/") ? "" : "/"}${maybePath}`;
+}
+
+function guideSearchText(guide: any) {
+  return [
+    guide?.title ?? "",
+    guide?.slug ?? "",
+    guide?.description ?? "",
+    guide?.content ?? "",
+    guide?.category ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function buildGuideSeoTypeLabel(guide: any) {
+  const text = guideSearchText(guide);
+
+  if (/\bspice|spices|masala\b/.test(text)) {
+    return "Indian Spices Guide";
+  }
+
+  if (/\bpantry|staples|essential|essentials\b/.test(text)) {
+    return "Vegan Indian Pantry Guide";
+  }
+
+  if (/\bcurry base|base gravy|onion tomato base\b/.test(text)) {
+    return "Indian Curry Base Guide";
+  }
+
+  if (/\bdal|lentil|lentils\b/.test(text)) {
+    return "Indian Lentils and Dal Guide";
+  }
+
+  if (/\bbasmati|rice|biryani\b/.test(text)) {
+    return "Indian Rice Guide";
+  }
+
+  if (/\bherb|herbs|coriander|mint|curry leaves\b/.test(text)) {
+    return "Indian Herbs Guide";
+  }
+
+  if (/\bequipment|tools|kitchen\b/.test(text)) {
+    return "Indian Cooking Equipment Guide";
+  }
+
+  if (/\bdairy|alternatives|substitutes|vegan dairy\b/.test(text)) {
+    return "Vegan Dairy Alternatives Guide";
+  }
+
+  if (/\bbeginner|beginners\b/.test(text)) {
+    return "Beginner's Guide to Vegan Indian Cooking";
+  }
+
+  return "Vegan Indian Cooking Guide";
+}
+
+function buildGuideSeoTitle(guide: any) {
+  const title = String(guide?.title ?? "Guide").trim();
+  const lower = title.toLowerCase();
+  const typeLabel = buildGuideSeoTypeLabel(guide);
+
+  if (lower.includes("guide")) {
+    return `${title} | Vegan Masala`;
+  }
+
+  if (lower === typeLabel.toLowerCase()) {
+    return `${title} | Vegan Masala`;
+  }
+
+  return `${title} | ${typeLabel} | Vegan Masala`;
+}
+
+function buildGuideSeoDescription(guide: any) {
+  const existing = String(guide?.description ?? "").trim();
+  if (existing) {
+    return existing.length <= 160 ? existing : `${existing.slice(0, 157).trim()}...`;
+  }
+
+  const title = String(guide?.title ?? "This guide").trim();
+  const typeLabel = buildGuideSeoTypeLabel(guide);
+
+  const sentence = `${title} is a practical ${typeLabel.toLowerCase()} with clear explanations, useful kitchen guidance and beginner-friendly help for vegan Indian cooking.`;
+
+  return sentence.length <= 160 ? sentence : `${sentence.slice(0, 157).trim()}...`;
+}
+
 function getRelatedRecipeTags(slug: string) {
   const guideRecipeMap: Record<string, string[]> = {
-    "vegan-indian-pantry-staples": [
-      "chana",
-      "rajma",
-      "rice",
-      "curry",
-      "dal",
-    ],
-    "indian-spices-explained-for-beginners": [
-      "curry",
-      "masala",
-      "dal",
-      "chana",
-    ],
-    "how-to-build-a-curry-base": [
-      "curry",
-      "masala",
-      "vindaloo",
-      "korma",
-    ],
-    "lentils-and-dal": [
-      "dal",
-      "lentil",
-      "rajma",
-      "chana",
-      "moong",
-    ],
-    "how-to-temper-spices": [
-      "dal",
-      "lentil",
-      "chana",
-      "rajma",
-    ],
-    "beginner-friendly-vegan-indian-recipes": [
-      "easy",
-      "chana",
-      "dal",
-      "potato",
-      "tofu",
-      "rice",
-    ],
-    "how-to-cook-basmati-rice": [
-      "rice",
-      "biryani",
-      "chana",
-      "rajma",
-      "curry",
-    ],
-    "vegan-dairy-alternatives": [
-      "tofu",
-      "korma",
-      "makhanwala",
-      "butter",
-    ],
-    herbs: [
-      "palak",
-      "spinach",
-      "curry",
-      "chutney",
-    ],
-    equipment: [
-      "instant-pot",
-      "pressure-cooker",
-      "one-pot",
-      "rice",
-    ],
+    "vegan-indian-pantry-staples": ["chana", "rajma", "rice", "curry", "dal"],
+    "indian-spices-explained-for-beginners": ["curry", "masala", "dal", "chana"],
+    "how-to-build-a-curry-base": ["curry", "masala", "vindaloo", "korma"],
+    "lentils-and-dal": ["dal", "lentil", "rajma", "chana", "moong"],
+    "how-to-temper-spices": ["dal", "lentil", "chana", "rajma"],
+    "beginner-friendly-vegan-indian-recipes": ["easy", "chana", "dal", "potato", "tofu", "rice"],
+    "how-to-cook-basmati-rice": ["rice", "biryani", "chana", "rajma", "curry"],
+    "vegan-dairy-alternatives": ["tofu", "korma", "makhanwala", "butter"],
+    herbs: ["palak", "spinach", "curry", "chutney"],
+    equipment: ["instant-pot", "pressure-cooker", "one-pot", "rice"],
   };
 
   return guideRecipeMap[slug] || [];
@@ -337,26 +372,29 @@ export async function generateMetadata({
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
   const canonical = `${siteUrl}/guides/${slug}`;
+  const imageAbs = absUrl(siteUrl, image);
+  const seoTitle = buildGuideSeoTitle(guide);
+  const seoDescription = buildGuideSeoDescription(guide);
 
   return {
-    title: guide.title,
-    description: guide.description,
+    title: seoTitle,
+    description: seoDescription,
     alternates: {
       canonical,
     },
     openGraph: {
-      title: `${guide.title} | Vegan Masala`,
-      description: guide.description,
+      title: seoTitle,
+      description: seoDescription,
       url: canonical,
       siteName: "Vegan Masala",
       type: "article",
-      images: image ? [image] : undefined,
+      images: imageAbs ? [{ url: imageAbs }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${guide.title} | Vegan Masala`,
-      description: guide.description,
-      images: image ? [image] : undefined,
+      title: seoTitle,
+      description: seoDescription,
+      images: imageAbs ? [imageAbs] : undefined,
     },
   };
 }
@@ -372,13 +410,71 @@ export default async function GuidePage({
 
   if (!guide) return notFound();
 
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
+
   const sections = extractSections(guide.content);
   const faqs = extractFAQs(guide.content);
   const heroImage = getGuideImage(guide);
+  const heroImageAbs = absUrl(siteUrl, heroImage);
   const relatedTags = getRelatedRecipeTags(guide.slug);
+  const canonical = `${siteUrl}/guides/${guide.slug}`;
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: siteUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Guides",
+        item: `${siteUrl}/guides`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: guide.title,
+        item: canonical,
+      },
+    ],
+  };
+
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: guide.title,
+    description: buildGuideSeoDescription(guide),
+    image: heroImageAbs ? [heroImageAbs] : undefined,
+    author: {
+      "@type": "Organization",
+      name: "Vegan Masala",
+      url: siteUrl,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Vegan Masala",
+      url: siteUrl,
+    },
+    mainEntityOfPage: canonical,
+  };
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+
       {faqs.length > 0 && (
         <script
           type="application/ld+json"

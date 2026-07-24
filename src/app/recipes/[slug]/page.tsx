@@ -75,6 +75,140 @@ function absUrl(siteUrl: string, maybePath: string) {
   return `${siteUrl}${maybePath.startsWith("/") ? "" : "/"}${maybePath}`;
 }
 
+function normaliseText(value: unknown) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function recipeSearchText(recipe: any) {
+  return [
+    recipe?.title ?? "",
+    recipe?.slug ?? "",
+    recipe?.description ?? "",
+    recipe?.cuisine ?? "",
+    ...(Array.isArray(recipe?.tags) ? recipe.tags : []),
+    ...(Array.isArray(recipe?.diet) ? recipe.diet : []),
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function buildSeoTypeLabel(recipe: any) {
+  const text = recipeSearchText(recipe);
+
+  if (/\bchana|chickpea|chickpeas|chole\b/.test(text)) {
+    return "Vegan Indian Chickpea Curry";
+  }
+
+  if (/\bdal|dahl|lentil|lentils|masoor|moong|urad|toor\b/.test(text)) {
+    return "Vegan Indian Dal";
+  }
+
+  if (/\bsaag|palak|spinach\b/.test(text) && /\baloo|potato|potatoes\b/.test(text)) {
+    return "Vegan Indian Spinach Potato Curry";
+  }
+
+  if (/\baloo|potato|potatoes\b/.test(text) && /\bcurry|masala\b/.test(text)) {
+    return "Vegan Indian Potato Curry";
+  }
+
+  if (/\btofu\b/.test(text) && /\bbutter\b/.test(text)) {
+    return "Vegan Indian Butter Tofu Curry";
+  }
+
+  if (/\btofu\b/.test(text) && /\bcurry|masala|makhani|korma|vindaloo\b/.test(text)) {
+    return "Vegan Indian Tofu Curry";
+  }
+
+  if (/\brajma|kidney beans?\b/.test(text)) {
+    return "Vegan Indian Kidney Bean Curry";
+  }
+
+  if (/\bbiryani\b/.test(text)) {
+    return "Vegan Indian Biryani";
+  }
+
+  if (/\brice|pulao\b/.test(text)) {
+    return "Vegan Indian Rice Dish";
+  }
+
+  if (/\bnaan|roti|chapati|poori|paratha|flatbread\b/.test(text)) {
+    return "Vegan Indian Bread";
+  }
+
+  if (/\bpakora|bhaji|samosa\b/.test(text)) {
+    return "Vegan Indian Snack";
+  }
+
+  if (/\bcurry|masala|korma|vindaloo|makhani|makhanwala\b/.test(text)) {
+    return "Vegan Indian Curry";
+  }
+
+  return "Vegan Indian Recipe";
+}
+
+function buildSeoTitle(recipe: any) {
+  const title = String(recipe?.title ?? "Recipe").trim();
+  const lowerTitle = title.toLowerCase();
+  const typeLabel = buildSeoTypeLabel(recipe);
+
+  if (lowerTitle.includes("recipe")) {
+    return `${title} | ${typeLabel} | Vegan Masala`;
+  }
+
+  return `${title} Recipe | ${typeLabel} | Vegan Masala`;
+}
+
+function buildSeoDescription(recipe: any) {
+  const existing = String(recipe?.description ?? "").trim();
+  if (existing) {
+    return existing.length <= 160 ? existing : `${existing.slice(0, 157).trim()}...`;
+  }
+
+  const title = String(recipe?.title ?? "This recipe").trim();
+  const typeLabel = buildSeoTypeLabel(recipe);
+  const total = totalMinutesNumber(recipe?.prepMinutes, recipe?.cookMinutes);
+  const serves =
+    typeof recipe?.servings === "number"
+      ? recipe.servings
+      : typeof recipe?.serves === "number"
+      ? recipe.serves
+      : null;
+
+  let sentence = `${title} is a ${typeLabel.toLowerCase()} with clear step-by-step instructions, proper masala flavour and a vegan-friendly method for home cooks.`;
+
+  if (total && serves) {
+    sentence = `${title} is a ${typeLabel.toLowerCase()} with clear step-by-step instructions, proper masala flavour, ready in about ${total} minutes and serving ${serves}.`;
+  } else if (total) {
+    sentence = `${title} is a ${typeLabel.toLowerCase()} with clear step-by-step instructions, proper masala flavour and a cooking time of about ${total} minutes.`;
+  } else if (serves) {
+    sentence = `${title} is a ${typeLabel.toLowerCase()} with clear step-by-step instructions, proper masala flavour and a recipe yield of ${serves} servings.`;
+  }
+
+  return sentence.length <= 160 ? sentence : `${sentence.slice(0, 157).trim()}...`;
+}
+
+function buildRecipeCategory(recipe: any) {
+  const text = recipeSearchText(recipe);
+
+  if (/\bdal|dahl|lentil|lentils|masoor|moong|urad|toor\b/.test(text)) {
+    return "Vegan Indian Dal";
+  }
+
+  if (/\bbiryani|rice|pulao\b/.test(text)) {
+    return "Vegan Indian Rice Dish";
+  }
+
+  if (/\bnaan|roti|chapati|poori|paratha|flatbread\b/.test(text)) {
+    return "Vegan Indian Bread";
+  }
+
+  if (/\bpakora|bhaji|samosa\b/.test(text)) {
+    return "Vegan Indian Snack";
+  }
+
+  return "Vegan Indian Curry";
+}
+
 function getRelatedGuideTags(recipe: any) {
   const text = [
     recipe.title ?? "",
@@ -215,30 +349,28 @@ export async function generateMetadata({
       : heroBase;
 
   const heroAbs = absUrl(siteUrl, hero);
-
-  const title = recipe?.title ? String(recipe.title) : "Recipe";
-  const description =
-    (recipe?.description ? String(recipe.description) : "").trim() ||
-    "Vegan Indian recipes made simple. Weeknight-friendly and tested.";
-
   const canonical = `${siteUrl}/recipes/${slug}`;
 
+  const seoTitle = buildSeoTitle(recipe);
+  const seoDescription = buildSeoDescription(recipe);
+
   return {
-    title: `${title} | Vegan Masala`,
-    description,
+    title: seoTitle,
+    description: seoDescription,
     alternates: { canonical },
     openGraph: {
-      title: `${title} | Vegan Masala`,
-      description,
+      title: seoTitle,
+      description: seoDescription,
       url: canonical,
       siteName: "Vegan Masala",
       type: "article",
+      publishedTime: recipe.publishedAt || undefined,
       images: heroAbs ? [{ url: heroAbs }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | Vegan Masala`,
-      description,
+      title: seoTitle,
+      description: seoDescription,
       images: heroAbs ? [heroAbs] : undefined,
     },
   };
@@ -400,7 +532,7 @@ export default async function RecipePage({
     "@context": "https://schema.org",
     "@type": "Recipe",
     name: recipe.title,
-    description: recipe.description || undefined,
+    description: buildSeoDescription(recipe),
     url: canonicalUrl,
     image: heroAbs || undefined,
     datePublished: recipe.publishedAt || undefined,
@@ -415,7 +547,7 @@ export default async function RecipePage({
       url: siteUrl,
     },
     recipeCuisine: recipe.cuisine || "Indian",
-    recipeCategory: "Vegan Indian Recipes",
+    recipeCategory: buildRecipeCategory(recipe),
     keywords: Array.isArray(recipe.tags) ? recipe.tags.join(", ") : undefined,
     recipeYield:
       typeof recipe.servings === "number"

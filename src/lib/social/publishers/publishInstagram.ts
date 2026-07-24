@@ -1,5 +1,8 @@
 const GRAPH_BASE = "https://graph.facebook.com/v23.0";
 
+import { assertSocialPublishPreflight } from "@/lib/social/core/publishPreflight";
+import { resolveInstagramMetaAuth } from "@/lib/social/publishers/metaCore";
+
 type PublishInstagramInput = {
   slug: string;
   caption: string;
@@ -8,12 +11,32 @@ type PublishInstagramInput = {
   videoUrl?: string;
 };
 
-function getRequiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} missing`);
+function cleanMediaUrl(url?: string) {
+  if (!url) return "";
+
+  try {
+    const parsed = new URL(url);
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return String(url).split("?")[0].split("#")[0];
   }
-  return value;
+}
+
+function getPublicSiteBase() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    "https://www.vegan-masala.com"
+  ).replace(/\/+$/, "");
+}
+
+function absolutizeMediaUrl(url?: string) {
+  const cleaned = cleanMediaUrl(url);
+  if (!cleaned) return "";
+  if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) return cleaned;
+  return `${getPublicSiteBase()}${cleaned.startsWith("/") ? "" : "/"}${cleaned}`;
 }
 
 async function graphGet(url: string) {
@@ -29,6 +52,7 @@ async function graphGet(url: string) {
 
 async function graphPost(endpoint: string, body: Record<string, string>) {
   const form = new URLSearchParams();
+
   Object.entries(body).forEach(([key, value]) => {
     form.set(key, value);
   });
@@ -50,7 +74,11 @@ async function graphPost(endpoint: string, body: Record<string, string>) {
   return data;
 }
 
-async function waitForVideoContainer(containerId: string, accessToken: string) {
+async function waitForInstagramContainer(
+  containerId: string,
+  accessToken: string,
+  kind: "image" | "video"
+) {
   for (let i = 0; i < 20; i++) {
     const status = await graphGet(
       `${GRAPH_BASE}/${containerId}?fields=status_code,status&access_token=${accessToken}`
@@ -58,18 +86,28 @@ async function waitForVideoContainer(containerId: string, accessToken: string) {
 
     const code = String(status?.status_code || status?.status || "").toUpperCase();
 
+    if (!code) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      continue;
+    }
+
     if (code === "FINISHED" || code === "PUBLISHED") {
       return;
     }
 
-    if (code === "ERROR" || code === "EXPIRED") {
-      throw new Error("Instagram video container failed");
+    if (code === "IN_PROGRESS") {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      continue;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    if (code === "ERROR" || code === "EXPIRED") {
+      throw new Error(`Instagram ${kind} container failed`);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
-  throw new Error("Instagram video container timed out");
+  throw new Error(`Instagram ${kind} container timed out`);
 }
 
 export async function publishInstagram(input: PublishInstagramInput) {
@@ -79,24 +117,29 @@ export async function publishInstagram(input: PublishInstagramInput) {
     throw new Error("Instagram publish slug missing");
   }
 
-  const accessToken = getRequiredEnv("META_ACCESS_TOKEN");
-  const igUserId =
-    process.env.META_IG_USER_ID ||
-    process.env.INSTAGRAM_BUSINESS_ID ||
-    "";
+  const { accessToken, igUserId } = resolveInstagramMetaAuth();
 
-  if (!igUserId) {
-    throw new Error("META_IG_USER_ID missing");
-  }
+  const preflight = assertSocialPublishPreflight({
+    platform: "instagram",
+    slug,
+    stage: "publish",
+    assetType: input.assetType,
+    imageUrl: input.imageUrl,
+    publishImageUrl: input.imageUrl,
+    videoUrl: input.videoUrl,
+    baseUrl: getPublicSiteBase(),
+  });
 
   if (input.assetType === "video") {
-    if (!input.videoUrl) {
+    const safeVideoUrl = cleanMediaUrl(preflight.normalized.videoUrl || input.videoUrl);
+
+    if (!safeVideoUrl) {
       throw new Error("Instagram video URL missing");
     }
 
     const container = await graphPost(`/${igUserId}/media`, {
       media_type: "REELS",
-      video_url: input.videoUrl,
+      video_url: safeVideoUrl,
       caption: input.caption || "",
       access_token: accessToken,
     });
@@ -105,7 +148,7 @@ export async function publishInstagram(input: PublishInstagramInput) {
       throw new Error("Instagram video container creation failed");
     }
 
-    await waitForVideoContainer(container.id, accessToken);
+    await waitForInstagramContainer(container.id, accessToken, "video");
 
     const published = await graphPost(`/${igUserId}/media_publish`, {
       creation_id: container.id,
@@ -115,18 +158,25 @@ export async function publishInstagram(input: PublishInstagramInput) {
     return {
       ok: true,
       assetType: "video" as const,
-      videoUrl: input.videoUrl,
+      videoUrl: safeVideoUrl,
       containerId: container.id,
       published,
     };
   }
 
-  if (!input.imageUrl) {
+  const fallbackImageUrl = absolutizeMediaUrl(
+    preflight.normalized.publishImageUrl || preflight.normalized.imageUrl || input.imageUrl
+  );
+  const safeImageUrl = fallbackImageUrl;
+
+  if (!safeImageUrl) {
     throw new Error("Instagram image URL missing");
   }
 
+  console.log("INSTAGRAM IMAGE URL:", safeImageUrl);
+
   const container = await graphPost(`/${igUserId}/media`, {
-    image_url: input.imageUrl,
+    image_url: safeImageUrl,
     caption: input.caption || "",
     access_token: accessToken,
   });
@@ -134,6 +184,8 @@ export async function publishInstagram(input: PublishInstagramInput) {
   if (!container?.id) {
     throw new Error("Instagram image container creation failed");
   }
+
+  await waitForInstagramContainer(container.id, accessToken, "image");
 
   const published = await graphPost(`/${igUserId}/media_publish`, {
     creation_id: container.id,
@@ -143,7 +195,7 @@ export async function publishInstagram(input: PublishInstagramInput) {
   return {
     ok: true,
     assetType: "image" as const,
-    imageUrl: input.imageUrl,
+    imageUrl: safeImageUrl,
     containerId: container.id,
     published,
   };

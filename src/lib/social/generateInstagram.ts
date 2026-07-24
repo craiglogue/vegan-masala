@@ -17,6 +17,7 @@ import { backgroundBuffer, findContentImage } from "./core/images";
 import { buildInstagramCaption, saveCaption } from "./core/captions";
 import { updateManifest } from "./core/manifest";
 import { saveGeneratedInstagramImage } from "./core/generatedAssets";
+import { renderInstagramBySlug } from "./instagram/render";
 
 import { getRecipeBySlug } from "@/lib/recipes";
 import { getGuideBySlug } from "@/lib/guides";
@@ -931,38 +932,20 @@ export async function generateLatestInstagram() {
 }
 
 export async function generateAllInstagram() {
-  const items = allContent();
-  let count = 0;
-  const generated: Array<{
-    slug: string;
-    image: string;
-    storage: "blob" | "local";
-    path: string;
-  }> = [];
+  const items = allContent().filter((item) => item.type === "recipe");
 
+  const results = [];
   for (const item of items) {
     const slug = slugFromFile(item.file);
-    const editorial = getEditorialContent(slug, item.type);
-    const result = await createPost(
-      slug,
-      editorial.title || titleFromSlug(slug),
-      item.type
-    );
-
-    generated.push({
-      slug,
-      image: result.image,
-      storage: result.storage,
-      path: result.path,
-    });
-
-    count++;
+    const result = await renderInstagramBySlug(slug);
+    results.push(result);
   }
 
   return {
     success: true,
-    count,
-    generated,
-    message: "All generated",
+    count: results.length,
+    results,
+    generated: results,
+    message: "Instagram generated",
   };
 }

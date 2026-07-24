@@ -8,13 +8,12 @@ import { put, list } from "@vercel/blob";
 import ffmpegPath from "ffmpeg-static";
 import opentype from "opentype.js";
 
-import {
-  detectContentTypeBySlug,
-  titleFromSlug,
-} from "@/lib/social/core/content";
+import { detectContentTypeBySlug, titleFromSlug } from "@/lib/social/core/content";
 import { BRAND } from "@/lib/social/core/brand";
+import { findContentImage } from "@/lib/social/core/assets";
 import { getRecipeBySlug } from "@/lib/recipes";
 import { getGuideBySlug } from "@/lib/guides";
+import { getSocialCopyForSlug } from "@/lib/social/core/socialCopy";
 
 const execFileAsync = promisify(execFile);
 
@@ -26,9 +25,9 @@ const WIDTH = 1080;
 const HEIGHT = 1920;
 const FPS = 30;
 
-const INTRO_DURATION = 6;
-const MAIN_DURATION = 9;
-const OUTRO_DURATION = 5;
+const INTRO_DURATION = 3;
+const MAIN_DURATION = 6;
+const OUTRO_DURATION = 3;
 
 function ensure(dir: string) {
   fs.mkdirSync(dir, { recursive: true });
@@ -66,14 +65,14 @@ async function fetchBuffer(url: string) {
   return Buffer.from(await res.arrayBuffer());
 }
 
-function wrap(text: string, maxLength = 18, maxLines = 3) {
-  const words = text.split(" ").filter(Boolean);
+function wrap(text: string, maxLength = 18) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let current = "";
 
   for (const w of words) {
     const next = current ? `${current} ${w}` : w;
-    if (next.length < maxLength) {
+    if (next.length <= maxLength) {
       current = next;
     } else {
       if (current) lines.push(current);
@@ -82,7 +81,65 @@ function wrap(text: string, maxLength = 18, maxLines = 3) {
   }
 
   if (current) lines.push(current);
-  return lines.slice(0, maxLines);
+  return lines;
+}
+
+function fitVideoTextBlock(options: {
+  text: string;
+  baseChars: number;
+  baseFontSize: number;
+  baseLineHeight: number;
+  maxHeight: number;
+  minFontSize?: number;
+  step?: number;
+}) {
+  const {
+    text,
+    baseChars,
+    baseFontSize,
+    baseLineHeight,
+    maxHeight,
+    minFontSize = 18,
+    step = 2,
+  } = options;
+
+  const cleaned = cleanPromoText(text);
+  if (!cleaned) {
+    return {
+      lines: [],
+      fontSize: baseFontSize,
+      lineHeight: baseLineHeight,
+    };
+  }
+
+  for (let fontSize = baseFontSize; fontSize >= minFontSize; fontSize -= step) {
+    const scale = fontSize / baseFontSize;
+    const chars = Math.max(12, Math.floor(baseChars / scale));
+    const lineHeight = Math.max(fontSize + 6, Math.round(baseLineHeight * scale));
+    const lines = wrap(cleaned, chars);
+
+    if (lines.length * lineHeight <= maxHeight) {
+      return {
+        lines,
+        fontSize,
+        lineHeight,
+      };
+    }
+  }
+
+  const fallbackFont = minFontSize;
+  const fallbackScale = fallbackFont / baseFontSize;
+  const fallbackChars = Math.max(12, Math.floor(baseChars / fallbackScale));
+  const fallbackLineHeight = Math.max(
+    fallbackFont + 6,
+    Math.round(baseLineHeight * fallbackScale)
+  );
+
+  return {
+    lines: wrap(cleaned, fallbackChars),
+    fontSize: fallbackFont,
+    lineHeight: fallbackLineHeight,
+  };
 }
 
 function pickFromSeed(slug: string, options: string[]) {
@@ -102,10 +159,18 @@ function cleanPromoText(text?: string) {
     .trim();
 }
 
-function shortenLine(text: string, max = 58) {
-  const clean = cleanPromoText(text);
-  if (clean.length <= max) return clean;
-  return `${clean.slice(0, max).trimEnd()}…`;
+function shortenLine(text: string) {
+  return cleanPromoText(text);
+}
+
+function shortenForReel(text: string, max = 110) {
+  const cleaned = cleanPromoText(text);
+  if (!cleaned) return "";
+  if (cleaned.length <= max) return cleaned;
+
+  const sliced = cleaned.slice(0, max);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return `${sliced.slice(0, lastSpace > 50 ? lastSpace : max).trim()}…`;
 }
 
 function getEditorialContent(slug: string, type: "recipe" | "guide") {
@@ -153,8 +218,8 @@ function buildNaturalIntroSubtitle(
   type: "recipe" | "guide",
   slug: string
 ) {
-  if (content.description) return shortenLine(content.description, 52);
-  if (content.introNote) return shortenLine(content.introNote, 52);
+  if (content.description) return shortenLine(content.description);
+  if (content.introNote) return shortenLine(content.introNote);
 
   if (type === "guide") {
     return pickFromSeed(slug, [
@@ -182,9 +247,9 @@ function buildNaturalMainSubtitle(
   type: "recipe" | "guide",
   slug: string
 ) {
-  if (content.introNote) return shortenLine(content.introNote, 44);
-  if (content.servingSuggestion) return shortenLine(content.servingSuggestion, 44);
-  if (content.description) return shortenLine(content.description, 44);
+  if (content.introNote) return shortenLine(content.introNote);
+  if (content.servingSuggestion) return shortenLine(content.servingSuggestion);
+  if (content.description) return shortenLine(content.description);
 
   if (type === "guide") {
     return pickFromSeed(slug, [
@@ -239,7 +304,7 @@ function buildNaturalOutroSubtitle(
   }
 
   if (content.servingSuggestion) {
-    return shortenLine(content.servingSuggestion, 48);
+    return shortenLine(content.servingSuggestion);
   }
 
   return pickFromSeed(slug, [
@@ -251,6 +316,15 @@ function buildNaturalOutroSubtitle(
 }
 
 async function resolveImage(slug: string) {
+  const type = (detectContentTypeBySlug(slug) || "recipe") as "recipe" | "guide";
+
+  const local = findContentImage(slug, type);
+  if (local && fs.existsSync(local)) {
+    const temp = path.join(TEMP_DIR, `${slug}-source.png`);
+    await sharp(local).png().toFile(temp);
+    return temp;
+  }
+
   const token = getBlobToken();
 
   if (!token) {
@@ -281,7 +355,7 @@ async function resolveImage(slug: string) {
     }
   }
 
-  throw new Error("No generated image");
+  throw new Error("No source image found for video");
 }
 
 async function resolveLogo() {
@@ -402,13 +476,7 @@ function textSvg(
   `;
 }
 
-function logoImageSvg(
-  logoPath: string | null,
-  x: number,
-  y: number,
-  w: number,
-  h: number
-) {
+function logoImageSvg(logoPath: string | null, x: number, y: number, w: number, h: number) {
   if (!logoPath || !fs.existsSync(logoPath)) return "";
 
   const buf = fs.readFileSync(logoPath);
@@ -418,12 +486,7 @@ function logoImageSvg(
 }
 
 async function brandTextureBackground(out: string) {
-  const texturePath = path.join(
-    process.cwd(),
-    "public",
-    "images",
-    "page-background.jpg"
-  );
+  const texturePath = path.join(process.cwd(), "public", "images", "page-background.jpg");
 
   let base = sharp({
     create: {
@@ -470,19 +533,55 @@ async function renderCard(
   logoPath: string | null
 ) {
   const font = loadFont();
-  const lines = wrap(title, 18, 3);
-  const subtitleLines = wrap(subtitle, 30, 2);
 
-  const titleSvg = lines
-    .map((l, i) => textSvg(l, font, 84, BRAND.gold, 540, 850 + i * 96, "center"))
+  const titleBlock = fitVideoTextBlock({
+    text: title,
+    baseChars: 16,
+    baseFontSize: 96,
+    baseLineHeight: 108,
+    maxHeight: 340,
+    minFontSize: 52,
+  });
+
+  const subtitleBlock = fitVideoTextBlock({
+    text: subtitle,
+    baseChars: 24,
+    baseFontSize: 48,
+    baseLineHeight: 62,
+    maxHeight: 260,
+    minFontSize: 30,
+  });
+
+  const titleSvg = titleBlock.lines
+    .map((l, i) =>
+      textSvg(
+        l,
+        font,
+        titleBlock.fontSize,
+        BRAND.gold,
+        540,
+        780 + i * titleBlock.lineHeight,
+        "center"
+      )
+    )
     .join("");
 
-  const subSvg = subtitleLines
-    .map((l, i) => textSvg(l, font, 40, BRAND.soft, 540, 1190 + i * 56, "center"))
+  const subSvg = subtitleBlock.lines
+    .map((l, i) =>
+      textSvg(
+        l,
+        font,
+        subtitleBlock.fontSize,
+        BRAND.soft,
+        540,
+        1120 + i * subtitleBlock.lineHeight,
+        "center"
+      )
+    )
     .join("");
 
-  const siteSvg = textSvg("vegan-masala.com", font, 28, "#ffffff", 540, 1818, "center");
-  const logoSvg = logoImageSvg(logoPath, 390, 240, 300, 300);
+  const siteSvg = textSvg("vegan-masala.com", font, 28, "#ffffff", 540, 1860, "center");
+  const logoSvg = logoImageSvg(logoPath, 390, 285, 300, 300);
 
   const svg = `
     <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -521,19 +620,55 @@ async function renderMainOverlay(
   logoPath: string | null
 ) {
   const font = loadFont();
-  const lines = wrap(title, 20, 3);
-  const subtitleLines = wrap(subtitle, 28, 2);
 
-  const titleSvg = lines
-    .map((l, i) => textSvg(l, font, 72, BRAND.gold, 74, 1425 + i * 82, "left"))
+  const titleBlock = fitVideoTextBlock({
+    text: title,
+    baseChars: 20,
+    baseFontSize: 72,
+    baseLineHeight: 82,
+    maxHeight: 240,
+    minFontSize: 42,
+  });
+
+  const subtitleBlock = fitVideoTextBlock({
+    text: subtitle,
+    baseChars: 28,
+    baseFontSize: 38,
+    baseLineHeight: 48,
+    maxHeight: 190,
+    minFontSize: 24,
+  });
+
+  const titleSvg = titleBlock.lines
+    .map((l, i) =>
+      textSvg(
+        l,
+        font,
+        titleBlock.fontSize,
+        BRAND.gold,
+        74,
+        215 + i * titleBlock.lineHeight,
+        "left"
+      )
+    )
     .join("");
 
-  const subSvg = subtitleLines
-    .map((l, i) => textSvg(l, font, 38, BRAND.soft, 74, 1675 + i * 48, "left"))
+  const subSvg = subtitleBlock.lines
+    .map((l, i) =>
+      textSvg(
+        l,
+        font,
+        subtitleBlock.fontSize,
+        BRAND.soft,
+        74,
+        1545 + i * subtitleBlock.lineHeight,
+        "left"
+      )
+    )
     .join("");
 
-  const siteSvg = textSvg("vegan-masala.com", font, 30, "#ffffff", 74, 1810, "left");
-  const logoSvg = logoImageSvg(logoPath, 760, 1480, 220, 220);
+  const siteSvg = textSvg("vegan-masala.com", font, 30, "#ffffff", 540, 1860, "center");
+  const logoSvg = logoImageSvg(logoPath, 760, 1535, 220, 220);
 
   const svg = `
     <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -561,9 +696,9 @@ async function renderMainOverlay(
 
       <rect
         x="0"
-        y="${HEIGHT - 560}"
+        y="${HEIGHT - 700}"
         width="${WIDTH}"
-        height="560"
+        height="700"
         fill="url(#bottomShade)"
       />
 
@@ -609,20 +744,40 @@ async function mainClip(
   const overlay = path.join(TEMP_DIR, "main-overlay.png");
 
   const mask = Buffer.from(`
-    <svg width="820" height="820" xmlns="http://www.w3.org/2000/svg">
-      <rect width="820" height="820" rx="34" ry="34" fill="white" />
+    <svg width="900" height="980" xmlns="http://www.w3.org/2000/svg">
+      <rect width="900" height="980" rx="34" ry="34" fill="white" />
+    </svg>
+  `);
+
+  const border = Buffer.from(`
+    <svg width="900" height="980" xmlns="http://www.w3.org/2000/svg">
+      <rect
+        x="2"
+        y="2"
+        width="896"
+        height="976"
+        rx="34"
+        ry="34"
+        fill="none"
+        stroke="${BRAND.gold}"
+        stroke-width="4"
+      />
     </svg>
   `);
 
   await sharp(image)
-    .resize(820, 820, {
-      fit: "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    .resize(900, 980, {
+      fit: "cover",
+      position: "centre",
     })
     .composite([
       {
         input: mask,
         blend: "dest-in",
+      },
+      {
+        input: border,
+        blend: "over",
       },
     ])
     .png()
@@ -630,20 +785,14 @@ async function mainClip(
 
   await renderMainOverlay(title, subtitle, overlay, logoPath);
 
-  const texturePath = path.join(
-    process.cwd(),
-    "public",
-    "images",
-    "page-background.jpg"
-  );
-
+  const texturePath = path.join(process.cwd(), "public", "images", "page-background.jpg");
   const textureInput = fs.existsSync(texturePath) ? texturePath : image;
 
   const filter = [
     `[0:v]scale=1500:2667:force_original_aspect_ratio=increase,crop=1080:1920,eq=saturation=0.78:contrast=1.04:brightness=0.04,boxblur=12:6,zoompan=z='min(zoom+0.0012,1.14)':d=${MAIN_DURATION * FPS}:x='iw/2-(iw/zoom/2)+sin(on/10)*16':y='ih/2-(ih/zoom/2)+cos(on/14)*12':s=1080x1920:fps=${FPS}[bg]`,
     `[1:v]format=rgba,colorchannelmixer=aa=1[card]`,
     `[2:v]format=rgba[overlay]`,
-    `[bg][card]overlay=(W-w)/2:400[tmp1]`,
+    `[bg][card]overlay=(W-w)/2:300[tmp1]`,
     `[tmp1][overlay]overlay=0:0,format=yuv420p[outv]`,
   ].join(";");
 
@@ -754,11 +903,28 @@ export async function buildRecipeVideo(slug: string) {
   const editorial = getEditorialContent(slug, type);
 
   const title = editorial.title || titleFromSlug(slug);
+  const socialCopy = await getSocialCopyForSlug(slug);
 
-  const introSubtitle = buildNaturalIntroSubtitle(editorial, type, slug);
-  const mainSubtitle = buildNaturalMainSubtitle(editorial, type, slug);
+  const introSubtitle = shortenForReel(
+    socialCopy.instagramImageHook?.trim() ||
+      buildNaturalIntroSubtitle(editorial, type, slug),
+    80
+  );
+
+  const mainSubtitle = shortenForReel(
+    socialCopy.instagramImageSubtitle?.trim() ||
+      buildNaturalMainSubtitle(editorial, type, slug),
+    72
+  );
+
   const outroTitle = buildNaturalOutroTitle(type, slug);
-  const outroSubtitle = buildNaturalOutroSubtitle(editorial, type, slug);
+
+  const outroSubtitle = shortenForReel(
+    type === "guide"
+      ? "Read more on Vegan Masala"
+      : "Full recipe on Vegan Masala",
+    48
+  );
 
   await renderCard(title, introSubtitle, introPng, logoPath);
   await renderCard(outroTitle, outroSubtitle, outroPng, logoPath);

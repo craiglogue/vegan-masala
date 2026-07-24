@@ -17,6 +17,7 @@ import { backgroundBuffer, findContentImage, logoBuffer } from "./core/images";
 import { buildPinterestCaption, saveCaption } from "./core/captions";
 import { updateManifest } from "./core/manifest";
 import { saveGeneratedPinterestImage } from "./core/generatedAssets";
+import { renderPinterestBySlug } from "./pinterest/render";
 
 import { getRecipeBySlug } from "@/lib/recipes";
 import { getGuideBySlug } from "@/lib/guides";
@@ -743,39 +744,20 @@ export async function generatePinterestBySlug(slug: string) {
 }
 
 export async function generateAllPinterest() {
-  const items = allContent();
-  let count = 0;
+  const items = allContent().filter((item) => item.type === "recipe");
 
-  const generated: Array<{
-    slug: string;
-    image: string;
-    storage: "blob" | "local";
-    path: string;
-  }> = [];
-
+  const results = [];
   for (const item of items) {
     const slug = slugFromFile(item.file);
-    const editorial = getEditorialContent(slug, item.type);
-    const result = await createPost(
-      slug,
-      editorial.title || titleFromSlug(slug),
-      item.type
-    );
-
-    generated.push({
-      slug,
-      image: result.image,
-      storage: result.storage,
-      path: result.path,
-    });
-
-    count++;
+    const result = await renderPinterestBySlug(slug);
+    results.push(result);
   }
 
   return {
     success: true,
-    count,
-    generated,
-    message: "Pinterest assets generated",
+    count: results.length,
+    results,
+    generated: results,
+    message: "Pinterest generated",
   };
 }

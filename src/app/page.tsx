@@ -639,6 +639,37 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {process.env.NODE_ENV === "development" && (
+        <section className="mt-12 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--brand-gold)]/70">
+            Local admin tools
+          </p>
+          <h2 className="mt-2 text-2xl font-extrabold text-[var(--brand-gold)]">
+            Development tools
+          </h2>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              href="/admin/import"
+              className="rounded-xl bg-[var(--brand-red)] px-4 py-2 text-sm font-extrabold text-white shadow transition hover:opacity-90"
+            >
+              Import
+            </Link>
+            <Link
+              href="/admin/pipeline"
+              className="rounded-xl bg-[var(--brand-red)] px-4 py-2 text-sm font-extrabold text-white shadow transition hover:opacity-90"
+            >
+              Pipeline
+            </Link>
+            <Link
+              href="/admin/social"
+              className="rounded-xl bg-[var(--brand-red)] px-4 py-2 text-sm font-extrabold text-white shadow transition hover:opacity-90"
+            >
+              Social
+            </Link>
+          </div>
+        </section>
+      )}
+
     </main>
   );
 }

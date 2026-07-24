@@ -4,7 +4,7 @@ import Script from "next/script";
 export const metadata = {
   title: "Vegan Indian Sweets Mini Ebook | Vegan Masala",
   description:
-    "A beautifully designed collection of 6 comforting sweet recipes, with pantry notes, troubleshooting tips, and festive serving ideas.",
+    "A beginner-friendly vegan Indian sweets ebook with 6 comforting recipes, pantry notes, troubleshooting tips, and festive serving ideas.",
 };
 
 export default function EbookPage() {
@@ -22,18 +22,30 @@ export default function EbookPage() {
             </h1>
 
             <p className="mb-6 text-lg leading-8 text-zinc-200">
-              A beautifully designed collection of 6 comforting sweet recipes,
-              with pantry notes, troubleshooting tips, and festive serving
-              ideas.
+              Make vegan Indian sweets at home with more confidence.
             </p>
 
-            <p className="mb-8 text-base leading-8 text-zinc-300">
-              Bring a little more sweetness to your kitchen with a curated
-              digital ebook inspired by the warmth, comfort, and celebration of
-              Indian sweet-making. Designed for home cooks, this mini ebook
-              combines classic-inspired vegan recipes with practical guidance and
-              beautiful presentation.
+            <p className="mb-6 text-base leading-8 text-zinc-300">
+              This beautifully designed mini ebook brings together 6 comforting
+              sweet recipes, plus pantry notes, troubleshooting tips, and
+              festive serving ideas to help you make Indian sweets that feel
+              warm, generous, and worth sharing.
             </p>
+
+            <div className="mb-8 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-yellow-500/30 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-200">
+                6 sweet recipes
+              </div>
+              <div className="rounded-2xl border border-yellow-500/30 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-200">
+                Beginner-friendly format
+              </div>
+              <div className="rounded-2xl border border-yellow-500/30 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-200">
+                Instant PDF download
+              </div>
+              <div className="rounded-2xl border border-yellow-500/30 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-200">
+                Pantry + troubleshooting notes
+              </div>
+            </div>
 
             <div className="flex flex-wrap gap-4">
               <a
@@ -76,9 +88,9 @@ export default function EbookPage() {
               What&apos;s Inside
             </h2>
             <p className="mb-6 leading-8 text-zinc-300">
-              This mini ebook includes a small but carefully chosen collection
-              of vegan Indian sweets and sweet treats, along with practical
-              notes to help you cook with more confidence.
+              A small but carefully chosen collection of vegan Indian sweets and
+              sweet treats, designed to feel approachable, practical, and
+              genuinely useful in a real kitchen.
             </p>
             <ul className="space-y-3 text-zinc-200">
               <li>• Jalebi</li>
@@ -99,11 +111,11 @@ export default function EbookPage() {
             </h2>
             <p className="leading-8 text-zinc-300">
               This ebook is for home cooks who want a warm, approachable
-              introduction to vegan Indian sweets. Whether you are making
-              desserts for a celebration, building confidence with traditional
-              favourites, or simply looking for a beautifully presented
-              collection to return to again and again, this guide is designed to
-              feel practical, enjoyable, and easy to use.
+              introduction to vegan Indian sweets. It&apos;s especially helpful
+              if you want something more curated than loose online recipes, more
+              beautiful than scattered notes, and easier to come back to when
+              you want to make something sweet for a celebration, family meal,
+              or quiet weekend at home.
             </p>
           </div>
         </section>
@@ -115,7 +127,7 @@ export default function EbookPage() {
           <p className="mb-8 max-w-3xl leading-8 text-zinc-300">
             Inside the ebook, you&apos;ll find beautifully designed recipe
             spreads, clear ingredient and method pages, helpful timing notes,
-            and small details to make each recipe feel approachable and
+            and practical details to make each recipe feel more manageable and
             rewarding.
           </p>
 
@@ -158,16 +170,18 @@ export default function EbookPage() {
               Why This Ebook
             </h2>
             <p className="mb-6 leading-8 text-zinc-300">
-              Rather than scattered notes or long, inconsistent recipe pages,
-              this ebook brings everything together in one polished,
-              easy-to-follow guide. It is designed to feel more curated, more
-              usable, and more giftable than a collection of loose recipes.
+              Rather than jumping between tabs or piecing together scattered
+              recipes, this ebook gives you one polished, easy-to-follow guide
+              you can actually keep and reuse. It&apos;s designed to feel more
+              curated, more usable, and more giftable than a loose collection of
+              recipe notes.
             </p>
 
             <ul className="space-y-3 text-zinc-200">
               <li>• Beautifully designed PDF format</li>
               <li>• Beginner-friendly structure</li>
               <li>• Vegan-friendly ingredients</li>
+              <li>• Practical notes you can actually use</li>
               <li>• Great for festive cooking and gifting</li>
               <li>• Instant digital download</li>
             </ul>
@@ -180,23 +194,58 @@ export default function EbookPage() {
             <h2 className="mb-4 text-3xl font-bold text-yellow-400">
               Get the Ebook
             </h2>
-            <p className="mb-6 leading-8 text-zinc-300">
-              Instant digital download in PDF format. Buy once and keep it ready
-              for whenever you want to make something sweet, comforting, and
-              worth sharing.
+            <p className="mb-4 leading-8 text-zinc-300">
+              Buy once and keep it ready for whenever you want to make
+              something sweet, comforting, and worth sharing.
             </p>
+
+            <div className="mb-6 rounded-2xl border border-yellow-500/30 bg-zinc-950/60 p-4">
+              <p className="text-sm uppercase tracking-[0.16em] text-zinc-400">
+                You&apos;ll get
+              </p>
+              <ul className="mt-3 space-y-2 text-sm leading-7 text-zinc-200">
+                <li>• 6 vegan Indian sweet recipes</li>
+                <li>• Pantry notes and ingredient help</li>
+                <li>• Troubleshooting tips</li>
+                <li>• Festive serving inspiration</li>
+                <li>• Instant PDF delivery by email</li>
+              </ul>
+            </div>
 
             <div className="mb-4 text-2xl font-bold text-white">£7.00</div>
 
-       <div className="flex justify-center">
-  <div className="inline-block">
-    <div id="product-component-1774981931178" className="flex justify-center" />
-  </div>
-</div>
+            <div className="flex justify-center">
+              <div className="inline-block">
+                <div
+                  id="product-component-1774981931178"
+                  className="flex justify-center"
+                />
+              </div>
+            </div>
 
             <p className="mt-4 text-sm text-zinc-500">
               Delivered instantly after purchase.
             </p>
+          </div>
+        </section>
+
+        <section className="mt-20 rounded-[2rem] border border-yellow-500/40 bg-zinc-950/60 p-8 text-center">
+          <h2 className="mb-4 text-3xl font-bold text-yellow-400">
+            Ready to make vegan Indian sweets at home?
+          </h2>
+          <p className="mx-auto max-w-3xl leading-8 text-zinc-300">
+            Download the Vegan Indian Sweets Mini Ebook and keep a beautiful,
+            practical collection of sweet recipes ready for whenever you want to
+            cook something warm, nostalgic, and worth sharing.
+          </p>
+
+          <div className="mt-8">
+            <a
+              href="#buy"
+              className="inline-flex rounded-full bg-red-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
+            >
+              Buy the Ebook for £7
+            </a>
           </div>
         </section>
 
@@ -293,21 +342,21 @@ export default function EbookPage() {
                     node: document.getElementById('product-component-1774981931178'),
                     moneyFormat: '%C2%A3%7B%7Bamount%7D%7D',
                     options: {
-                    product: {
-  styles: {
-    product: {
-      "width": "auto",
-      "margin-left": "0px",
-      "margin-right": "0px",
-      "margin-bottom": "0px",
-      "@media (min-width: 601px)": {
-        "width": "auto",
-        "max-width": "none",
-        "margin-left": "0px",
-        "margin-right": "0px",
-        "margin-bottom": "0px"
-      }
-    },
+                      product: {
+                        styles: {
+                          product: {
+                            "width": "auto",
+                            "margin-left": "0px",
+                            "margin-right": "0px",
+                            "margin-bottom": "0px",
+                            "@media (min-width: 601px)": {
+                              "width": "auto",
+                              "max-width": "none",
+                              "margin-left": "0px",
+                              "margin-right": "0px",
+                              "margin-bottom": "0px"
+                            }
+                          },
                           button: {
                             "font-family": "'Rajdhani', Arial, sans-serif",
                             "font-size": "17px",

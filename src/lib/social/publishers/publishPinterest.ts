@@ -1,5 +1,6 @@
 import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
 import { getPinterestAccessToken } from "@/lib/social/core/pinterestToken";
+import { assertSocialPublishPreflight } from "@/lib/social/core/publishPreflight";
 
 type PublishPinterestInput = {
   slug: string;
@@ -17,6 +18,14 @@ function getRequiredEnv(name: string): string {
   }
 
   return value;
+}
+
+function getSiteBase() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    "https://www.vegan-masala.com"
+  ).replace(/\/+$/, "");
 }
 
 async function pinterestPost(input: {
@@ -88,17 +97,28 @@ export async function publishPinterest(input: PublishPinterestInput) {
   const link =
     input.url?.trim() || `${getRequiredEnv("NEXT_PUBLIC_SITE_URL")}/recipes/${slug}`;
 
-  const result = await pinterestPost({
+  const preflight = assertSocialPublishPreflight({
+    platform: "pinterest",
+    slug,
+    stage: "publish",
+    assetType: "image",
     imageUrl,
+    publishImageUrl: imageUrl,
+    board: boardId,
+    baseUrl: getSiteBase(),
+  });
+
+  const result = await pinterestPost({
+    imageUrl: preflight.normalized.publishImageUrl || preflight.normalized.imageUrl,
     title: input.title?.trim() || generated.slug || slug,
     description: input.caption || "",
     link,
-    boardId,
+    boardId: preflight.normalized.board || boardId,
   });
 
   return {
     ok: true,
-    imageUrl,
+    imageUrl: preflight.normalized.publishImageUrl || preflight.normalized.imageUrl,
     pinId: result?.id || null,
     result,
   };

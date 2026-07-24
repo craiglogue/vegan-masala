@@ -6,7 +6,7 @@ import opentype from "opentype.js";
 import { getRecipeBySlug } from "../../recipes";
 import { getGuideBySlug } from "../../guides";
 import { detectContentTypeBySlug, titleFromSlug } from "../core/content";
-import { cleanPromoText, firstSentence, limitWords, wrapWords } from "../core/text";
+import { cleanPromoText, fitWrappedTextBlock, wrapWords } from "../core/text";
 import {
   findBrandBackground,
   findBrandLogo,
@@ -79,15 +79,15 @@ function getEditorialContent(slug: string, type: "recipe" | "guide") {
 }
 
 function buildHook(editorial: ReturnType<typeof getEditorialContent>) {
-  const raw =
-    editorial.socialHook || editorial.introNote || editorial.description || editorial.title;
-
-  return limitWords(firstSentence(raw), 12);
+  return cleanPromoText(
+    editorial.socialHook || editorial.introNote || editorial.description || editorial.title
+  );
 }
 
 function buildSubtitle(editorial: ReturnType<typeof getEditorialContent>) {
-  const raw = editorial.description || editorial.servingSuggestion || editorial.title;
-  return limitWords(firstSentence(raw), 20);
+  return cleanPromoText(
+    editorial.description || editorial.servingSuggestion || editorial.title
+  );
 }
 
 function makeTextPathSvg(
@@ -175,7 +175,9 @@ async function backgroundLayer() {
         channels: 4,
         background: BRAND.bg,
       },
-    }).png().toBuffer();
+    })
+      .png()
+      .toBuffer();
   }
 
   return sharp(bgPath)
@@ -193,7 +195,9 @@ async function darkOverlay() {
         <rect width="${WIDTH}" height="${HEIGHT}" fill="#081318" fill-opacity="0.05"/>
       </svg>
     `)
-  ).png().toBuffer();
+  )
+    .png()
+    .toBuffer();
 }
 
 async function topGradient() {
@@ -211,7 +215,9 @@ async function topGradient() {
         <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#g)"/>
       </svg>
     `)
-  ).png().toBuffer();
+  )
+    .png()
+    .toBuffer();
 }
 
 async function bottomGradient() {
@@ -229,7 +235,9 @@ async function bottomGradient() {
         <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#g)"/>
       </svg>
     `)
-  ).png().toBuffer();
+  )
+    .png()
+    .toBuffer();
 }
 
 async function outerFrame() {
@@ -240,7 +248,9 @@ async function outerFrame() {
           fill="none" stroke="${BRAND.border}" stroke-opacity="0.95" stroke-width="2.5" />
       </svg>
     `)
-  ).png().toBuffer();
+  )
+    .png()
+    .toBuffer();
 }
 
 async function imageFrame() {
@@ -251,7 +261,9 @@ async function imageFrame() {
           fill="none" stroke="${BRAND.border}" stroke-opacity="0.95" stroke-width="3" />
       </svg>
     `)
-  ).png().toBuffer();
+  )
+    .png()
+    .toBuffer();
 }
 
 async function badgeLayer(font: opentype.Font, type: "recipe" | "guide") {
@@ -282,13 +294,34 @@ async function badgeLayer(font: opentype.Font, type: "recipe" | "guide") {
         ${text}
       </svg>
     `)
-  ).png().toBuffer();
+  )
+    .png()
+    .toBuffer();
 }
 
 async function textLayer(font: opentype.Font, title: string, hook: string, subtitle: string) {
-  const titleLines = wrapWords(cleanPromoText(title), 18, 4);
-  const hookLines = wrapWords(cleanPromoText(hook), 34, 2);
-  const subtitleLines = wrapWords(cleanPromoText(subtitle), 46, 3);
+  const titleLines = wrapWords(cleanPromoText(title), 18);
+
+  const hookBlock = fitWrappedTextBlock({
+    text: hook,
+    baseChars: 34,
+    baseFontSize: 34,
+    baseLineHeight: 36,
+    maxHeight: 130,
+    minFontSize: 20,
+  });
+
+  const subtitleBlock = fitWrappedTextBlock({
+    text: subtitle,
+    baseChars: 46,
+    baseFontSize: 24,
+    baseLineHeight: 28,
+    maxHeight: 150,
+    minFontSize: 16,
+  });
+
+  const hookLines = hookBlock.lines;
+  const subtitleLines = subtitleBlock.lines;
 
   let titleFont = 72;
   let titleLine = 62;
@@ -327,10 +360,10 @@ async function textLayer(font: opentype.Font, title: string, hook: string, subti
       makeShadowedTextPathSvg(
         line,
         font,
-        34,
+        hookBlock.fontSize,
         BRAND.gold,
         74,
-        hookBaseY + i * 36,
+        hookBaseY + i * hookBlock.lineHeight,
         0.08,
         0.14,
         2,
@@ -339,24 +372,24 @@ async function textLayer(font: opentype.Font, title: string, hook: string, subti
     )
     .join("");
 
-  const subtitleBaseY = hookBaseY + hookLines.length * 36 + 18;
+  const subtitleBaseY = hookBaseY + hookLines.length * hookBlock.lineHeight + 18;
 
-const subtitleSvg = subtitleLines
-  .map((line, i) =>
-    makeShadowedTextPathSvg(
-      line,
-      font,
-      24,
-      BRAND.soft,
-      74,
-      subtitleBaseY + i * 28,
-      0.03,
-      0.08,
-      2,
-      "left"
+  const subtitleSvg = subtitleLines
+    .map((line, i) =>
+      makeShadowedTextPathSvg(
+        line,
+        font,
+        subtitleBlock.fontSize,
+        BRAND.soft,
+        74,
+        subtitleBaseY + i * subtitleBlock.lineHeight,
+        0.03,
+        0.08,
+        2,
+        "left"
+      )
     )
-  )
-  .join("");
+    .join("");
 
   const siteSvg = makeShadowedTextPathSvg(
     "vegan-masala.com",
@@ -380,7 +413,9 @@ const subtitleSvg = subtitleLines
         ${siteSvg}
       </svg>
     `)
-  ).png().toBuffer();
+  )
+    .png()
+    .toBuffer();
 }
 
 async function logoLayer() {
@@ -425,7 +460,9 @@ async function heroImageLayer(slug: string, type: "recipe" | "guide") {
           fill="black" opacity="0.14" filter="url(#shadow)" />
       </svg>
     `)
-  ).png().toBuffer();
+  )
+    .png()
+    .toBuffer();
 
   return { image, shadow };
 }
@@ -463,7 +500,7 @@ export async function renderPinterestBySlug(slug: string) {
   ];
 
   if (hero.shadow) layers.push({ input: hero.shadow, left: 86, top: 324 });
-if (hero.image) layers.push({ input: hero.image, left: 100, top: 338 });
+  if (hero.image) layers.push({ input: hero.image, left: 100, top: 338 });
 
   layers.push(
     { input: top, left: 0, top: 0 },

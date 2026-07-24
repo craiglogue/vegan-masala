@@ -20,6 +20,7 @@ export async function GET() {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
+        Accept: "application/json",
       },
       cache: "no-store",
     });
@@ -30,8 +31,13 @@ export async function GET() {
       return NextResponse.json(
         {
           ok: false,
-          error: data?.message || data?.error || "Failed to fetch boards",
+          error:
+            data?.message ||
+            data?.error ||
+            data?.code ||
+            "Failed to fetch boards",
           items: [],
+          status: res.status,
           raw: data,
         },
         { status: res.status || 500 }
@@ -39,13 +45,16 @@ export async function GET() {
     }
 
     const rawItems = Array.isArray(data?.items) ? data.items : [];
-    const items = rawItems.map((board: any) => ({
-      id: board.id,
-      name: board.name,
-    }));
+    const items = rawItems
+      .filter((board: any) => board?.id && board?.name)
+      .map((board: any) => ({
+        id: String(board.id),
+        name: String(board.name),
+      }));
 
     return NextResponse.json({
       ok: true,
+      count: items.length,
       items,
       raw: data,
     });

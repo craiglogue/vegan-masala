@@ -9,23 +9,132 @@ export type MetaConfig = {
   appId: string;
   appSecret: string;
   accessToken: string;
+  pageAccessToken: string;
   igUserId: string;
   pageId: string;
 };
 
+export type MetaConfigValidation = {
+  ok: boolean;
+  missing: string[];
+  warnings: string[];
+};
+
+export type MetaAuthDiagnostics = {
+  present: {
+    META_ACCESS_TOKEN: boolean;
+    META_PAGE_ACCESS_TOKEN: boolean;
+    META_IG_USER_ID: boolean;
+    INSTAGRAM_BUSINESS_ID: boolean;
+    META_PAGE_ID: boolean;
+    META_APP_ID: boolean;
+    META_APP_SECRET: boolean;
+  };
+  tokenInfo: {
+    metaAccessTokenLength: number;
+    metaPageAccessTokenLength: number;
+    usingFacebookPageAccessToken: boolean;
+  };
+  warnings: string[];
+};
+
+function trim(value?: string) {
+  return String(value || "").trim();
+}
+
+function formatMetaConfigError(missing: string[]) {
+  if (!missing.length) {
+    return "META_CONFIG_ERROR: Missing Meta configuration";
+  }
+
+  return ["META_CONFIG_ERROR:", ...missing.map((name) => `Missing ${name}`)].join("\n");
+}
+
 export function getMetaConfig(): MetaConfig {
-  const appId = process.env.META_APP_ID || "";
-  const appSecret = process.env.META_APP_SECRET || "";
-  const accessToken = process.env.META_ACCESS_TOKEN || "";
-  const igUserId = process.env.META_IG_USER_ID || "";
-  const pageId = process.env.META_PAGE_ID || "";
+  const appId = trim(process.env.META_APP_ID);
+  const appSecret = trim(process.env.META_APP_SECRET);
+  const accessToken = trim(process.env.META_ACCESS_TOKEN);
+  const pageAccessToken = trim(process.env.META_PAGE_ACCESS_TOKEN);
+  const igUserId =
+    trim(process.env.META_IG_USER_ID) || trim(process.env.INSTAGRAM_BUSINESS_ID);
+  const pageId = trim(process.env.META_PAGE_ID);
 
   return {
     appId,
     appSecret,
     accessToken,
+    pageAccessToken,
     igUserId,
     pageId,
+  };
+}
+
+export function validateMetaConfig(
+  platform: MetaPlatform,
+  config = getMetaConfig()
+): MetaConfigValidation {
+  const missing: string[] = [];
+  const warnings: string[] = [];
+
+  if (platform === "instagram") {
+    if (!config.accessToken) {
+      missing.push("META_ACCESS_TOKEN");
+    }
+
+    if (!config.igUserId) {
+      missing.push("META_IG_USER_ID");
+    }
+
+    if (!trim(process.env.META_IG_USER_ID) && trim(process.env.INSTAGRAM_BUSINESS_ID)) {
+      warnings.push("Using INSTAGRAM_BUSINESS_ID fallback. Prefer META_IG_USER_ID.");
+    }
+  }
+
+  if (platform === "facebook") {
+    if (!config.pageAccessToken && !config.accessToken) {
+      missing.push("META_PAGE_ACCESS_TOKEN");
+      missing.push("META_ACCESS_TOKEN");
+    }
+
+    if (!config.pageId) {
+      missing.push("META_PAGE_ID");
+    }
+  }
+
+  return {
+    ok: missing.length === 0,
+    missing,
+    warnings,
+  };
+}
+
+export function getMetaAuthDiagnostics(config = getMetaConfig()): MetaAuthDiagnostics {
+  const warnings: string[] = [];
+
+  if (!trim(process.env.META_IG_USER_ID) && trim(process.env.INSTAGRAM_BUSINESS_ID)) {
+    warnings.push("Using INSTAGRAM_BUSINESS_ID fallback. Prefer META_IG_USER_ID.");
+  }
+
+  if (!config.accessToken && config.pageAccessToken) {
+    warnings.push("META_ACCESS_TOKEN missing; Instagram publishing will fail.");
+  }
+
+  return {
+    present: {
+      META_ACCESS_TOKEN: Boolean(config.accessToken),
+      META_PAGE_ACCESS_TOKEN: Boolean(config.pageAccessToken),
+      META_IG_USER_ID: Boolean(trim(process.env.META_IG_USER_ID)),
+      INSTAGRAM_BUSINESS_ID: Boolean(trim(process.env.INSTAGRAM_BUSINESS_ID)),
+      META_PAGE_ID: Boolean(config.pageId),
+      META_APP_ID: Boolean(config.appId),
+      META_APP_SECRET: Boolean(config.appSecret),
+    },
+    tokenInfo: {
+      metaAccessTokenLength: config.accessToken.length,
+      metaPageAccessTokenLength: config.pageAccessToken.length,
+      usingFacebookPageAccessToken: Boolean(config.pageAccessToken),
+    },
+    warnings,
   };
 }
 
@@ -33,27 +142,31 @@ export function assertMetaConfig(
   platform: MetaPlatform,
   config = getMetaConfig()
 ): MetaConfig {
-  if (!config.appId) {
-    throw new Error("META_APP_ID missing");
-  }
+  const validation = validateMetaConfig(platform, config);
 
-  if (!config.appSecret) {
-    throw new Error("META_APP_SECRET missing");
-  }
-
-  if (!config.accessToken) {
-    throw new Error("META_ACCESS_TOKEN missing");
-  }
-
-  if (platform === "instagram" && !config.igUserId) {
-    throw new Error("META_IG_USER_ID missing");
-  }
-
-  if (platform === "facebook" && !config.pageId) {
-    throw new Error("META_PAGE_ID missing");
+  if (!validation.ok) {
+    throw new Error(formatMetaConfigError(validation.missing));
   }
 
   return config;
+}
+
+export function resolveInstagramMetaAuth(config = getMetaConfig()) {
+  const validated = assertMetaConfig("instagram", config);
+
+  return {
+    accessToken: validated.accessToken,
+    igUserId: validated.igUserId,
+  };
+}
+
+export function resolveFacebookMetaAuth(config = getMetaConfig()) {
+  const validated = assertMetaConfig("facebook", config);
+
+  return {
+    accessToken: validated.pageAccessToken || validated.accessToken,
+    pageId: validated.pageId,
+  };
 }
 
 export function buildGraphUrl(
@@ -78,7 +191,7 @@ export async function metaGet<T = any>(
   endpoint: string,
   query?: Record<string, string | number | boolean | undefined | null>
 ): Promise<T> {
-  const { accessToken } = assertMetaConfig("facebook");
+  const { accessToken } = resolveFacebookMetaAuth();
 
   const url = buildGraphUrl(endpoint, {
     ...query,
@@ -103,7 +216,7 @@ export async function metaPostForm<T = any>(
   endpoint: string,
   body: Record<string, string | number | boolean | undefined | null>
 ): Promise<T> {
-  const { accessToken } = assertMetaConfig("facebook");
+  const { accessToken } = resolveFacebookMetaAuth();
 
   const form = new URLSearchParams();
 
@@ -182,16 +295,26 @@ export async function verifyMetaConnection(): Promise<{
   ok: true;
   facebookPageId?: string;
   instagramUserId?: string;
+  warnings?: string[];
 }> {
   const config = getMetaConfig();
+  const instagram = validateMetaConfig("instagram", config);
+  const facebook = validateMetaConfig("facebook", config);
 
-  if (!config.accessToken) {
-    throw new Error("META_ACCESS_TOKEN missing");
+  if (!instagram.ok && !facebook.ok) {
+    throw new Error(
+      formatMetaConfigError([
+        ...new Set([...instagram.missing, ...facebook.missing]),
+      ])
+    );
   }
+
+  const warnings = [...instagram.warnings, ...facebook.warnings];
 
   return {
     ok: true,
     facebookPageId: config.pageId || undefined,
     instagramUserId: config.igUserId || undefined,
+    warnings,
   };
 }

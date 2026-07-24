@@ -21,7 +21,7 @@ export function limitWords(text: string, maxWords: number) {
   return `${words.slice(0, maxWords).join(" ")}…`;
 }
 
-export function wrapWords(text: string, maxChars: number, maxLines: number) {
+export function wrapWords(text: string, maxChars: number) {
   const words = String(text || "").trim().split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let current = "";
@@ -31,21 +31,70 @@ export function wrapWords(text: string, maxChars: number, maxLines: number) {
 
     if (next.length <= maxChars) {
       current = next;
-      continue;
+    } else {
+      if (current) lines.push(current);
+      current = word;
     }
-
-    if (current) lines.push(current);
-    current = word;
-
-    if (lines.length === maxLines - 1) break;
   }
 
-  if (current && lines.length < maxLines) lines.push(current);
-
-  const usedWords = lines.join(" ").split(/\s+/).filter(Boolean).length;
-  if (usedWords < words.length && lines.length) {
-    lines[lines.length - 1] = `${lines[lines.length - 1]}…`;
-  }
-
+  if (current) lines.push(current);
   return lines;
+}
+
+export function fitWrappedTextBlock(options: {
+  text: string;
+  baseChars: number;
+  baseFontSize: number;
+  baseLineHeight: number;
+  maxHeight: number;
+  minFontSize?: number;
+  step?: number;
+}) {
+  const {
+    text,
+    baseChars,
+    baseFontSize,
+    baseLineHeight,
+    maxHeight,
+    minFontSize = 14,
+    step = 2,
+  } = options;
+
+  const cleaned = cleanPromoText(text);
+  if (!cleaned) {
+    return {
+      lines: [],
+      fontSize: baseFontSize,
+      lineHeight: baseLineHeight,
+    };
+  }
+
+  for (let fontSize = baseFontSize; fontSize >= minFontSize; fontSize -= step) {
+    const scale = fontSize / baseFontSize;
+    const chars = Math.max(12, Math.floor(baseChars / scale));
+    const lineHeight = Math.max(fontSize + 4, Math.round(baseLineHeight * scale));
+    const lines = wrapWords(cleaned, chars);
+
+    if (lines.length * lineHeight <= maxHeight) {
+      return {
+        lines,
+        fontSize,
+        lineHeight,
+      };
+    }
+  }
+
+  const fallbackFont = minFontSize;
+  const fallbackScale = fallbackFont / baseFontSize;
+  const fallbackChars = Math.max(12, Math.floor(baseChars / fallbackScale));
+  const fallbackLineHeight = Math.max(
+    fallbackFont + 4,
+    Math.round(baseLineHeight * fallbackScale)
+  );
+
+  return {
+    lines: wrapWords(cleaned, fallbackChars),
+    fontSize: fallbackFont,
+    lineHeight: fallbackLineHeight,
+  };
 }
