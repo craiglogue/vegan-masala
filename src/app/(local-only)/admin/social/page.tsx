@@ -53,6 +53,17 @@ description:
 "Generate branded short-form recipe videos with intro, outro, music and animation.",
 
 cta:"Open video tools"
+},
+
+{
+title:"SEO Health",
+
+href:"/admin/seo/health",
+
+description:
+"Monitor recipe, guide, hub and sitemap SEO structure health using local repository data.",
+
+cta:"Open SEO health"
 }
 
 ];
@@ -118,6 +129,19 @@ className="rounded-xl border border-[var(--border)] px-6 py-3 text-sm font-bold 
 >
 
 Generate videos
+
+</Link>
+
+
+<Link
+
+href="/admin/seo/health"
+
+className="rounded-xl border border-[var(--border)] px-6 py-3 text-sm font-bold text-[var(--brand-gold)]"
+
+>
+
+SEO health
 
 </Link>
 
