@@ -1,6 +1,27 @@
 // src/app/guides/herbs/page.tsx
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
+
+export const metadata: Metadata = {
+  title: "Indian Herbs Guide | Vegan Masala",
+  description:
+    "Explore the key herbs used in Indian cooking, how to use them, and how they add freshness, lift, and balance to vegan dishes.",
+  alternates: {
+    canonical: `${siteUrl}/guides/herbs`,
+  },
+  openGraph: {
+    title: "Indian Herbs Guide | Vegan Masala",
+    description:
+      "Explore the key herbs used in Indian cooking, how to use them, and how they add freshness, lift, and balance to vegan dishes.",
+    url: `${siteUrl}/guides/herbs`,
+    siteName: "Vegan Masala",
+    type: "article",
+  },
+};
 
 function GuideImage({ src, alt }: { src: string; alt: string }) {
   return (

@@ -1,5 +1,26 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
+
+export const metadata: Metadata = {
+  title: "Indian Cooking Equipment Guide | Vegan Masala",
+  description:
+    "Discover the essential tools for Indian cooking, what each one does, and which pieces of equipment are worth buying first.",
+  alternates: {
+    canonical: `${siteUrl}/guides/equipment`,
+  },
+  openGraph: {
+    title: "Indian Cooking Equipment Guide | Vegan Masala",
+    description:
+      "Discover the essential tools for Indian cooking, what each one does, and which pieces of equipment are worth buying first.",
+    url: `${siteUrl}/guides/equipment`,
+    siteName: "Vegan Masala",
+    type: "article",
+  },
+};
 
 function GuideImage({ src, alt }: { src: string; alt: string }) {
   return (

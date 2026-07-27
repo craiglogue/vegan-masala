@@ -1,5 +1,26 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
+
+export const metadata: Metadata = {
+  title: "Vegan Dairy Alternatives Guide | Vegan Masala",
+  description:
+    "Find practical vegan substitutes for milk, cream, yogurt, and butter, plus the best ways to use them in Indian cooking.",
+  alternates: {
+    canonical: `${siteUrl}/guides/vegan-dairy-alternatives`,
+  },
+  openGraph: {
+    title: "Vegan Dairy Alternatives Guide | Vegan Masala",
+    description:
+      "Find practical vegan substitutes for milk, cream, yogurt, and butter, plus the best ways to use them in Indian cooking.",
+    url: `${siteUrl}/guides/vegan-dairy-alternatives`,
+    siteName: "Vegan Masala",
+    type: "article",
+  },
+};
 
 type DairyAlt = {
   name: string;

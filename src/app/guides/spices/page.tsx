@@ -1,5 +1,26 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
+
+export const metadata: Metadata = {
+  title: "Indian Spices Guide | Vegan Masala",
+  description:
+    "Learn the essential Indian spices, how they taste, when to use them, and which substitutions work best in vegan Indian cooking.",
+  alternates: {
+    canonical: `${siteUrl}/guides/spices`,
+  },
+  openGraph: {
+    title: "Indian Spices Guide | Vegan Masala",
+    description:
+      "Learn the essential Indian spices, how they taste, when to use them, and which substitutions work best in vegan Indian cooking.",
+    url: `${siteUrl}/guides/spices`,
+    siteName: "Vegan Masala",
+    type: "article",
+  },
+};
 
 type Spice = {
   name: string;

@@ -61,6 +61,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     },
+    {
+      url: `${siteUrl}/guides/spices`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/guides/herbs`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/guides/equipment`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/guides/vegan-dairy-alternatives`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
 
     ...recipes.map((recipe) => ({
       url: `${siteUrl}/recipes/${recipe.slug}`,
