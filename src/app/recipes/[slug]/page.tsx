@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { getRecipeBySlug } from "@/lib/recipes";
 import { getRecipeImage, isPlaceholderImage } from "@/lib/recipeimages";
 import { isCurryHubRecipe } from "@/lib/seo/curryHub";
+import { isDalHubRecipe } from "@/lib/seo/dalHub";
 import PrintButton from "@/components/PrintButton";
 import RelatedGuides from "@/components/RelatedGuides";
 import StorePromo from "@/components/StorePromo";
@@ -471,6 +472,8 @@ export default async function RecipePage({
   const canonicalUrl = `${siteUrl}/recipes/${recipe.slug}`;
   const heroAbs = absUrl(siteUrl, hero);
   const relatedGuideTags = getRelatedGuideTags(recipe);
+  const showCurryHubCallout = isCurryHubRecipe(recipe.slug);
+  const showDalHubCallout = isDalHubRecipe(recipe.slug) && !showCurryHubCallout;
 
   const servingIdeas = (() => {
     if (typeof recipe.servingSuggestion === "string" && recipe.servingSuggestion.trim()) {
@@ -840,7 +843,7 @@ export default async function RecipePage({
 
       {storePromoSlugs.includes(recipe.slug) && <StorePromo />}
 
-      {isCurryHubRecipe(recipe.slug) && (
+      {showCurryHubCallout && (
         <section className="mt-12 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
           <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--brand-gold)]/70">
             Topic hub
@@ -856,6 +859,26 @@ export default async function RecipePage({
             className="mt-4 inline-flex rounded-xl bg-[var(--brand-red)] px-4 py-2 text-sm font-extrabold text-white transition hover:opacity-90"
           >
             Visit the curry hub
+          </Link>
+        </section>
+      )}
+
+      {showDalHubCallout && (
+        <section className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--brand-gold)]/70">
+            Topic hub
+          </p>
+          <h2 className="mt-2 text-xl font-extrabold text-[var(--brand-gold)]">
+            Explore Vegan Indian Dal Recipes
+          </h2>
+          <p className="mt-3 max-w-2xl leading-7 text-[var(--text-soft)]">
+            Browse the dal hub for classic dal recipes, lentil curries, and bean-based Indian curries in one place.
+          </p>
+          <Link
+            href="/recipes/vegan-indian-dal-recipes"
+            className="mt-4 inline-flex rounded-xl bg-[var(--brand-red)] px-4 py-2 text-sm font-extrabold text-white transition hover:opacity-90"
+          >
+            Visit the dal hub
           </Link>
         </section>
       )}
