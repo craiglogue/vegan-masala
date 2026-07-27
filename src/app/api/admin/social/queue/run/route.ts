@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 
 import {
   dueQueueItems,
-  markQueueItemFailed,
-  markQueueItemPosted,
+  classifyQueueFailure,
+  markQueueItemFailedWithMetadata,
+  markQueueItemPostedWithMetadata,
 } from "@/lib/social/core/queue";
 
 import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
@@ -14,6 +15,25 @@ import { publishInstagram } from "@/lib/social/publishers/publishInstagram";
 import { publishFacebook } from "@/lib/social/publishers/publishFacebook";
 
 const ROOT = process.cwd();
+
+function platformResponseIdForResult(platform: string, result: any) {
+  if (platform === "pinterest") {
+    return String(result?.id || result?.pinId || "") || null;
+  }
+
+  if (platform === "instagram") {
+    return String(result?.published?.id || result?.containerId || "") || null;
+  }
+
+  if (platform === "facebook") {
+    return (
+      String(result?.photoId || result?.postId || result?.videoId || result?.published?.id || "") ||
+      null
+    );
+  }
+
+  return null;
+}
 
 export async function POST() {
   try {
@@ -30,6 +50,8 @@ export async function POST() {
     }> = [];
 
     for (const item of due) {
+      const attemptedAt = new Date().toISOString();
+
       try {
         if (item.platform === "pinterest") {
           if (!item.board) {
@@ -45,7 +67,7 @@ export async function POST() {
             `${item.slug}.png`
           );
 
-          await postPinterestPin({
+          const result = await postPinterestPin({
             title: item.title || item.slug,
             description: item.caption || "",
             link: item.url || "",
@@ -53,7 +75,11 @@ export async function POST() {
             boardId: item.board,
           });
 
-          await markQueueItemPosted(item.id);
+          await markQueueItemPostedWithMetadata(item.id, {
+            attemptedAt,
+            completedAt: new Date().toISOString(),
+            platformResponseId: platformResponseIdForResult(item.platform, result),
+          });
           count++;
           results.push({
             id: item.id,
@@ -68,7 +94,7 @@ export async function POST() {
         if (item.platform === "instagram") {
           const publishImageUrl = item.publishImageUrl || item.imageUrl;
 
-          await publishInstagram({
+          const result = await publishInstagram({
             slug: item.slug,
             caption: item.caption || "",
             assetType: item.assetType || "image",
@@ -76,7 +102,11 @@ export async function POST() {
             videoUrl: item.videoUrl,
           });
 
-          await markQueueItemPosted(item.id);
+          await markQueueItemPostedWithMetadata(item.id, {
+            attemptedAt,
+            completedAt: new Date().toISOString(),
+            platformResponseId: platformResponseIdForResult(item.platform, result),
+          });
           count++;
           results.push({
             id: item.id,
@@ -91,7 +121,7 @@ export async function POST() {
         if (item.platform === "facebook") {
           const publishImageUrl = item.publishImageUrl || item.imageUrl;
 
-          await publishFacebook({
+          const result = await publishFacebook({
             slug: item.slug,
             caption: item.caption || "",
             assetType: item.assetType || "image",
@@ -99,7 +129,11 @@ export async function POST() {
             videoUrl: item.videoUrl,
           });
 
-          await markQueueItemPosted(item.id);
+          await markQueueItemPostedWithMetadata(item.id, {
+            attemptedAt,
+            completedAt: new Date().toISOString(),
+            platformResponseId: platformResponseIdForResult(item.platform, result),
+          });
           count++;
           results.push({
             id: item.id,
@@ -112,7 +146,13 @@ export async function POST() {
         }
 
         const unsupported = `Unsupported platform: ${item.platform}`;
-        await markQueueItemFailed(item.id, unsupported);
+        const classification = classifyQueueFailure(unsupported);
+
+        await markQueueItemFailedWithMetadata(item.id, unsupported, {
+          attemptedAt,
+          completedAt: new Date().toISOString(),
+          ...classification,
+        });
         results.push({
           id: item.id,
           slug: item.slug,
@@ -124,7 +164,13 @@ export async function POST() {
       } catch (err: any) {
         const message = err?.message || "Queue run failed";
 
-        await markQueueItemFailed(item.id, message);
+        const classification = classifyQueueFailure(message);
+
+        await markQueueItemFailedWithMetadata(item.id, message, {
+          attemptedAt,
+          completedAt: new Date().toISOString(),
+          ...classification,
+        });
         results.push({
           id: item.id,
           slug: item.slug,

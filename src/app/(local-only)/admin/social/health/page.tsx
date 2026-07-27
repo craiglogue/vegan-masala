@@ -17,8 +17,13 @@ type QueueItem = {
   scheduledFor: string;
   status: QueueStatus;
   createdAt: string;
+  attemptedAt?: string;
+  completedAt?: string;
   postedAt?: string;
   error?: string;
+  errorCategory?: "authentication" | "media" | "validation" | "platform_api" | "unknown";
+  retryable?: boolean;
+  platformResponseId?: string | null;
 };
 
 type MetaHealthResponse = {
@@ -99,6 +104,42 @@ function formatRelativeTime(value?: string) {
 function truncate(text: string, max = 160) {
   if (!text) return "";
   return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+function activityTimestamp(item: QueueItem) {
+  return item.completedAt || item.postedAt || item.attemptedAt || item.createdAt;
+}
+
+function successTimestamp(item: QueueItem) {
+  return item.postedAt || item.completedAt || item.attemptedAt || item.createdAt;
+}
+
+function displayFailureCategory(item: QueueItem) {
+  switch (item.errorCategory) {
+    case "authentication":
+      return "authentication";
+    case "media":
+      return "media URL";
+    case "validation":
+      return "validation";
+    case "platform_api":
+      return "platform API";
+    case "unknown":
+      return "unknown";
+    default:
+      return failureCategory(item.error);
+  }
+}
+
+function retryableLabel(item: QueueItem) {
+  if (typeof item.retryable === "boolean") {
+    return item.retryable ? "Retryable" : "Not retryable";
+  }
+
+  const category = displayFailureCategory(item);
+  return category === "platform API" || category === "unknown"
+    ? "Likely retryable"
+    : "Not retryable";
 }
 
 function statusChip(status: string) {
@@ -196,8 +237,8 @@ function latestByStatus(items: QueueItem[], platform: QueuePlatform, status: Que
   return items
     .filter((item) => item.platform === platform && item.status === status)
     .sort((a, b) => {
-      const aTime = new Date(a.postedAt || a.createdAt).getTime();
-      const bTime = new Date(b.postedAt || b.createdAt).getTime();
+      const aTime = new Date(successTimestamp(a)).getTime();
+      const bTime = new Date(successTimestamp(b)).getTime();
       return bTime - aTime;
     })[0];
 }
@@ -206,8 +247,8 @@ function latestFailure(items: QueueItem[], platform: QueuePlatform) {
   return items
     .filter((item) => item.platform === platform && item.status === "failed")
     .sort((a, b) => {
-      const aTime = new Date(a.postedAt || a.createdAt).getTime();
-      const bTime = new Date(b.postedAt || b.createdAt).getTime();
+      const aTime = new Date(activityTimestamp(a)).getTime();
+      const bTime = new Date(activityTimestamp(b)).getTime();
       return bTime - aTime;
     });
 }
@@ -299,8 +340,8 @@ export default function SocialHealthDashboardPage() {
         .filter((item) => item.status === "posted" || item.status === "failed")
         .sort(
           (a, b) =>
-            new Date(b.postedAt || b.createdAt).getTime() -
-            new Date(a.postedAt || a.createdAt).getTime()
+            new Date(activityTimestamp(b)).getTime() -
+            new Date(activityTimestamp(a)).getTime()
         )
         .slice(0, 20),
     [queueItems]
@@ -330,7 +371,7 @@ export default function SocialHealthDashboardPage() {
     const buckets = new Map<FailureCategory, QueueItem[]>();
 
     for (const item of failedItems) {
-      const category = failureCategory(item.error);
+      const category = displayFailureCategory(item);
       const list = buckets.get(category) || [];
       list.push(item);
       buckets.set(category, list);
@@ -338,7 +379,7 @@ export default function SocialHealthDashboardPage() {
 
     return CATEGORY_ORDER.map((category) => {
       const items = (buckets.get(category) || []).sort(
-        (a, b) => new Date(b.postedAt || b.createdAt).getTime() - new Date(a.postedAt || a.createdAt).getTime()
+        (a, b) => new Date(activityTimestamp(b)).getTime() - new Date(activityTimestamp(a)).getTime()
       );
 
       return {
@@ -452,7 +493,7 @@ export default function SocialHealthDashboardPage() {
               </div>
               {instagramLastSuccess ? (
                 <div className="mt-1 text-xs text-[var(--text-soft)]">
-                  {formatDateTime(instagramLastSuccess.postedAt || instagramLastSuccess.createdAt)}
+                  {formatDateTime(successTimestamp(instagramLastSuccess))}
                 </div>
               ) : null}
             </div>
@@ -466,9 +507,13 @@ export default function SocialHealthDashboardPage() {
                   <div key={item.id} className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-100">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase ${platformChip(item.platform)}`}>{item.platform}</span>
-                      <span className="text-xs text-red-200/80">{formatDateTime(item.postedAt || item.createdAt)}</span>
+                      <span className="text-xs text-red-200/80">{formatDateTime(activityTimestamp(item))}</span>
                     </div>
                     <div className="mt-2 font-semibold text-white">{item.title || item.slug}</div>
+                    <div className="mt-1 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.14em] text-red-100/80">
+                      <span>{displayFailureCategory(item)}</span>
+                      <span>{retryableLabel(item)}</span>
+                    </div>
                     <div className="mt-1 text-xs text-red-100/90">{truncate(item.error || "Failure recorded")}</div>
                   </div>
                 ))
@@ -523,7 +568,7 @@ export default function SocialHealthDashboardPage() {
             </div>
             {pinterestLastSuccess ? (
               <div className="mt-1 text-xs text-[var(--text-soft)]">
-                {formatDateTime(pinterestLastSuccess.postedAt || pinterestLastSuccess.createdAt)}
+                {formatDateTime(successTimestamp(pinterestLastSuccess))}
               </div>
             ) : null}
           </div>
@@ -536,9 +581,13 @@ export default function SocialHealthDashboardPage() {
                   <div key={item.id} className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-100">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase ${platformChip(item.platform)}`}>{item.platform}</span>
-                      <span className="text-xs text-red-200/80">{formatDateTime(item.postedAt || item.createdAt)}</span>
+                      <span className="text-xs text-red-200/80">{formatDateTime(activityTimestamp(item))}</span>
                     </div>
                     <div className="mt-2 font-semibold text-white">{item.title || item.slug}</div>
+                    <div className="mt-1 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.14em] text-red-100/80">
+                      <span>{displayFailureCategory(item)}</span>
+                      <span>{retryableLabel(item)}</span>
+                    </div>
                     <div className="mt-1 text-xs text-red-100/90">{truncate(item.error || "Failure recorded")}</div>
                   </div>
                 ))
@@ -599,13 +648,25 @@ export default function SocialHealthDashboardPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase ${platformChip(item.platform)}`}>{item.platform}</span>
                     <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase ${statusChip(status)}`}>{status}</span>
-                    <span className="text-xs text-[var(--text-soft)]">{formatDateTime(item.postedAt || item.createdAt)}</span>
+                    <span className="text-xs text-[var(--text-soft)]">{formatDateTime(activityTimestamp(item))}</span>
                   </div>
 
                   <div className="mt-2 flex flex-wrap items-baseline gap-2">
                     <div className="text-base font-bold text-white">{item.title || item.slug}</div>
                     <div className="text-xs text-[var(--text-soft)]">{item.slug}</div>
                   </div>
+
+                  {item.platformResponseId ? (
+                    <div className="mt-1 text-xs text-[var(--text-soft)]">
+                      Response ID: {item.platformResponseId}
+                    </div>
+                  ) : null}
+
+                  {!item.error && typeof item.retryable === "boolean" ? (
+                    <div className="mt-1 text-xs text-[var(--text-soft)]">
+                      {item.retryable ? "Retryable" : "Not retryable"}
+                    </div>
+                  ) : null}
 
                   {item.error ? (
                     <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-100">

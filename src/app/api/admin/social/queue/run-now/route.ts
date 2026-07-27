@@ -5,8 +5,9 @@ import { NextResponse } from "next/server";
 
 import {
   dueQueueItems,
-  markQueueItemFailed,
-  markQueueItemPosted,
+  classifyQueueFailure,
+  markQueueItemFailedWithMetadata,
+  markQueueItemPostedWithMetadata,
 } from "@/lib/social/core/queue";
 
 import { generatePinterestBySlug } from "@/lib/social/generatePinterest";
@@ -93,6 +94,25 @@ function normalizeError(err: any) {
   return message;
 }
 
+function platformResponseIdForResult(platform: string, result: any) {
+  if (platform === "pinterest") {
+    return String(result?.id || result?.pinId || "") || null;
+  }
+
+  if (platform === "instagram") {
+    return String(result?.published?.id || result?.containerId || "") || null;
+  }
+
+  if (platform === "facebook") {
+    return (
+      String(result?.photoId || result?.postId || result?.videoId || result?.published?.id || "") ||
+      null
+    );
+  }
+
+  return null;
+}
+
 export async function POST() {
   try {
     const due = await dueQueueItems();
@@ -108,6 +128,8 @@ export async function POST() {
     }> = [];
 
     for (const item of due) {
+      const attemptedAt = new Date().toISOString();
+
       try {
         if (item.platform === "pinterest") {
           const sourceUrl = item.publishImageUrl || item.imageUrl || "";
@@ -162,7 +184,11 @@ export async function POST() {
 
             console.log("QUEUE PINTEREST RESULT:", result);
 
-            await markQueueItemPosted(item.id);
+            await markQueueItemPostedWithMetadata(item.id, {
+              attemptedAt,
+              completedAt: new Date().toISOString(),
+              platformResponseId: platformResponseIdForResult(item.platform, result),
+            });
             count++;
             results.push({
               id: item.id,
@@ -209,7 +235,11 @@ export async function POST() {
 
           console.log("QUEUE INSTAGRAM RESULT:", result);
 
-          await markQueueItemPosted(item.id);
+          await markQueueItemPostedWithMetadata(item.id, {
+            attemptedAt,
+            completedAt: new Date().toISOString(),
+            platformResponseId: platformResponseIdForResult(item.platform, result),
+          });
           count++;
           results.push({
             id: item.id,
@@ -249,7 +279,11 @@ export async function POST() {
 
           console.log("QUEUE FACEBOOK RESULT:", result);
 
-          await markQueueItemPosted(item.id);
+          await markQueueItemPostedWithMetadata(item.id, {
+            attemptedAt,
+            completedAt: new Date().toISOString(),
+            platformResponseId: platformResponseIdForResult(item.platform, result),
+          });
           count++;
           results.push({
             id: item.id,
@@ -262,7 +296,13 @@ export async function POST() {
         }
 
         const unsupported = `Unsupported platform: ${item.platform}`;
-        await markQueueItemFailed(item.id, unsupported);
+        const unsupportedClassification = classifyQueueFailure(unsupported);
+
+        await markQueueItemFailedWithMetadata(item.id, unsupported, {
+          attemptedAt,
+          completedAt: new Date().toISOString(),
+          ...unsupportedClassification,
+        });
         results.push({
           id: item.id,
           slug: item.slug,
@@ -284,7 +324,13 @@ export async function POST() {
           error: message,
         });
 
-        await markQueueItemFailed(item.id, message);
+        const classification = classifyQueueFailure(message);
+
+        await markQueueItemFailedWithMetadata(item.id, message, {
+          attemptedAt,
+          completedAt: new Date().toISOString(),
+          ...classification,
+        });
         results.push({
           id: item.id,
           slug: item.slug,
