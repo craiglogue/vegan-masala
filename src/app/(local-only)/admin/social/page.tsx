@@ -12,6 +12,17 @@ type ToolCard = {
 const tools:ToolCard[]=[
 
 {
+title:"Health Dashboard",
+
+href:"/admin/social/health",
+
+description:
+"Inspect queue status, platform readiness, recent failures and publishing activity without exposing tokens or secrets.",
+
+cta:"Open health dashboard"
+},
+
+{
 title:"Content Generator",
 
 href:"/admin/social/generate",
