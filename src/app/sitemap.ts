@@ -91,6 +91,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.85,
     },
+    {
+      url: `${siteUrl}/recipes/vegan-indian-dal-recipes`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
 
     ...recipes.map((recipe) => ({
       url: `${siteUrl}/recipes/${recipe.slug}`,
