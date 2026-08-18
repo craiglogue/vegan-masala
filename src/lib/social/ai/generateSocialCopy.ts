@@ -2,8 +2,6 @@ import OpenAI from "openai";
 import { getRecipeBySlug } from "@/lib/recipes";
 import { getGuideBySlug } from "@/lib/guides";
 
-const client = new OpenAI();
-
 type ContentType = "recipe" | "guide";
 
 type SocialCopyResult = {
@@ -59,6 +57,8 @@ export async function generateSocialCopyForSlug(
   if (!process.env.OPENAI_API_KEY?.trim()) {
     return null;
   }
+
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const source =
     type === "recipe" ? getRecipeBySlug(slug) : getGuideBySlug(slug);

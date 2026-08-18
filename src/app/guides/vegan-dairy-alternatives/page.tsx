@@ -6,7 +6,7 @@ const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
 export const metadata: Metadata = {
-  title: "Vegan Dairy Alternatives Guide | Vegan Masala",
+  title: "Vegan Dairy Alternatives Guide",
   description:
     "Find practical vegan substitutes for milk, cream, yogurt, and butter, plus the best ways to use them in Indian cooking.",
   alternates: {

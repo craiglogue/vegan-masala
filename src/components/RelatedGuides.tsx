@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getAllGuides } from "@/lib/guides";
 
 type Guide = {
@@ -72,10 +73,12 @@ export default function RelatedGuides({
               href={`/guides/${guide.slug}`}
               className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-black/20 transition hover:bg-black/30"
             >
-              <div className="h-40 w-full overflow-hidden border-b border-[var(--border)] bg-black/25">
-                <img
+              <div className="relative h-40 w-full overflow-hidden border-b border-[var(--border)] bg-black/25">
+                <Image
                   src={image}
                   alt={guide.title}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 33vw"
                   className="h-full w-full object-cover"
                 />
               </div>

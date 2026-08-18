@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import RelatedRecipes from "@/components/RelatedRecipes";
 
@@ -143,14 +144,14 @@ function buildGuideSeoTitle(guide: any) {
   const typeLabel = buildGuideSeoTypeLabel(guide);
 
   if (lower.includes("guide")) {
-    return `${title} | Vegan Masala`;
+    return title;
   }
 
   if (lower === typeLabel.toLowerCase()) {
-    return `${title} | Vegan Masala`;
+    return title;
   }
 
-  return `${title} | ${typeLabel} | Vegan Masala`;
+  return `${title} | ${typeLabel}`;
 }
 
 function buildGuideSeoDescription(guide: any) {
@@ -259,10 +260,12 @@ function renderBlock(body: string) {
               key={i}
               className="overflow-hidden rounded-2xl border border-[var(--border)] bg-black/20"
             >
-              <div className="h-48 w-full overflow-hidden border-b border-[var(--border)] bg-black/25">
-                <img
+              <div className="relative h-48 w-full overflow-hidden border-b border-[var(--border)] bg-black/25">
+                <Image
                   src={imgSrc}
                   alt={card.title}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 33vw"
                   className="h-full w-full object-cover"
                   style={{ objectPosition: pos }}
                 />
@@ -504,9 +507,12 @@ export default async function GuidePage({
 
       <section className="mt-6 overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         {heroImage && (
-          <img
+          <Image
             src={heroImage}
             alt={guide.title}
+            width={1200}
+            height={500}
+            priority
             className="h-64 w-full object-cover"
           />
         )}

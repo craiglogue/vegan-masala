@@ -34,7 +34,7 @@ const techniqueLinks = [
 ];
 
 export const metadata: Metadata = {
-  title: "Vegan Indian Curry Recipes | Curry Hubs, Dals, Tofu & Vegetable Curries | Vegan Masala",
+  title: "Vegan Indian Curry Recipes | Dal, Tofu & Vegetables",
   description:
     "Explore vegan Indian curry recipes across chickpea, dal, potato, tofu and vegetable curries, plus practical cooking techniques for deeper flavour.",
   alternates: {
@@ -120,7 +120,7 @@ export default function VeganIndianCurryRecipesPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/15 to-black/35" />
           <div className="relative max-w-4xl">
             <div className="inline-flex rounded-full border border-[var(--border)] bg-black/20 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[var(--brand-gold)]/80">
-              SEO Pillar Page
+              Curry recipe collection
             </div>
 
             <h1 className="mt-5 text-3xl font-extrabold tracking-wide text-[var(--brand-gold)] sm:text-4xl lg:text-5xl">
@@ -301,7 +301,7 @@ export default function VeganIndianCurryRecipesPage() {
 
       <section className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm sm:p-7">
         <h2 className="text-2xl font-extrabold tracking-wide text-[var(--brand-gold)]">
-          Why this hub should rank
+          Find the right curry for your table
         </h2>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-[var(--border)] bg-black/10 p-4">

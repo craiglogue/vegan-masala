@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { getAllGuides } from "@/lib/guides";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
 export const metadata: Metadata = {
-  title: "Vegan Indian Cooking Guides | Spices, Pantry Staples & Techniques",
+  title: "Vegan Indian Cooking Guides | Spices, Pantry & Techniques",
   description:
     "Learn vegan Indian cooking with practical guides to spices, pantry staples, curry bases, lentils, herbs, rice and kitchen essentials.",
   alternates: {
@@ -112,9 +113,11 @@ function GuideCard({
             : "h-44 border-t border-[var(--border)] sm:h-full sm:border-l sm:border-t-0",
         ].join(" ")}
       >
-        <img
+        <Image
           src={image}
           alt={guide.title}
+          fill
+          sizes={featured ? "(max-width: 1024px) 100vw, 50vw" : "(max-width: 640px) 100vw, 33vw"}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-l from-black/20 via-black/10 to-transparent" />

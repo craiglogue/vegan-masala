@@ -6,7 +6,7 @@ const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
 export const metadata: Metadata = {
-  title: "Indian Cooking Equipment Guide | Vegan Masala",
+  title: "Indian Cooking Equipment Guide",
   description:
     "Discover the essential tools for Indian cooking, what each one does, and which pieces of equipment are worth buying first.",
   alternates: {

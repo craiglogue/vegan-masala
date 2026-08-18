@@ -3,7 +3,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Rajdhani } from "next/font/google";
+import localFont from "next/font/local";
 
 import SiteHeader from "@/components/SiteHeader";
 
@@ -33,9 +33,13 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest?v=3",
 };
 
-const rajdhani = Rajdhani({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+const rajdhani = localFont({
+  src: [
+    { path: "../../public/fonts/Rajdhani-Regular.ttf", weight: "400", style: "normal" },
+    { path: "../../public/fonts/Rajdhani-Medium.ttf", weight: "500", style: "normal" },
+    { path: "../../public/fonts/Rajdhani-SemiBold.ttf", weight: "600", style: "normal" },
+    { path: "../../public/fonts/Rajdhani-Bold.ttf", weight: "700", style: "normal" },
+  ],
   variable: "--font-sans",
   display: "swap",
 });

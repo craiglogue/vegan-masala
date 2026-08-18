@@ -12,14 +12,8 @@ export type Guide = {
   content: string;
 };
 
-function ensureDir() {
-  if (!fs.existsSync(GUIDES_DIR)) {
-    fs.mkdirSync(GUIDES_DIR, { recursive: true });
-  }
-}
-
 export function getAllGuideSlugs(): string[] {
-  ensureDir();
+  if (!fs.existsSync(GUIDES_DIR)) return [];
 
   return fs
     .readdirSync(GUIDES_DIR)
@@ -28,7 +22,7 @@ export function getAllGuideSlugs(): string[] {
 }
 
 export function getGuideBySlug(slug: string): Guide | null {
-  ensureDir();
+  if (!fs.existsSync(GUIDES_DIR)) return null;
 
   const mdxPath = path.join(GUIDES_DIR, `${slug}.mdx`);
   const mdPath = path.join(GUIDES_DIR, `${slug}.md`);

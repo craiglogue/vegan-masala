@@ -1,14 +1,17 @@
 // src/components/SiteHeader.tsx
 import Link from "next/link";
+import Image from "next/image";
 
 export default function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)]">
       <div className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img
+          <Image
             src="/images/header/mandala-bg.jpg"
             alt=""
+            fill
+            sizes="100vw"
             className="h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-black/60" />
@@ -18,9 +21,11 @@ export default function SiteHeader() {
         <div className="relative mx-auto max-w-7xl px-4 py-3">
           <div className="flex items-center justify-center overflow-hidden">
             <Link href="/" className="flex items-center justify-center">
-              <img
+              <Image
                 src="/brand/logo-flat.png"
                 alt="Vegan Masala"
+                width={220}
+                height={90}
                 style={{
                   height: "clamp(120px, 14vw, 180px)",
                   width: "auto",

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Script from "next/script";
 
 export const metadata = {
-  title: "Vegan Indian Sweets Mini Ebook | Vegan Masala",
+  title: "Vegan Indian Sweets Mini Ebook",
   description:
     "A beginner-friendly vegan Indian sweets ebook with 6 comforting recipes, pantry notes, troubleshooting tips, and festive serving ideas.",
 };

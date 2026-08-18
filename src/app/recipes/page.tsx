@@ -1,11 +1,10 @@
-export const dynamic = "force-dynamic";
-
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 
 import { getAllRecipes } from "@/lib/recipes";
 import { getRecipeImage, isPlaceholderImage } from "@/lib/recipeimages";
+import { RECIPE_COLLECTIONS } from "@/lib/seo/collections";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
@@ -18,7 +17,7 @@ export const metadata: Metadata = {
     canonical: `${siteUrl}/recipes`,
   },
   openGraph: {
-    title: "Vegan Indian Recipes | Curries, Dal, Rice, Snacks & Sweets | Vegan Masala",
+    title: "Vegan Indian Recipes | Curries, Dal, Rice, Snacks & Sweets",
     description:
       "Browse vegan Indian recipes including curries, dals, rice dishes, snacks, flatbreads and sweet recipes.",
     url: `${siteUrl}/recipes`,
@@ -27,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vegan Indian Recipes | Curries, Dal, Rice, Snacks & Sweets | Vegan Masala",
+    title: "Vegan Indian Recipes | Curries, Dal, Rice, Snacks & Sweets",
     description:
       "Browse vegan Indian recipes including curries, dals, rice dishes, snacks, flatbreads and sweet recipes.",
   },
@@ -424,6 +423,20 @@ export default async function RecipesPage({
                 {COLLECTION_LABELS[collection]} ({collectionCounts.get(collection)})
               </Link>
             ))}
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
+        <h2 className="text-xl font-extrabold text-[var(--brand-gold)]">Explore recipe guides</h2>
+        <p className="mt-2 text-sm text-[var(--text-soft)]">Curated collections with the most useful recipes for each cooking goal.</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link href="/recipes/vegan-indian-curry-recipes" className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-bold text-[var(--brand-gold)]">Curries</Link>
+          <Link href="/recipes/vegan-indian-dal-recipes" className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-bold text-[var(--brand-gold)]">Dal and lentils</Link>
+          {RECIPE_COLLECTIONS.map((collection) => (
+            <Link key={collection.slug} href={`/recipes/collections/${collection.slug}`} className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-bold text-[var(--brand-gold)]">
+              {collection.title.replace(/^Vegan Indian /, "")}
+            </Link>
+          ))}
         </div>
       </section>
 

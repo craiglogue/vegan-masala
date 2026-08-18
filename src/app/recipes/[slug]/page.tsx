@@ -4,13 +4,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
-import { getRecipeBySlug } from "@/lib/recipes";
+import { getAllRecipeSlugs, getRecipeBySlug } from "@/lib/recipes";
 import { getRecipeImage, isPlaceholderImage } from "@/lib/recipeimages";
 import { isCurryHubRecipe } from "@/lib/seo/curryHub";
 import { isDalHubRecipe } from "@/lib/seo/dalHub";
+import { getCollectionsForRecipe } from "@/lib/seo/collections";
 import PrintButton from "@/components/PrintButton";
 import RelatedGuides from "@/components/RelatedGuides";
+import RelatedRecipes from "@/components/RelatedRecipes";
 import StorePromo from "@/components/StorePromo";
+import RecipeEngagement from "@/components/RecipeEngagement";
 
 function extractSections(raw: string) {
   const sections: Record<string, string> = {};
@@ -154,10 +157,14 @@ function buildSeoTitle(recipe: any) {
   const typeLabel = buildSeoTypeLabel(recipe);
 
   if (lowerTitle.includes("recipe")) {
-    return `${title} | ${typeLabel} | Vegan Masala`;
+    return `${title} | ${typeLabel}`;
   }
 
-  return `${title} Recipe | ${typeLabel} | Vegan Masala`;
+  return `${title} Recipe | ${typeLabel}`;
+}
+
+export function generateStaticParams() {
+  return getAllRecipeSlugs().map((slug) => ({ slug }));
 }
 
 function buildSeoDescription(recipe: any) {
@@ -473,7 +480,8 @@ export default async function RecipePage({
   const heroAbs = absUrl(siteUrl, hero);
   const relatedGuideTags = getRelatedGuideTags(recipe);
   const showCurryHubCallout = isCurryHubRecipe(recipe.slug);
-  const showDalHubCallout = isDalHubRecipe(recipe.slug) && !showCurryHubCallout;
+  const showDalHubCallout = isDalHubRecipe(recipe.slug);
+  const recipeCollections = getCollectionsForRecipe(recipe);
 
   const servingIdeas = (() => {
     if (typeof recipe.servingSuggestion === "string" && recipe.servingSuggestion.trim()) {
@@ -843,6 +851,8 @@ export default async function RecipePage({
 
       {storePromoSlugs.includes(recipe.slug) && <StorePromo />}
 
+      <RecipeEngagement slug={recipe.slug} title={recipe.title} />
+
       {showCurryHubCallout && (
         <section className="mt-12 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
           <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--brand-gold)]/70">
@@ -881,6 +891,23 @@ export default async function RecipePage({
             Visit the dal hub
           </Link>
         </section>
+      )}
+
+      <RelatedRecipes
+        title="Cook next"
+        tags={recipe.tags ?? []}
+        excludeSlugs={[recipe.slug]}
+        max={6}
+      />
+
+      {recipeCollections.length > 0 && (
+        <nav aria-label="Recipe collections" className="mt-8 flex flex-wrap gap-3">
+          {recipeCollections.map((collection) => (
+            <Link key={collection.slug} href={`/recipes/collections/${collection.slug}`} className="rounded-xl border border-[var(--border)] bg-black/10 px-4 py-2 text-sm font-bold text-[var(--brand-gold)] hover:bg-black/20">
+              More {collection.title}
+            </Link>
+          ))}
+        </nav>
       )}
 
       <RelatedGuides title="Learn the technique" tags={relatedGuideTags} max={3} />

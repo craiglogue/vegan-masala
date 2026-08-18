@@ -1,7 +1,10 @@
 // src/app/sitemap.ts
 import type { MetadataRoute } from "next";
+import fs from "node:fs";
+import path from "node:path";
 import { getAllRecipes } from "@/lib/recipes";
 import { getAllGuideSlugs } from "@/lib/guides";
+import { RECIPE_COLLECTIONS } from "@/lib/seo/collections";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl =
@@ -10,104 +13,79 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const recipes = getAllRecipes();
   const guideSlugs = getAllGuideSlugs();
 
-  const now = new Date();
-
   return [
     {
       url: `${siteUrl}/`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 1,
     },
     {
       url: `${siteUrl}/recipes`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
       url: `${siteUrl}/guides`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
       url: `${siteUrl}/about`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
       url: `${siteUrl}/contact`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
       url: `${siteUrl}/privacy`,
-      lastModified: now,
       changeFrequency: "yearly",
       priority: 0.4,
     },
     {
       url: `${siteUrl}/cookies`,
-      lastModified: now,
       changeFrequency: "yearly",
       priority: 0.4,
     },
     {
       url: `${siteUrl}/store`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
-      url: `${siteUrl}/guides/spices`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: `${siteUrl}/guides/herbs`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: `${siteUrl}/guides/equipment`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: `${siteUrl}/guides/vegan-dairy-alternatives`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
       url: `${siteUrl}/recipes/vegan-indian-curry-recipes`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.85,
     },
     {
       url: `${siteUrl}/recipes/vegan-indian-dal-recipes`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.85,
     },
 
     ...recipes.map((recipe) => ({
       url: `${siteUrl}/recipes/${recipe.slug}`,
-      lastModified: recipe.publishedAt ? new Date(recipe.publishedAt) : now,
+      lastModified: recipe.publishedAt ? new Date(recipe.publishedAt) : undefined,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
+
+    ...RECIPE_COLLECTIONS.map((collection) => ({
+      url: `${siteUrl}/recipes/collections/${collection.slug}`,
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
 
     ...guideSlugs.map((slug) => ({
       url: `${siteUrl}/guides/${slug}`,
-      lastModified: now,
+      lastModified: (() => {
+        const mdx = path.join(process.cwd(), "content", "guides", `${slug}.mdx`);
+        const md = path.join(process.cwd(), "content", "guides", `${slug}.md`);
+        const file = fs.existsSync(mdx) ? mdx : md;
+        return fs.existsSync(file) ? fs.statSync(file).mtime : undefined;
+      })(),
       changeFrequency: "monthly" as const,
       priority: 0.75,
     })),

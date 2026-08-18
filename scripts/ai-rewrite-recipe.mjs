@@ -8,6 +8,7 @@ import matter from "gray-matter";
 import OpenAI from "openai";
 
 const RECIPES_DIR = path.join(process.cwd(), "content", "recipes");
+const STAGING_DIR = path.join(process.cwd(), "content", "recipes_rewritten");
 
 function die(msg) {
   console.error(`\n❌ ${msg}\n`);
@@ -31,6 +32,8 @@ OPTIONS
   --dry-run
   --no-write
   --no-backup
+  --write-live       Explicitly write the reviewed result to the live recipe file.
+                     Without this flag, output is staged in content/recipes_rewritten.
 `);
 }
 
@@ -133,6 +136,7 @@ async function main() {
   const dryRun = args.includes("--dry-run");
   const noWrite = args.includes("--no-write");
   const noBackup = args.includes("--no-backup");
+  const writeLive = args.includes("--write-live");
 
   const modelIdx = args.indexOf("--model");
   const model = modelIdx !== -1 ? args[modelIdx + 1] : "gpt-4o-mini";
@@ -353,12 +357,17 @@ Return JSON only.
     return;
   }
 
-  if (!noBackup) {
-    backupFile(filePath);
+  const outputPath = writeLive
+    ? filePath
+    : path.join(STAGING_DIR, path.basename(filePath));
+
+  if (writeLive && !noBackup) {
+    backupFile(outputPath);
   }
 
-  fs.writeFileSync(filePath, out, "utf8");
-  console.log(`✅ Rewrote ${filePath}`);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, out, "utf8");
+  console.log(`✅ ${writeLive ? "Rewrote live recipe" : "Staged for human review"}: ${outputPath}`);
 }
 
 main().catch((err) => {

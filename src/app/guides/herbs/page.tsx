@@ -7,7 +7,7 @@ const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
 
 export const metadata: Metadata = {
-  title: "Indian Herbs Guide | Vegan Masala",
+  title: "Indian Herbs Guide",
   description:
     "Explore the key herbs used in Indian cooking, how to use them, and how they add freshness, lift, and balance to vegan dishes.",
   alternates: {

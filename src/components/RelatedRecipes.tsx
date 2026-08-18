@@ -2,24 +2,27 @@ import Link from "next/link";
 import Image from "next/image";
 
 import { getAllRecipes } from "@/lib/recipes";
+import type { Recipe } from "@/lib/recipes";
 import { getRecipeImage } from "@/lib/recipeimages";
 
 type Props = {
   title?: string;
   tags?: string[];
   max?: number;
+  excludeSlugs?: string[];
 };
 
 export default function RelatedRecipes({
   title = "Related Recipes",
   tags = [],
   max = 6,
+  excludeSlugs = [],
 }: Props) {
   const recipes = getAllRecipes();
 
   const related = recipes
-    .filter((r: any) => {
-      if (!tags.length) return false;
+    .map((r: Recipe) => {
+      if (!tags.length) return null;
 
       const recipeTags = [
         ...(r.tags || []),
@@ -30,10 +33,15 @@ export default function RelatedRecipes({
         .join(" ")
         .toLowerCase();
 
-      return tags.some((t) =>
-        recipeTags.includes(t.toLowerCase())
+      const score = tags.reduce(
+        (total, tag) => total + (recipeTags.includes(tag.toLowerCase()) ? 1 : 0),
+        0
       );
+      return { recipe: r, score };
     })
+    .filter((item): item is { recipe: Recipe; score: number } => item !== null && item.score > 0)
+    .filter(({ recipe }) => !excludeSlugs.includes(recipe.slug))
+    .sort((a, b) => b.score - a.score)
     .slice(0, max);
 
   if (!related.length) return null;
@@ -46,7 +54,7 @@ export default function RelatedRecipes({
       </h2>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {related.map((r: any) => {
+        {related.map(({ recipe: r }) => {
           const img = getRecipeImage(r.slug);
 
           return (
