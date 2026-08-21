@@ -109,6 +109,14 @@ function SiteFooter() {
                   </Link>
                 </li>
                 <li>
+                  <Link
+                    href="/affiliate-disclosure"
+                    className="hover:text-[var(--brand-gold)]"
+                  >
+                    Affiliate Disclosure
+                  </Link>
+                </li>
+                <li>
                   <Link href="/contact" className="hover:text-[var(--brand-gold)]">
                     Contact
                   </Link>

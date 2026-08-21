@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import AffiliateCard from "@/components/AffiliateCard";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://vegan-masala.com";
@@ -44,6 +45,8 @@ const equipment = [
     alt: "Small tadka pan for tempering spices in oil",
     why: "Perfect for blooming spices in oil (tadka) and pouring over dal, chana, and curries.",
     tip: "Keep it small — spices bloom fast and can burn.",
+    affiliateUrl:
+      "https://www.amazon.co.uk/s?k=Indian%20tadka%20tempering%20pan&tag=veganmasala03-21",
   },
   {
     name: "Kadai / Karahi (wok-like pan)",
@@ -51,6 +54,8 @@ const equipment = [
     alt: "Kadai (karahi) pan",
     why: "Great for stir-frying, bhaji-style dishes, and quick curries.",
     tip: "Hot pan + quick movement = better flavour and texture.",
+    affiliateUrl:
+      "https://www.amazon.co.uk/s?k=Indian%20kadai%20karahi%20pan&tag=veganmasala03-21",
   },
   {
     name: "Tawa (flat griddle)",
@@ -58,6 +63,8 @@ const equipment = [
     alt: "Tawa for cooking rotis and flatbreads",
     why: "Essential for rotis, chapatis, parathas, and toasting spices.",
     tip: "Heat until a sprinkle of water dances; don’t oil for chapati.",
+    affiliateUrl:
+      "https://www.amazon.co.uk/s?k=cast%20iron%20tawa%20chapati%20pan&tag=veganmasala03-21",
   },
   {
     name: "Heavy-bottom pot / Dutch oven",
@@ -65,6 +72,8 @@ const equipment = [
     alt: "Heavy-bottom pot or Dutch oven on a stovetop",
     why: "Best for curries and dals: even heat prevents sticking and scorching.",
     tip: "Use medium heat and stir after adding tomatoes or purées.",
+    affiliateUrl:
+      "https://www.amazon.co.uk/s?k=heavy%20bottom%20casserole%20pot&tag=veganmasala03-21",
   },
   {
     name: "Pressure cooker / Instant Pot",
@@ -72,6 +81,8 @@ const equipment = [
     alt: "Pressure cooker used for lentils and beans",
     why: "Speeds up lentils, chickpeas, and beans — weeknight game-changer.",
     tip: "Finish with tadka for best flavour.",
+    affiliateUrl:
+      "https://www.amazon.co.uk/s?k=electric%20pressure%20cooker%20Instant%20Pot&tag=veganmasala03-21",
   },
   {
     name: "Spice grinder / coffee grinder",
@@ -79,6 +90,8 @@ const equipment = [
     alt: "Spice grinder with whole spices",
     why: "Fresh-ground spices taste dramatically better (cumin, coriander, pepper).",
     tip: "Grind small batches and keep in a sealed jar.",
+    affiliateUrl:
+      "https://www.amazon.co.uk/s?k=electric%20spice%20grinder&tag=veganmasala03-21",
   },
   {
     name: "Mortar & pestle",
@@ -86,6 +99,8 @@ const equipment = [
     alt: "Mortar and pestle for crushing spices",
     why: "Crush ginger/garlic, chilli, and whole spices for pastes and marinades.",
     tip: "A rough paste is often better than perfectly smooth.",
+    affiliateUrl:
+      "https://www.amazon.co.uk/s?k=granite%20mortar%20and%20pestle&tag=veganmasala03-21",
   },
   {
     name: "Fine mesh strainer (sieve)",
@@ -93,6 +108,8 @@ const equipment = [
     alt: "Fine mesh sieve",
     why: "Great for rinsing lentils and straining chai or stocks.",
     tip: "Rinse lentils until water runs clearer for cleaner flavour.",
+    affiliateUrl:
+      "https://www.amazon.co.uk/s?k=fine%20mesh%20kitchen%20sieve&tag=veganmasala03-21",
   },
   {
     name: "Wooden spoon",
@@ -100,6 +117,8 @@ const equipment = [
     alt: "Wooden spoon for stirring curries",
     why: "Simple but essential — great for stirring without scratching pans.",
     tip: "Stir after adding tomatoes to prevent catching at the bottom.",
+    affiliateUrl:
+      "https://www.amazon.co.uk/s?k=wooden%20cooking%20spoon&tag=veganmasala03-21",
   },
 ];
 
@@ -158,6 +177,18 @@ export default function EquipmentGuidePage() {
                 <p className="mt-3 text-sm text-[var(--brand-ink)]/70">
                   <span className="font-medium text-[var(--brand-ink)]">Tip:</span> {e.tip}
                 </p>
+
+                {e.affiliateUrl && (
+                  <div className="mt-5">
+                    <AffiliateCard
+                      title={e.name}
+                      description={e.why}
+                      href={e.affiliateUrl}
+                      category="Indian cooking equipment"
+                      ctaLabel="Check price"
+                    />
+                  </div>
+                )}
               </div>
             </article>
           ))}
